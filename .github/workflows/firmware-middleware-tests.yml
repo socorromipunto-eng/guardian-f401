@@ -1,0 +1,63 @@
+# Give the portable M4 firmware middleware verification workflow a clear name.
+name: Guardian Firmware Middleware Tests
+
+# Run M4 portable C verification whenever changes reach GitHub.
+on:
+  # Validate direct pushes to main.
+  push:
+    # Restrict direct-push validation to main.
+    branches:
+      # Validate every main commit.
+      - main
+
+  # Validate pull requests.
+  pull_request:
+
+# Grant only repository read access.
+permissions:
+  # Allow source checkout.
+  contents: read
+
+# Define portable embedded-link verification.
+jobs:
+  # Compile middleware using a strict desktop compiler.
+  embedded-link:
+    # Use the GitHub-hosted Ubuntu runner.
+    runs-on: ubuntu-latest
+
+    # Execute verification steps.
+    steps:
+      # Download repository source.
+      - name: Check out repository
+        # Use official checkout action.
+        uses: actions/checkout@v6
+
+      # Create generated-output directory.
+      - name: Prepare build directory
+        # Keep binaries outside source folders.
+        run: mkdir -p build
+
+      # Compile portable middleware with strict warnings.
+      - name: Compile M4 embedded middleware tests
+        # Treat every warning as failure.
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Platform/Inc
+          firmware/Protocol/Src/guardian_protocol.c
+          firmware/Protocol/Src/guardian_parser.c
+          firmware/App/Src/guardian_device_service.c
+          firmware/Platform/Src/guardian_embedded_link.c
+          firmware/Tests/embedded_link_host_test.c
+          -o build/embedded_link_host_test
+
+      # Run portable middleware tests.
+      - name: Run M4 embedded middleware tests
+        # Fail when assertions detect incompatibility.
+        run: ./build/embedded_link_host_test

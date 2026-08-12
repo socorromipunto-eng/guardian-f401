@@ -1,26 +1,28 @@
 """Command-line interface for Guardian F401 host diagnostics."""
 
-# Import argparse for a dependency-free professional CLI.
+# Import argparse for the dependency-free CLI.
 import argparse
 
-# Import sys for explicit stdout/stderr routing.
+# Import sys for explicit stdout and stderr routing.
 import sys
 
 # Import the high-level Guardian client.
 from .client import GuardianClient
 
-# Import immutable client connection configuration and defaults.
+# Import TCP and serial configuration models and defaults.
 from .config import (
     DEFAULT_HOST,
     DEFAULT_PORT,
+    DEFAULT_SERIAL_BAUD,
     DEFAULT_TIMEOUT_SECONDS,
     ClientConfig,
+    SerialConfig,
 )
 
 # Import the expected host-side exception boundary.
 from .errors import GuardianCtlError
 
-# Import text and JSON renderers.
+# Import presentation helpers.
 from .presentation import (
     render_info_json,
     render_info_text,
@@ -30,28 +32,31 @@ from .presentation import (
     render_status_text,
 )
 
-# Import the default TCP development transport.
-from .transport import GuardianTcpTransport
+# Import the physical serial transport.
+from .serial_transport import GuardianSerialTransport
+
+# Import the exchange contract and TCP transport.
+from .transport import ExchangeTransport, GuardianTcpTransport
 
 
 # Build the complete guardianctl command-line grammar.
 def build_parser() -> argparse.ArgumentParser:
     """Return the configured guardianctl argument parser."""
 
-    # Create the top-level parser with a concise project description.
+    # Create the top-level parser.
     parser = argparse.ArgumentParser(
         prog="guardianctl",
         description="Guardian F401 host diagnostics and management console.",
     )
 
-    # Allow the operator to select a different Guardian development endpoint.
+    # Configure TCP host selection.
     parser.add_argument(
         "--host",
         default=DEFAULT_HOST,
-        help=f"Guardian host or IP address (default: {DEFAULT_HOST})",
+        help=f"Guardian TCP host or IP address (default: {DEFAULT_HOST})",
     )
 
-    # Allow the operator to select a different Guardian TCP development port.
+    # Configure TCP port selection.
     parser.add_argument(
         "--port",
         type=int,
@@ -59,7 +64,21 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Guardian TCP port (default: {DEFAULT_PORT})",
     )
 
-    # Allow the operator to bound connect and response latency explicitly.
+    # Select physical UART when provided.
+    parser.add_argument(
+        "--serial-port",
+        help="physical UART port, for example COM5 or /dev/ttyUSB0",
+    )
+
+    # Configure physical UART baud rate.
+    parser.add_argument(
+        "--baud",
+        type=int,
+        default=DEFAULT_SERIAL_BAUD,
+        help=f"physical UART baud rate (default: {DEFAULT_SERIAL_BAUD})",
+    )
+
+    # Configure bounded response timeout.
     parser.add_argument(
         "--timeout",
         type=float,
@@ -70,151 +89,172 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    # Allow machine-readable output for scripts, CI and future tooling.
+    # Configure machine-readable output.
     parser.add_argument(
         "--json",
         action="store_true",
         help="emit machine-readable JSON output",
     )
 
-    # Create the required command registry.
+    # Create required command registry.
     subcommands = parser.add_subparsers(
         dest="command",
         required=True,
     )
 
-    # Register the PING diagnostic command.
+    # Register PING.
     subcommands.add_parser(
         "ping",
         help="verify Guardian connectivity and measure latency",
     )
 
-    # Register the DEVICE_INFO diagnostic command.
+    # Register DEVICE_INFO.
     subcommands.add_parser(
         "info",
         help="read device model, firmware and identifier",
     )
 
-    # Register the GET_STATUS diagnostic command.
+    # Register GET_STATUS.
     subcommands.add_parser(
         "status",
         help="read runtime state and protocol diagnostics",
     )
 
-    # Return the complete command-line grammar.
+    # Return complete grammar.
     return parser
 
 
-# Execute one parsed guardianctl command and return a process exit status.
+# Build either TCP or physical serial transport.
+def build_transport(args: argparse.Namespace) -> ExchangeTransport:
+    """Return the selected Guardian exchange transport."""
+
+    # Select physical UART when a serial port is supplied.
+    if args.serial_port:
+
+        # Validate serial configuration.
+        config = SerialConfig(
+            port=args.serial_port,
+            baud_rate=args.baud,
+            timeout_seconds=args.timeout,
+        )
+
+        # Return physical serial transport.
+        return GuardianSerialTransport(config)
+
+    # Validate TCP configuration.
+    config = ClientConfig(
+        host=args.host,
+        port=args.port,
+        timeout_seconds=args.timeout,
+    )
+
+    # Return TCP transport.
+    return GuardianTcpTransport(config)
+
+
+# Execute one guardianctl command.
 def main(argv: list[str] | None = None) -> int:
     """Execute guardianctl and return a conventional process exit code."""
 
-    # Build the deterministic command-line grammar.
+    # Build command grammar.
     parser = build_parser()
 
-    # Parse explicit test arguments or the current process command line.
+    # Parse command line.
     args = parser.parse_args(argv)
 
-    # Validate connection parameters using the shared immutable configuration model.
+    # Build selected transport.
     try:
 
-        # Construct the host connection configuration.
-        config = ClientConfig(
-            host=args.host,
-            port=args.port,
-            timeout_seconds=args.timeout,
-        )
+        # Create TCP or physical serial transport.
+        transport = build_transport(args)
     except ValueError as exc:
 
-        # Print configuration errors to stderr for shell-friendly behavior.
+        # Print configuration failure to stderr.
         print(f"guardianctl: configuration error: {exc}", file=sys.stderr)
 
-        # Return the conventional command-line usage/configuration failure status.
+        # Return usage/configuration failure status.
         return 2
 
-    # Create the configured synchronous TCP transport.
-    transport = GuardianTcpTransport(config)
-
-    # Create the high-level typed Guardian client.
+    # Create high-level client.
     client = GuardianClient(transport=transport)
 
-    # Convert expected communication failures into concise CLI diagnostics.
+    # Normalize expected operational failures.
     try:
 
-        # Dispatch the PING command.
+        # Dispatch PING.
         if args.command == "ping":
 
-            # Execute the typed high-level PING operation.
+            # Execute PING.
             result = client.ping()
 
-            # Select JSON output when explicitly requested.
+            # Select JSON output.
             if args.json:
 
-                # Print the machine-readable PING representation.
-                print(render_ping_json(result, config))
+                # Print machine-readable output.
+                print(render_ping_json(result, transport.endpoint))
             else:
 
-                # Print the human-readable PING representation.
-                print(render_ping_text(result, config))
+                # Print human-readable output.
+                print(render_ping_text(result, transport.endpoint))
 
-            # Report command success.
+            # Report success.
             return 0
 
-        # Dispatch the device-information command.
+        # Dispatch DEVICE_INFO.
         if args.command == "info":
 
-            # Execute the typed high-level metadata operation.
+            # Execute metadata query.
             info = client.device_info()
 
-            # Select JSON output when explicitly requested.
+            # Select JSON output.
             if args.json:
 
-                # Print the machine-readable metadata representation.
+                # Print machine-readable output.
                 print(render_info_json(info))
             else:
 
-                # Print the human-readable metadata representation.
+                # Print human-readable output.
                 print(render_info_text(info))
 
-            # Report command success.
+            # Report success.
             return 0
 
-        # Dispatch the runtime-status command.
+        # Dispatch GET_STATUS.
         if args.command == "status":
 
-            # Execute the typed high-level runtime-status operation.
+            # Execute status query.
             status = client.status()
 
-            # Select JSON output when explicitly requested.
+            # Select JSON output.
             if args.json:
 
-                # Print the machine-readable status representation.
+                # Print machine-readable output.
                 print(render_status_json(status))
             else:
 
-                # Print the human-readable status representation.
+                # Print human-readable output.
                 print(render_status_text(status))
 
-            # Report command success.
+            # Report success.
             return 0
 
-        # Protect future edits from accidentally creating an unhandled parsed command.
+        # Protect future edits from an unhandled parsed command.
         parser.error(f"unsupported command: {args.command}")
 
-        # Satisfy static analysis even though parser.error always terminates execution.
+        # Satisfy static analysis.
         return 2
 
     except GuardianCtlError as exc:
 
-        # Print expected communication/protocol failures to stderr only.
+        # Print expected operational failure without traceback.
         print(f"guardianctl: {exc}", file=sys.stderr)
 
-        # Return a non-zero operational failure status without a Python traceback.
+        # Return non-zero operational status.
         return 1
 
 
 # Run the CLI when this module is executed directly.
 if __name__ == "__main__":
 
-    # Exit the process using the status returned by the CLI boundary.
+    # Exit using the CLI status.
     raise SystemExit(main())

@@ -2,49 +2,39 @@
 
 Guardian F401 is an advanced embedded systems portfolio project built around the STM32F401CDU6.
 
-## Purpose
+## Current System
 
-The project demonstrates:
-
-- modular STM32 firmware architecture
-- transport-independent binary communication
-- defensive stream parsing
-- host/device protocol contracts
-- software device simulation
-- operator-facing host tooling
-- UART-ready framing
-- telemetry and diagnostics
-- ADC, timers, interrupts and DMA
-- DSP and machine-health analysis
-- deterministic state machines
-- authentication and authorization architecture
-- anti-replay protection
-- automated testing and fuzzing
-
-## Current End-to-End System
-
-M3 provides the first complete operator-to-device software path:
+M4 adds the first physical STM32F401 transport while preserving the Guardian Protocol contract used by the simulator.
 
 ```text
-Operator
-   |
-   v
-guardianctl
-   |
-   v
-GuardianClient
-   |
-   v
-GuardianTcpTransport
-   |
-   v
-Guardian Protocol v0.1
-   |
-   v
-M2 Device Simulator
+                       GuardianClient
+                            |
+             +--------------+--------------+
+             |                             |
+             v                             v
+     TCP development                 Physical serial
+        transport                      transport
+             |                             |
+             v                             v
+      M2 Simulator                  USB-to-UART adapter
+                                           |
+                                           v
+                                  STM32F401 USART2
+                                    PA2 TX / PA3 RX
+                                           |
+                                           v
+                                    IRQ byte queues
+                                           |
+                                           v
+                                  Guardian Embedded Link
+                                           |
+                                           v
+                                   Device Command Service
 ```
 
-Available commands:
+## Host Commands
+
+Simulator:
 
 ```text
 python tools/guardianctl.py ping
@@ -52,110 +42,71 @@ python tools/guardianctl.py info
 python tools/guardianctl.py status
 ```
 
-The same host command model will later use UART to communicate with the STM32F401.
-
-## Guardian Protocol v0.1
+Physical UART:
 
 ```text
-+-------+---------+------+---------+-------+----------+--------+---------+-------+
-| MAGIC | VERSION | TYPE | COMMAND | FLAGS | SEQUENCE | LENGTH | PAYLOAD | CRC32 |
-+-------+---------+------+---------+-------+----------+--------+---------+-------+
+python tools/guardianctl.py --serial-port COM5 ping
+python tools/guardianctl.py --serial-port COM5 info
+python tools/guardianctl.py --serial-port COM5 status
 ```
 
-Implemented properties:
-
-- fixed 12-byte header
-- maximum 256-byte payload
-- big-endian multi-byte fields
-- IEEE CRC32
-- incremental stream parsing
-- bounded STM32 memory
-- canonical C/Python compatibility vectors
-- command-specific payload codecs
-- automated Python and portable C tests
-
-## Quick Demonstration
-
-Start the software device:
+## Physical UART Reference
 
 ```text
-python tools/run_simulator.py
+STM32F401CDU6
+USART2
+PA2 = TX
+PA3 = RX
+AF7
+115200
+8-N-1
 ```
 
-In another terminal:
+The ISR performs bounded byte movement only.
 
-```text
-python tools/guardianctl.py ping
-python tools/guardianctl.py info
-python tools/guardianctl.py status
-```
-
-JSON is available for automation:
-
-```text
-python tools/guardianctl.py --json status
-```
+CRC, parsing and command dispatch execute in foreground code.
 
 ## Development Phases
 
 ### M0 — Repository Foundation
-
 Completed.
 
 ### M1 — Guardian Protocol v0.1
-
 Completed.
 
 ### M2 — Device Simulator
-
 Completed.
 
 ### M3 — guardianctl
-
 Completed.
 
-Implemented typed host operations, request sequence allocation, bounded TCP I/O, response correlation, remote-error handling, human output, JSON output and end-to-end simulator tests.
-
 ### M4 — STM32 UART Transport
+Implemented in source.
 
-Next.
-
-The first physical STM32F401 integration will reuse Guardian Protocol v0.1 instead of inventing a new command path.
+Physical Keil build and board validation remain required before declaring the hardware path verified.
 
 ### M5 — Telemetry
-
-Asynchronous measurements, diagnostics and event reporting.
+Next.
 
 ### M6 — Acquisition
-
-ADC, timers, DMA and deterministic data capture.
+ADC, timers and DMA.
 
 ### M7 — DSP
-
-RMS, FFT, spectral features and signal processing.
+RMS, FFT and spectral features.
 
 ### M8 — Machine Health
-
 Baseline modeling and anomaly detection.
 
 ### M9 — Supervisory Control
-
-State machine, faults and controlled outputs.
+State machine, faults and outputs.
 
 ### M10 — Security
-
-Authentication, authorization, session management and anti-replay controls.
+Authentication, authorization, sessions and anti-replay.
 
 ### M11 — Robustness
-
-Fuzzing, malformed frames, fault injection and recovery testing.
+Fuzzing and fault injection.
 
 ### M12 — Firmware Lifecycle
+Signed firmware updates and rollback protection.
 
-Signed firmware update architecture and rollback protection.
-
-## Current Milestone
-
-M3 — `guardianctl` implemented.
-
-Next milestone: M4 — STM32 UART Transport.
+See `docs/m4-stm32-uart.md`.

@@ -1,72 +1,69 @@
 """Human-readable and JSON presentation helpers for guardianctl."""
 
-# Import json for machine-readable CLI output without external dependencies.
+# Import json for machine-readable output.
 import json
 
 # Import typed protocol models displayed by the CLI.
 from guardian_protocol import DeviceInfo, DeviceStatus
 
-# Import the typed successful PING result.
+# Import typed PING result.
 from .client import PingResult
-
-# Import immutable host connection configuration.
-from .config import ClientConfig
 
 
 # Format unsigned 32-bit device identifiers consistently.
 def format_device_id(device_id: int) -> str:
     """Return a fixed-width hexadecimal Guardian device identifier."""
 
-    # Render the identifier using eight uppercase hexadecimal digits.
+    # Render eight uppercase hexadecimal digits.
     return f"{device_id:08X}"
 
 
-# Convert whole uptime seconds into a compact human-readable duration.
+# Convert uptime seconds into a compact duration.
 def format_uptime(total_seconds: int) -> str:
     """Return uptime using days plus HH:MM:SS when required."""
 
-    # Split the complete duration into whole days and remaining seconds.
+    # Split into days and remaining seconds.
     days, remaining_seconds = divmod(total_seconds, 86400)
 
-    # Split the remaining duration into whole hours and remaining seconds.
+    # Split into hours and remaining seconds.
     hours, remaining_seconds = divmod(remaining_seconds, 3600)
 
-    # Split the remaining duration into minutes and seconds.
+    # Split into minutes and seconds.
     minutes, seconds = divmod(remaining_seconds, 60)
 
-    # Include the day component only when uptime has crossed one day.
+    # Include days only when needed.
     if days:
 
-        # Return the extended duration representation.
+        # Return extended duration.
         return f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}"
 
-    # Return the compact sub-day duration representation.
+    # Return sub-day duration.
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
-# Render one successful PING result for a human operator.
-def render_ping_text(result: PingResult, config: ClientConfig) -> str:
+# Render one successful PING result for a human.
+def render_ping_text(result: PingResult, endpoint: str) -> str:
     """Return human-readable PING output."""
 
-    # Join stable output lines into one terminal-ready text block.
+    # Join stable output lines.
     return "\n".join(
         (
             "Guardian device reachable",
-            f"Endpoint: {config.host}:{config.port}",
+            f"Endpoint: {endpoint}",
             f"Reply: {result.reply}",
             f"Latency: {result.latency_ms:.2f} ms",
         )
     )
 
 
-# Render one successful PING result for scripting and automation.
-def render_ping_json(result: PingResult, config: ClientConfig) -> str:
+# Render one successful PING result as JSON.
+def render_ping_json(result: PingResult, endpoint: str) -> str:
     """Return JSON PING output."""
 
-    # Serialize a stable machine-readable object with sorted keys.
+    # Serialize stable machine-readable output.
     return json.dumps(
         {
-            "endpoint": f"{config.host}:{config.port}",
+            "endpoint": endpoint,
             "latency_ms": round(result.latency_ms, 3),
             "reachable": True,
             "reply": result.reply,
@@ -75,11 +72,11 @@ def render_ping_json(result: PingResult, config: ClientConfig) -> str:
     )
 
 
-# Render immutable device metadata for a human operator.
+# Render immutable device metadata for a human.
 def render_info_text(info: DeviceInfo) -> str:
     """Return human-readable DEVICE_INFO output."""
 
-    # Join stable metadata lines into one terminal-ready text block.
+    # Join stable metadata lines.
     return "\n".join(
         (
             f"Model: {info.model}",
@@ -95,11 +92,11 @@ def render_info_text(info: DeviceInfo) -> str:
     )
 
 
-# Render immutable device metadata for scripts and automation.
+# Render immutable device metadata as JSON.
 def render_info_json(info: DeviceInfo) -> str:
     """Return JSON DEVICE_INFO output."""
 
-    # Serialize a stable machine-readable metadata object.
+    # Serialize stable machine-readable metadata.
     return json.dumps(
         {
             "device_id": format_device_id(info.device_id),
@@ -115,11 +112,11 @@ def render_info_json(info: DeviceInfo) -> str:
     )
 
 
-# Render one runtime status snapshot for a human operator.
+# Render runtime status for a human.
 def render_status_text(status: DeviceStatus) -> str:
     """Return human-readable GET_STATUS output."""
 
-    # Join stable runtime diagnostic lines into one terminal-ready text block.
+    # Join stable diagnostic lines.
     return "\n".join(
         (
             f"State: {status.state.name}",
@@ -132,11 +129,11 @@ def render_status_text(status: DeviceStatus) -> str:
     )
 
 
-# Render one runtime status snapshot for scripts and automation.
+# Render runtime status as JSON.
 def render_status_json(status: DeviceStatus) -> str:
     """Return JSON GET_STATUS output."""
 
-    # Serialize a stable machine-readable runtime diagnostic object.
+    # Serialize stable machine-readable status.
     return json.dumps(
         {
             "last_error": status.last_error,

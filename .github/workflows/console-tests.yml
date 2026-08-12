@@ -1,57 +1,57 @@
-# Give the M3 guardianctl verification workflow a clear GitHub Actions name.
+# Give the guardianctl verification workflow a clear name.
 name: Guardian Console Tests
 
-# Run host-console verification whenever relevant changes reach GitHub.
+# Run host-console verification whenever changes reach GitHub.
 on:
-  # Validate changes pushed directly to the stable project branch.
+  # Validate direct pushes.
   push:
     # Restrict direct-push validation to main.
     branches:
-      # Validate every published main commit.
+      # Validate every main commit.
       - main
 
-  # Validate proposed host-console changes before merge.
+  # Validate pull requests.
   pull_request:
 
-# Grant the workflow only the repository read permission it requires.
+# Grant only repository read access.
 permissions:
-  # Allow checkout to read source files.
+  # Allow source checkout.
   contents: read
 
-# Define the complete host-console verification job.
+# Define complete host verification.
 jobs:
-  # Exercise guardianctl against the real M2 loopback simulator.
+  # Exercise TCP and injected-fake serial abstractions.
   guardianctl:
-    # Use the current GitHub-hosted Ubuntu runner.
+    # Use the GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
-    # Execute every M3 verification step in order.
+    # Execute verification steps.
     steps:
-      # Download repository source into the isolated runner workspace.
+      # Download source.
       - name: Check out repository
-        # Use the current official checkout major release.
+        # Use official checkout action.
         uses: actions/checkout@v6
 
-      # Install the selected stable Python runtime.
+      # Install Python.
       - name: Set up Python
-        # Use the current official Python setup major release.
+        # Use official Python setup action.
         uses: actions/setup-python@v6
-        # Configure a deterministic runtime version.
+        # Configure deterministic runtime.
         with:
-          # Keep compatibility aligned with the previous project workflows.
+          # Match existing workflows.
           python-version: "3.12"
 
-      # Re-run the shared Guardian Protocol test suite first.
+      # Run protocol tests.
       - name: Run Guardian Protocol tests
-        # Expose the repository-local protocol package to this process.
+        # Expose local protocol package.
         run: PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
 
-      # Re-run the M2 simulator test suite before testing host integration.
+      # Run simulator tests.
       - name: Run Guardian simulator tests
-        # Expose the protocol and simulator packages to this process.
+        # Expose protocol and simulator packages.
         run: PYTHONPATH=protocol/python:simulator/src python -m unittest discover -s simulator/tests -v
 
-      # Run guardianctl unit and integration tests against the simulator.
+      # Run console and fake serial tests.
       - name: Run guardianctl tests
-        # Expose protocol, simulator and console packages to this process.
+        # Expose protocol, simulator and console packages.
         run: PYTHONPATH=protocol/python:simulator/src:console/src python -m unittest discover -s console/tests -v

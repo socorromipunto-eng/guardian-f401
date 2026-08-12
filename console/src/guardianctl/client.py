@@ -1,12 +1,12 @@
 """High-level Guardian host client independent from CLI presentation."""
 
-# Import monotonic high-resolution timing for PING latency measurement.
+# Import high-resolution timing for PING latency measurement.
 import time
 
 # Import dataclass for immutable PING results.
 from dataclasses import dataclass
 
-# Import shared command and payload codecs from the protocol package.
+# Import shared command and payload codecs.
 from guardian_protocol import (
     Command,
     DeviceInfo,
@@ -20,22 +20,22 @@ from guardian_protocol import (
 # Import host-side protocol contract errors.
 from .errors import ProtocolClientError
 
-# Import the thread-safe request sequence allocator.
+# Import request sequence allocation.
 from .sequence import SequenceManager
 
-# Import the default TCP transport.
-from .transport import GuardianTcpTransport
+# Import transport contract and default TCP transport.
+from .transport import ExchangeTransport, GuardianTcpTransport
 
 
-# Represent the complete result of one successful PING operation.
+# Represent one successful PING result.
 @dataclass(frozen=True, slots=True)
 class PingResult:
     """Successful Guardian PING result."""
 
-    # Store the response payload text.
+    # Store response payload text.
     reply: str
 
-    # Store measured request/response latency in milliseconds.
+    # Store measured latency in milliseconds.
     latency_ms: float
 
 
@@ -43,100 +43,100 @@ class PingResult:
 class GuardianClient:
     """High-level synchronous Guardian device client."""
 
-    # Create a client from an explicit transport or development defaults.
+    # Create a client from an explicit transport or TCP defaults.
     def __init__(
         self,
-        transport: GuardianTcpTransport | None = None,
+        transport: ExchangeTransport | None = None,
         sequence_manager: SequenceManager | None = None,
     ) -> None:
 
-        # Use the explicit transport or create the default local TCP transport.
+        # Use explicit transport or default local TCP.
         self._transport = transport or GuardianTcpTransport()
 
-        # Use the explicit sequence allocator or start from one.
+        # Use explicit sequence allocator or start from one.
         self._sequence_manager = sequence_manager or SequenceManager()
 
-    # Expose transport configuration for operator-facing endpoint output.
+    # Expose configured exchange transport.
     @property
-    def transport(self) -> GuardianTcpTransport:
+    def transport(self) -> ExchangeTransport:
         """Return the configured synchronous transport."""
 
-        # Return the transport object without changing its state.
+        # Return transport without changing state.
         return self._transport
 
-    # Verify Guardian connectivity and measure end-to-end response latency.
+    # Verify connectivity and measure response latency.
     def ping(self) -> PingResult:
         """Execute PING and return reply text plus measured latency."""
 
-        # Allocate one unique request correlation sequence.
+        # Allocate request correlation sequence.
         sequence = self._sequence_manager.next()
 
-        # Build the frozen empty-payload PING request.
+        # Build the PING request.
         request = Frame(
             message_type=MessageType.REQUEST,
             command=Command.PING,
             sequence=sequence,
         )
 
-        # Capture a monotonic timestamp immediately before transport exchange.
+        # Capture start time.
         started_at = time.perf_counter()
 
-        # Execute the bounded request/response exchange.
+        # Execute transport exchange.
         response = self._transport.exchange(request)
 
-        # Calculate end-to-end latency after a validated response arrives.
+        # Calculate end-to-end latency.
         latency_ms = (time.perf_counter() - started_at) * 1000.0
 
-        # Require the frozen PING response payload.
+        # Require frozen PONG semantics.
         if response.payload != b"PONG":
 
-            # Reject a semantically invalid response even when framing is correct.
+            # Reject semantically invalid response.
             raise ProtocolClientError(
                 f"PING returned unexpected payload: {response.payload!r}"
             )
 
-        # Return immutable typed PING information.
+        # Return typed result.
         return PingResult(
             reply="PONG",
             latency_ms=latency_ms,
         )
 
-    # Read immutable device and firmware metadata.
+    # Read immutable device metadata.
     def device_info(self) -> DeviceInfo:
         """Execute DEVICE_INFO and decode its binary payload."""
 
-        # Allocate one unique request correlation sequence.
+        # Allocate request correlation sequence.
         sequence = self._sequence_manager.next()
 
-        # Build the frozen empty-payload metadata request.
+        # Build the metadata request.
         request = Frame(
             message_type=MessageType.REQUEST,
             command=Command.DEVICE_INFO,
             sequence=sequence,
         )
 
-        # Execute the bounded request/response exchange.
+        # Execute transport exchange.
         response = self._transport.exchange(request)
 
-        # Decode and validate the command-specific binary metadata payload.
+        # Decode command-specific payload.
         return decode_device_info(response.payload)
 
-    # Read one coherent runtime diagnostic snapshot.
+    # Read one runtime diagnostic snapshot.
     def status(self) -> DeviceStatus:
         """Execute GET_STATUS and decode its binary payload."""
 
-        # Allocate one unique request correlation sequence.
+        # Allocate request correlation sequence.
         sequence = self._sequence_manager.next()
 
-        # Build the frozen empty-payload status request.
+        # Build the status request.
         request = Frame(
             message_type=MessageType.REQUEST,
             command=Command.GET_STATUS,
             sequence=sequence,
         )
 
-        # Execute the bounded request/response exchange.
+        # Execute transport exchange.
         response = self._transport.exchange(request)
 
-        # Decode and validate the fixed-width runtime status payload.
+        # Decode fixed-width status payload.
         return decode_device_status(response.payload)

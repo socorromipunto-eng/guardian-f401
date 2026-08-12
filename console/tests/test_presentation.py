@@ -1,21 +1,18 @@
-"""Unit tests for guardianctl text and JSON presentation helpers."""
+"""Unit tests for guardianctl presentation helpers."""
 
-# Import json so generated machine-readable output can be validated structurally.
+# Import json for machine-readable output validation.
 import json
 
-# Import unittest from the Python standard library.
+# Import unittest from the standard library.
 import unittest
 
-# Import shared typed protocol models used by presentation helpers.
+# Import typed protocol models.
 from guardian_protocol import DeviceInfo, DeviceState, DeviceStatus
 
-# Import the typed PING result.
+# Import typed PING result.
 from guardianctl.client import PingResult
 
-# Import the default host configuration.
-from guardianctl.config import ClientConfig
-
-# Import presentation functions under test.
+# Import presentation functions.
 from guardianctl.presentation import (
     format_uptime,
     render_info_json,
@@ -24,41 +21,41 @@ from guardianctl.presentation import (
 )
 
 
-# Verify stable human and machine-readable console formatting.
+# Verify stable console formatting.
 class PresentationTests(unittest.TestCase):
     """Exercise guardianctl presentation behavior."""
 
     # Verify short uptime formatting.
     def test_format_uptime_under_one_day(self) -> None:
 
-        # Require deterministic zero-padded HH:MM:SS output.
+        # Require HH:MM:SS output.
         self.assertEqual(format_uptime(3661), "01:01:01")
 
     # Verify extended uptime formatting.
     def test_format_uptime_with_days(self) -> None:
 
-        # Require deterministic day plus HH:MM:SS output.
+        # Require day plus HH:MM:SS output.
         self.assertEqual(format_uptime(90061), "1d 01:01:01")
 
-    # Verify human-readable PING output contains the endpoint and latency.
+    # Verify PING output contains the supplied endpoint.
     def test_ping_text_contains_endpoint(self) -> None:
 
-        # Render one deterministic PING result.
+        # Render deterministic PING output.
         output = render_ping_text(
             PingResult(reply="PONG", latency_ms=1.25),
-            ClientConfig(),
+            "COM5@115200",
         )
 
-        # Require the safe default development endpoint.
-        self.assertIn("127.0.0.1:9401", output)
+        # Require physical endpoint text.
+        self.assertIn("COM5@115200", output)
 
-        # Require the frozen PONG response text.
+        # Require PONG.
         self.assertIn("PONG", output)
 
-    # Verify metadata JSON output is valid and stable.
+    # Verify metadata JSON.
     def test_info_json_is_machine_readable(self) -> None:
 
-        # Render deterministic simulator metadata.
+        # Render deterministic metadata.
         output = render_info_json(
             DeviceInfo(
                 model="Guardian-F401-SIM",
@@ -69,19 +66,19 @@ class PresentationTests(unittest.TestCase):
             )
         )
 
-        # Decode the generated JSON using the standard library.
+        # Decode generated JSON.
         decoded = json.loads(output)
 
-        # Require the expected model identity.
+        # Require model identity.
         self.assertEqual(decoded["model"], "Guardian-F401-SIM")
 
-        # Require the fixed-width hexadecimal device identifier.
+        # Require fixed-width device ID.
         self.assertEqual(decoded["device_id"], "F4010001")
 
-    # Verify human-readable status exposes core runtime diagnostics.
+    # Verify status text.
     def test_status_text_contains_runtime_diagnostics(self) -> None:
 
-        # Render one deterministic runtime snapshot.
+        # Render deterministic status.
         output = render_status_text(
             DeviceStatus(
                 state=DeviceState.IDLE,
@@ -93,15 +90,15 @@ class PresentationTests(unittest.TestCase):
             )
         )
 
-        # Require the named application state.
+        # Require state.
         self.assertIn("State: IDLE", output)
 
-        # Require the protocol error counter.
+        # Require protocol error count.
         self.assertIn("Protocol errors: 1", output)
 
 
-# Execute the tests when this file is run directly.
+# Execute tests when run directly.
 if __name__ == "__main__":
 
-    # Start the standard-library unit test runner with verbose output.
+    # Start unittest.
     unittest.main(verbosity=2)
