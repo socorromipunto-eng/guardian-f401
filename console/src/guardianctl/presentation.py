@@ -9,6 +9,9 @@ from guardian_protocol import DeviceInfo, DeviceStatus
 # Import typed PING result.
 from .client import PingResult
 
+# Import the decoded asynchronous telemetry record.
+from .telemetry_client import TelemetryRecord
+
 
 # Format unsigned 32-bit device identifiers consistently.
 def format_device_id(device_id: int) -> str:
@@ -142,6 +145,48 @@ def render_status_json(status: DeviceStatus) -> str:
             "state": status.state.name,
             "tx_frames": status.tx_frames,
             "uptime_seconds": status.uptime_seconds,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one live telemetry record for a human operator.
+def render_telemetry_text(record: TelemetryRecord) -> str:
+    """Return one compact human-readable telemetry line."""
+
+    # Convert signed hundredths of a degree into Celsius for display only.
+    temperature_c = record.sample.temperature_centi_c / 100.0
+
+    # Return one terminal-friendly live sample line.
+    return (
+        f"[{record.sequence:08d}] "
+        f"t={record.sample.timestamp_ms} ms "
+        f"state={record.sample.state.name} "
+        f"temp={temperature_c:.2f} C "
+        f"vib={record.sample.vibration_mg_rms} mgRMS "
+        f"current={record.sample.current_ma} mA "
+        f"rpm={record.sample.rpm} "
+        f"supply={record.sample.supply_mv} mV "
+        f"flags=0x{record.sample.status_flags:04X}"
+    )
+
+
+# Render one live telemetry record as one JSON Lines object.
+def render_telemetry_json(record: TelemetryRecord) -> str:
+    """Return one machine-readable JSON telemetry line."""
+
+    # Serialize stable telemetry fields for streaming automation.
+    return json.dumps(
+        {
+            "current_ma": record.sample.current_ma,
+            "rpm": record.sample.rpm,
+            "sequence": record.sequence,
+            "state": record.sample.state.name,
+            "status_flags": record.sample.status_flags,
+            "supply_mv": record.sample.supply_mv,
+            "temperature_centi_c": record.sample.temperature_centi_c,
+            "timestamp_ms": record.sample.timestamp_ms,
+            "vibration_mg_rms": record.sample.vibration_mg_rms,
         },
         sort_keys=True,
     )

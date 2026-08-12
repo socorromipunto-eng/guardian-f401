@@ -11,6 +11,8 @@ Guardian Protocol `0.1`.
 | `0x01` | `PING` | Empty | ASCII `PONG` |
 | `0x02` | `DEVICE_INFO` | Empty | Binary DeviceInfo schema v1 |
 | `0x10` | `GET_STATUS` | Empty | Binary DeviceStatus schema v1 |
+| `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
+| `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
 ## DEVICE_INFO Response Payload
 
@@ -74,3 +76,42 @@ The first payload byte contains the error code.
 | `0x0A` | `REPLAY_DETECTED` |
 
 `UNAUTHORIZED` and `REPLAY_DETECTED` remain reserved for the later security milestone.
+
+
+## SET_TELEMETRY Request and Response Payload
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ENABLED
+2       2     PERIOD_MS
+```
+
+`ENABLED` must be `0` or `1`.
+
+`PERIOD_MS` uses big-endian order and must be between `100` and `60000`.
+
+The successful response echoes the normalized active configuration.
+
+## MACHINE_TELEMETRY Payload
+
+This identifier is used with `message_type = TELEMETRY`.
+
+```text
+Offset  Size  Field
+------  ----  -------------------------
+0       1     SCHEMA_VERSION = 1
+1       1     DEVICE_STATE
+2       4     TIMESTAMP_MS
+6       2     TEMPERATURE_CENTI_C (i16)
+8       2     VIBRATION_MG_RMS
+10      2     CURRENT_MA
+12      2     RPM
+14      2     SUPPLY_MV
+16      2     STATUS_FLAGS
+```
+
+The frame `SEQUENCE` field is an independent non-zero telemetry sequence.
+
+All multi-byte values use big-endian order.

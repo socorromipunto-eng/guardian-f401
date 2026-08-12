@@ -1,7 +1,7 @@
-# Give the portable M4 firmware middleware verification workflow a clear name.
+# Give the portable firmware verification workflow a clear name.
 name: Guardian Firmware Middleware Tests
 
-# Run M4 portable C verification whenever changes reach GitHub.
+# Run portable C verification whenever changes reach GitHub.
 on:
   # Validate direct pushes to main.
   push:
@@ -18,18 +18,18 @@ permissions:
   # Allow source checkout.
   contents: read
 
-# Define portable embedded-link verification.
+# Define portable embedded middleware verification.
 jobs:
-  # Compile middleware using a strict desktop compiler.
+  # Compile command and telemetry middleware using a strict desktop compiler.
   embedded-link:
-    # Use the GitHub-hosted Ubuntu runner.
+    # Use the current GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
     # Execute verification steps.
     steps:
       # Download repository source.
       - name: Check out repository
-        # Use official checkout action.
+        # Use the official current major checkout action.
         uses: actions/checkout@v6
 
       # Create generated-output directory.
@@ -37,9 +37,9 @@ jobs:
         # Keep binaries outside source folders.
         run: mkdir -p build
 
-      # Compile portable middleware with strict warnings.
-      - name: Compile M4 embedded middleware tests
-        # Treat every warning as failure.
+      # Compile the existing command middleware regression suite.
+      - name: Compile embedded command middleware tests
+        # Treat every compiler warning as a regression.
         run: >
           gcc
           -std=c11
@@ -50,14 +50,43 @@ jobs:
           -Ifirmware/Protocol/Inc
           -Ifirmware/App/Inc
           -Ifirmware/Platform/Inc
+          -Ifirmware/Telemetry/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
+          firmware/Telemetry/Src/guardian_telemetry.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/embedded_link_host_test.c
           -o build/embedded_link_host_test
 
-      # Run portable middleware tests.
-      - name: Run M4 embedded middleware tests
-        # Fail when assertions detect incompatibility.
+      # Run the existing command middleware regression suite.
+      - name: Run embedded command middleware tests
+        # Fail when assertions detect protocol regressions.
         run: ./build/embedded_link_host_test
+
+      # Compile the M5 asynchronous telemetry middleware suite.
+      - name: Compile M5 telemetry middleware tests
+        # Treat every compiler warning as a regression.
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Platform/Inc
+          -Ifirmware/Telemetry/Inc
+          firmware/Protocol/Src/guardian_protocol.c
+          firmware/Protocol/Src/guardian_parser.c
+          firmware/App/Src/guardian_device_service.c
+          firmware/Telemetry/Src/guardian_telemetry.c
+          firmware/Platform/Src/guardian_embedded_link.c
+          firmware/Tests/telemetry_host_test.c
+          -o build/telemetry_host_test
+
+      # Run the M5 telemetry scheduling and payload tests.
+      - name: Run M5 telemetry middleware tests
+        # Fail when assertions detect a telemetry regression.
+        run: ./build/telemetry_host_test

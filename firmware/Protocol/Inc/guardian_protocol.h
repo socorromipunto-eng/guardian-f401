@@ -89,7 +89,13 @@ typedef enum
     GUARDIAN_COMMAND_DEVICE_INFO = 0x02,
 
     /* Request the current runtime system status. */
-    GUARDIAN_COMMAND_GET_STATUS = 0x10
+    GUARDIAN_COMMAND_GET_STATUS = 0x10,
+
+    /* Configure asynchronous machine telemetry streaming. */
+    GUARDIAN_COMMAND_SET_TELEMETRY = 0x20,
+
+    /* Identify asynchronous machine telemetry frames. */
+    GUARDIAN_COMMAND_MACHINE_TELEMETRY = 0x21
 } guardian_command_t;
 
 /* Define application and protocol error identifiers carried in ERROR payloads. */

@@ -1,52 +1,53 @@
 # Firmware
 
-Target MCU:
+Target:
 
 ```text
 STM32F401CDU6
 ```
 
-Primary environment:
+## M5 Telemetry
 
-- ARM Cortex-M4
-- Keil MDK / uVision
-- C
-- ST/Keil CMSIS device pack
-- Guardian Protocol v0.1
-
-## M4 Physical Command Channel
-
-M4 adds a reference USART2 implementation:
+M5 adds a transport-independent asynchronous telemetry engine.
 
 ```text
-PA2 -> USART2_TX
-PA3 -> USART2_RX
-AF7
-115200 8-N-1
-```
-
-Architecture:
-
-```text
+application measurement snapshot
+            |
+            v
+guardian_telemetry
+            |
+            v
+guardian_embedded_link
+            |
+            v
+bounded TX queue
+            |
+            v
 USART2 ISR
-   |
-   +--> bounded RX/TX queues
-   |
-main loop
-   |
-   v
-guardian_firmware_app_poll()
-   |
-   v
-Guardian parser
-   |
-   v
-device service
-   |
-   v
-Guardian response
 ```
 
-The ISR does not execute protocol parsing or command dispatch.
+The application supplies the newest measurement snapshot:
 
-See `docs/m4-stm32-uart.md` before integrating sources into Keil.
+```text
+guardian_firmware_app_update_telemetry(...)
+```
+
+The existing one-millisecond application tick calls:
+
+```text
+guardian_firmware_app_tick_1ms()
+```
+
+The main loop calls:
+
+```text
+guardian_firmware_app_poll()
+```
+
+The UART interrupt handler still performs byte movement only.
+
+M5 does not implement sensor acquisition.
+
+M6 will populate the measurement snapshot from ADC, timers and DMA.
+
+See `docs/m5-telemetry.md`.

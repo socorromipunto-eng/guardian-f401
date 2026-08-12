@@ -1,40 +1,49 @@
 # guardianctl
 
-`guardianctl` is the host-side diagnostics and management console for Guardian F401.
-
-M4 supports both the M2 simulator and the physical STM32 UART command channel.
+`guardianctl` supports synchronous diagnostics and M5 asynchronous telemetry.
 
 ## Simulator
 
+Start the software device:
+
 ```text
 python tools/run_simulator.py
-python tools/guardianctl.py ping
-python tools/guardianctl.py info
-python tools/guardianctl.py status
 ```
 
-## Physical STM32F401 UART
+Stream ten live samples:
 
-Install pyserial:
+```text
+python tools/guardianctl.py telemetry --period-ms 500 --count 10
+```
+
+Machine-readable JSON Lines:
+
+```text
+python tools/guardianctl.py --json telemetry --period-ms 250 --count 20
+```
+
+## Physical UART
+
+Install the optional serial dependency:
 
 ```text
 python -m pip install -r console/requirements-serial.txt
 ```
 
-Example Windows port:
+Then:
 
 ```text
-python tools/guardianctl.py --serial-port COM5 ping
-python tools/guardianctl.py --serial-port COM5 info
-python tools/guardianctl.py --serial-port COM5 status
+python tools/guardianctl.py --serial-port COM5 telemetry --period-ms 500 --count 10
 ```
 
-The high-level client is transport-independent:
+The command automatically:
 
 ```text
-GuardianClient
+enable telemetry
       |
-      +--> GuardianTcpTransport
+receive bounded sample count
       |
-      `--> GuardianSerialTransport
+disable telemetry
 ```
+
+The telemetry period is limited to 100–60000 ms.

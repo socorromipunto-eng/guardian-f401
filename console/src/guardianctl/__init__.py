@@ -17,6 +17,9 @@ from .errors import (
 # Re-export physical UART transport.
 from .serial_transport import GuardianSerialTransport
 
+# Re-export M5 persistent telemetry streaming.
+from .telemetry_client import TelemetryMonitor, TelemetryRecord
+
 # Re-export request sequence allocator.
 from .sequence import SequenceManager
 
@@ -35,6 +38,8 @@ __all__ = [
     "ProtocolClientError",
     "RemoteDeviceError",
     "SequenceManager",
+    "TelemetryMonitor",
+    "TelemetryRecord",
     "SerialConfig",
     "TransportError",
 ]

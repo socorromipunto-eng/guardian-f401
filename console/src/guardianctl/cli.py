@@ -1,4 +1,4 @@
-"""Command-line interface for Guardian F401 host diagnostics."""
+"""Command-line interface for Guardian F401 diagnostics and live telemetry."""
 
 # Import argparse for the dependency-free CLI.
 import argparse
@@ -6,7 +6,7 @@ import argparse
 # Import sys for explicit stdout and stderr routing.
 import sys
 
-# Import the high-level Guardian client.
+# Import the high-level synchronous Guardian client.
 from .client import GuardianClient
 
 # Import TCP and serial configuration models and defaults.
@@ -22,7 +22,7 @@ from .config import (
 # Import the expected host-side exception boundary.
 from .errors import GuardianCtlError
 
-# Import presentation helpers.
+# Import human and machine-readable presentation helpers.
 from .presentation import (
     render_info_json,
     render_info_text,
@@ -30,12 +30,17 @@ from .presentation import (
     render_ping_text,
     render_status_json,
     render_status_text,
+    render_telemetry_json,
+    render_telemetry_text,
 )
 
-# Import the physical serial transport.
+# Import the physical synchronous serial transport.
 from .serial_transport import GuardianSerialTransport
 
-# Import the exchange contract and TCP transport.
+# Import persistent M5 telemetry streaming.
+from .telemetry_client import TelemetryMonitor
+
+# Import the synchronous exchange contract and TCP transport.
 from .transport import ExchangeTransport, GuardianTcpTransport
 
 
@@ -46,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     # Create the top-level parser.
     parser = argparse.ArgumentParser(
         prog="guardianctl",
-        description="Guardian F401 host diagnostics and management console.",
+        description="Guardian F401 diagnostics, management and telemetry console.",
     )
 
     # Configure TCP host selection.
@@ -64,7 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Guardian TCP port (default: {DEFAULT_PORT})",
     )
 
-    # Select physical UART when provided.
+    # Select physical UART when supplied.
     parser.add_argument(
         "--serial-port",
         help="physical UART port, for example COM5 or /dev/ttyUSB0",
@@ -78,7 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"physical UART baud rate (default: {DEFAULT_SERIAL_BAUD})",
     )
 
-    # Configure bounded response timeout.
+    # Configure bounded connect and response timeout.
     parser.add_argument(
         "--timeout",
         type=float,
@@ -93,10 +98,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--json",
         action="store_true",
-        help="emit machine-readable JSON output",
+        help="emit JSON or JSON Lines output",
     )
 
-    # Create required command registry.
+    # Create the required command registry.
     subcommands = parser.add_subparsers(
         dest="command",
         required=True,
@@ -120,35 +125,69 @@ def build_parser() -> argparse.ArgumentParser:
         help="read runtime state and protocol diagnostics",
     )
 
-    # Return complete grammar.
+    # Register live M5 telemetry streaming.
+    telemetry_parser = subcommands.add_parser(
+        "telemetry",
+        help="stream bounded live machine telemetry",
+    )
+
+    # Configure the device-side telemetry period.
+    telemetry_parser.add_argument(
+        "--period-ms",
+        type=int,
+        default=500,
+        help="telemetry period in milliseconds (100-60000, default: 500)",
+    )
+
+    # Configure a bounded number of live samples.
+    telemetry_parser.add_argument(
+        "--count",
+        type=int,
+        default=10,
+        help="number of samples to receive (default: 10)",
+    )
+
+    # Return the complete grammar.
     return parser
 
 
-# Build either TCP or physical serial transport.
-def build_transport(args: argparse.Namespace) -> ExchangeTransport:
-    """Return the selected Guardian exchange transport."""
+# Build immutable TCP or serial endpoint configuration.
+def build_endpoint_config(
+    args: argparse.Namespace,
+) -> ClientConfig | SerialConfig:
+    """Return the selected validated Guardian endpoint configuration."""
 
     # Select physical UART when a serial port is supplied.
     if args.serial_port:
 
-        # Validate serial configuration.
-        config = SerialConfig(
+        # Return validated physical serial configuration.
+        return SerialConfig(
             port=args.serial_port,
             baud_rate=args.baud,
             timeout_seconds=args.timeout,
         )
 
-        # Return physical serial transport.
-        return GuardianSerialTransport(config)
-
-    # Validate TCP configuration.
-    config = ClientConfig(
+    # Return validated TCP development configuration.
+    return ClientConfig(
         host=args.host,
         port=args.port,
         timeout_seconds=args.timeout,
     )
 
-    # Return TCP transport.
+
+# Build a synchronous request-response transport from endpoint configuration.
+def build_transport(
+    config: ClientConfig | SerialConfig,
+) -> ExchangeTransport:
+    """Return the synchronous transport for *config*."""
+
+    # Select physical serial transport for SerialConfig.
+    if isinstance(config, SerialConfig):
+
+        # Return the physical synchronous transport.
+        return GuardianSerialTransport(config)
+
+    # Return the TCP simulator/development transport.
     return GuardianTcpTransport(config)
 
 
@@ -156,29 +195,94 @@ def build_transport(args: argparse.Namespace) -> ExchangeTransport:
 def main(argv: list[str] | None = None) -> int:
     """Execute guardianctl and return a conventional process exit code."""
 
-    # Build command grammar.
+    # Build deterministic command grammar.
     parser = build_parser()
 
-    # Parse command line.
+    # Parse explicit test arguments or the current process command line.
     args = parser.parse_args(argv)
 
-    # Build selected transport.
+    # Validate the selected endpoint before command side effects.
     try:
 
-        # Create TCP or physical serial transport.
-        transport = build_transport(args)
+        # Build immutable TCP or physical serial configuration.
+        endpoint_config = build_endpoint_config(args)
     except ValueError as exc:
 
         # Print configuration failure to stderr.
-        print(f"guardianctl: configuration error: {exc}", file=sys.stderr)
+        print(
+            f"guardianctl: configuration error: {exc}",
+            file=sys.stderr,
+        )
 
         # Return usage/configuration failure status.
         return 2
 
-    # Create high-level client.
+    # Handle live telemetry separately because it requires a persistent stream.
+    if args.command == "telemetry":
+
+        # Create the persistent M5 telemetry monitor.
+        monitor = TelemetryMonitor(endpoint_config)
+
+        # Select the live renderer once before receiving samples.
+        renderer = (
+            render_telemetry_json
+            if args.json
+            else render_telemetry_text
+        )
+
+        # Convert validation and communication failures into concise CLI diagnostics.
+        try:
+
+            # Stream each sample immediately to stdout.
+            monitor.stream_samples(
+                period_ms=args.period_ms,
+                count=args.count,
+                consumer=lambda record: print(
+                    renderer(record),
+                    flush=True,
+                ),
+            )
+
+            # Report successful bounded telemetry completion.
+            return 0
+        except ValueError as exc:
+
+            # Print telemetry policy validation failure to stderr.
+            print(
+                f"guardianctl: configuration error: {exc}",
+                file=sys.stderr,
+            )
+
+            # Return usage/configuration failure status.
+            return 2
+        except GuardianCtlError as exc:
+
+            # Print expected communication failure without traceback.
+            print(
+                f"guardianctl: {exc}",
+                file=sys.stderr,
+            )
+
+            # Return operational failure status.
+            return 1
+        except KeyboardInterrupt:
+
+            # Print a concise operator interruption message.
+            print(
+                "\nguardianctl: telemetry interrupted",
+                file=sys.stderr,
+            )
+
+            # Return the conventional shell interruption status.
+            return 130
+
+    # Build the existing synchronous request-response transport.
+    transport = build_transport(endpoint_config)
+
+    # Create the high-level typed Guardian client.
     client = GuardianClient(transport=transport)
 
-    # Normalize expected operational failures.
+    # Normalize expected synchronous operational failures.
     try:
 
         # Dispatch PING.
@@ -191,11 +295,21 @@ def main(argv: list[str] | None = None) -> int:
             if args.json:
 
                 # Print machine-readable output.
-                print(render_ping_json(result, transport.endpoint))
+                print(
+                    render_ping_json(
+                        result,
+                        transport.endpoint,
+                    )
+                )
             else:
 
                 # Print human-readable output.
-                print(render_ping_text(result, transport.endpoint))
+                print(
+                    render_ping_text(
+                        result,
+                        transport.endpoint,
+                    )
+                )
 
             # Report success.
             return 0
@@ -247,7 +361,10 @@ def main(argv: list[str] | None = None) -> int:
     except GuardianCtlError as exc:
 
         # Print expected operational failure without traceback.
-        print(f"guardianctl: {exc}", file=sys.stderr)
+        print(
+            f"guardianctl: {exc}",
+            file=sys.stderr,
+        )
 
         # Return non-zero operational status.
         return 1

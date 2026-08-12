@@ -16,31 +16,33 @@ static guardian_embedded_link_t guardian_link;
 /* Store monotonic milliseconds advanced by the existing application tick. */
 static volatile uint32_t guardian_uptime_ms = 0U;
 
-/* Return whole monotonic uptime seconds. */
-static uint32_t guardian_firmware_uptime_seconds(void *context)
+/* Return whole monotonic uptime seconds to middleware. */
+static uint32_t guardian_firmware_uptime_seconds(
+    void *context)
 {
-    /* Mark generic callback context as unused. */
+    /* Mark the generic callback context as unused. */
     (void)context;
 
-    /* Convert milliseconds into whole seconds. */
+    /* Convert monotonic milliseconds into whole seconds. */
     return guardian_uptime_ms / 1000U;
 }
 
-/* Initialize the complete STM32F401 Guardian physical command path. */
+/* Initialize the complete STM32F401 Guardian physical path. */
 int guardian_firmware_app_init(
     uint32_t baud_rate,
     uint32_t uart_irq_priority)
 {
-    /* Store platform callbacks. */
+    /* Store platform-independent I/O callbacks. */
     guardian_embedded_io_t io = {0};
 
-    /* Store public device identity. */
+    /* Store immutable public device identity. */
     guardian_device_identity_t identity = {0};
 
     /* Store middleware initialization status. */
-    guardian_protocol_result_t result = GUARDIAN_PROTOCOL_OK;
+    guardian_protocol_result_t result =
+        GUARDIAN_PROTOCOL_OK;
 
-    /* Initialize USART2. */
+    /* Initialize the physical USART2 command channel first. */
     if (guardian_stm32f401_uart2_init(
             baud_rate,
             uart_irq_priority) == 0)
@@ -49,38 +51,41 @@ int guardian_firmware_app_init(
         return 0;
     }
 
-    /* Reset uptime after hardware startup. */
+    /* Reset application uptime only after hardware initialization succeeds. */
     guardian_uptime_ms = 0U;
 
-    /* Connect RX callback. */
-    io.read_byte = guardian_stm32f401_uart2_read_byte;
+    /* Connect middleware RX to the interrupt-backed USART2 RX queue. */
+    io.read_byte =
+        guardian_stm32f401_uart2_read_byte;
 
-    /* Connect TX callback. */
-    io.write = guardian_stm32f401_uart2_write;
+    /* Connect middleware TX to the interrupt-backed USART2 TX queue. */
+    io.write =
+        guardian_stm32f401_uart2_write;
 
-    /* Connect uptime callback. */
-    io.uptime_seconds = guardian_firmware_uptime_seconds;
+    /* Connect middleware uptime to application time. */
+    io.uptime_seconds =
+        guardian_firmware_uptime_seconds;
 
-    /* No context is required by the singleton adapter. */
+    /* No platform context is required by the singleton USART2 adapter. */
     io.context = NULL;
 
-    /* Publish hardware model name. */
+    /* Publish the hardware-specific Guardian model name. */
     identity.model = guardian_model;
 
-    /* Publish firmware major version. */
+    /* Publish firmware milestone major version. */
     identity.firmware_major = 0U;
 
-    /* Publish firmware minor version. */
-    identity.firmware_minor = 4U;
+    /* Publish firmware milestone minor version. */
+    identity.firmware_minor = 5U;
 
-    /* Publish firmware patch version. */
+    /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
 
-    /* Publish a non-security device display ID. */
+    /* Derive a non-security display identifier from the STM32 factory UID. */
     identity.device_id =
         guardian_stm32f401_public_device_id();
 
-    /* Initialize middleware. */
+    /* Initialize parser, command service, telemetry and callbacks. */
     result =
         guardian_embedded_link_init(
             &guardian_link,
@@ -94,36 +99,50 @@ int guardian_firmware_app_init(
         return 0;
     }
 
-    /* Report successful startup. */
+    /* Report successful physical Guardian startup. */
     return 1;
 }
 
-/* Execute bounded protocol work from the main loop. */
+/* Execute bounded command and telemetry work from the main loop. */
 void guardian_firmware_app_poll(void)
 {
-    /* Process the documented default RX byte budget. */
+    /* Process bounded RX work and at most one due telemetry frame. */
     guardian_embedded_link_poll(
         &guardian_link,
         GUARDIAN_EMBEDDED_DEFAULT_RX_BUDGET);
 }
 
-/* Advance monotonic uptime from an existing one-millisecond application tick. */
+/* Advance monotonic firmware time and telemetry scheduling. */
 void guardian_firmware_app_tick_1ms(void)
 {
-    /* Avoid millisecond wrap. */
+    /* Avoid uptime counter wrap so GET_STATUS remains monotonic. */
     if (guardian_uptime_ms != 0xFFFFFFFFUL)
     {
-        /* Advance one millisecond. */
+        /* Advance one application millisecond. */
         guardian_uptime_ms += 1U;
     }
+
+    /* Advance the independent M5 telemetry timestamp and scheduler. */
+    guardian_embedded_link_tick_1ms(
+        &guardian_link);
 }
 
-/* Change the state exposed by GET_STATUS. */
+/* Change the state exposed by status and telemetry. */
 void guardian_firmware_app_set_state(
     guardian_device_state_t state)
 {
-    /* Forward the application state into middleware. */
+    /* Forward application state into middleware. */
     guardian_embedded_link_set_state(
         &guardian_link,
         state);
+}
+
+/* Replace the latest application-provided telemetry measurements. */
+void guardian_firmware_app_update_telemetry(
+    const guardian_machine_measurements_t *measurements)
+{
+    /* Forward the bounded snapshot into middleware. */
+    guardian_embedded_link_update_telemetry(
+        &guardian_link,
+        measurements);
 }

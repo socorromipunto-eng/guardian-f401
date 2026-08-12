@@ -29,7 +29,7 @@ SerialFactory = Callable[[SerialConfig], Any]
 
 
 # Create a real pyserial connection lazily.
-def _default_serial_factory(config: SerialConfig) -> Any:
+def open_serial_port(config: SerialConfig) -> Any:
     """Return one configured pyserial Serial object."""
 
     # Import pyserial only when physical UART is requested.
@@ -71,7 +71,7 @@ class GuardianSerialTransport:
         self._config = config
 
         # Use a test fake or lazily open pyserial.
-        self._serial_factory = serial_factory or _default_serial_factory
+        self._serial_factory = serial_factory or open_serial_port
 
     # Expose immutable serial configuration.
     @property

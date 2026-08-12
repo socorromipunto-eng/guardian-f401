@@ -37,6 +37,12 @@ class Command(IntEnum):
     # Request the current runtime state.
     GET_STATUS = 0x10
 
+    # Configure asynchronous machine telemetry streaming.
+    SET_TELEMETRY = 0x20
+
+    # Identify asynchronous machine telemetry frames.
+    MACHINE_TELEMETRY = 0x21
+
 
 # Define error identifiers carried by ERROR frame payloads.
 class ErrorCode(IntEnum):

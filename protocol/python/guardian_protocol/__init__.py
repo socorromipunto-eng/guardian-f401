@@ -26,9 +26,24 @@ from .payloads import (
 # Re-export the incremental stream parser and its diagnostics.
 from .parser import IncrementalParser, ParserStats
 
+
+# Re-export M5 telemetry models, bounds and codecs.
+from .telemetry import (
+    DEFAULT_TELEMETRY_PERIOD_MS,
+    MAX_TELEMETRY_PERIOD_MS,
+    MIN_TELEMETRY_PERIOD_MS,
+    MachineTelemetry,
+    TelemetryConfig,
+    decode_machine_telemetry,
+    decode_telemetry_config,
+    encode_machine_telemetry,
+    encode_telemetry_config,
+)
+
 # Define the supported public import surface explicitly.
 __all__ = [
     "Command",
+    "DEFAULT_TELEMETRY_PERIOD_MS",
     "DeviceInfo",
     "DeviceState",
     "DeviceStatus",
@@ -38,17 +53,25 @@ __all__ = [
     "IncrementalParser",
     "MAGIC",
     "MAX_FRAME_SIZE",
+    "MAX_TELEMETRY_PERIOD_MS",
     "MAX_PAYLOAD_SIZE",
     "MessageType",
+    "MIN_TELEMETRY_PERIOD_MS",
+    "MachineTelemetry",
     "ParserStats",
     "ProtocolDecodeError",
     "ProtocolResult",
+    "TelemetryConfig",
     "VERSION",
     "crc32_ieee",
     "decode_device_info",
     "decode_device_status",
     "decode_frame",
+    "decode_machine_telemetry",
+    "decode_telemetry_config",
     "encode_device_info",
     "encode_device_status",
     "encode_frame",
+    "encode_machine_telemetry",
+    "encode_telemetry_config",
 ]

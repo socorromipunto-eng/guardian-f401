@@ -4,37 +4,31 @@ Guardian F401 is an advanced embedded systems portfolio project built around the
 
 ## Current System
 
-M4 adds the first physical STM32F401 transport while preserving the Guardian Protocol contract used by the simulator.
+M5 adds asynchronous machine telemetry to the existing protocol, simulator, host console and STM32 middleware.
 
 ```text
-                       GuardianClient
-                            |
-             +--------------+--------------+
-             |                             |
-             v                             v
-     TCP development                 Physical serial
-        transport                      transport
-             |                             |
-             v                             v
-      M2 Simulator                  USB-to-UART adapter
-                                           |
-                                           v
-                                  STM32F401 USART2
-                                    PA2 TX / PA3 RX
-                                           |
-                                           v
-                                    IRQ byte queues
-                                           |
-                                           v
-                                  Guardian Embedded Link
-                                           |
-                                           v
-                                   Device Command Service
+Application measurements
+         |
+         v
+Telemetry scheduler
+         |
+         v
+Guardian TELEMETRY frame
+         |
+    +----+----+
+    |         |
+    v         v
+ STM32 UART   TCP Simulator
+    |         |
+    +----+----+
+         |
+         v
+guardianctl telemetry
 ```
 
-## Host Commands
+## Commands
 
-Simulator:
+Synchronous diagnostics:
 
 ```text
 python tools/guardianctl.py ping
@@ -42,29 +36,66 @@ python tools/guardianctl.py info
 python tools/guardianctl.py status
 ```
 
-Physical UART:
+Live simulator telemetry:
 
 ```text
-python tools/guardianctl.py --serial-port COM5 ping
-python tools/guardianctl.py --serial-port COM5 info
-python tools/guardianctl.py --serial-port COM5 status
+python tools/run_simulator.py
+python tools/guardianctl.py telemetry --period-ms 500 --count 10
 ```
 
-## Physical UART Reference
+JSON Lines:
 
 ```text
-STM32F401CDU6
-USART2
-PA2 = TX
-PA3 = RX
-AF7
-115200
-8-N-1
+python tools/guardianctl.py --json telemetry --period-ms 250 --count 20
 ```
 
-The ISR performs bounded byte movement only.
+Physical UART after target validation:
 
-CRC, parsing and command dispatch execute in foreground code.
+```text
+python tools/guardianctl.py --serial-port COM5 telemetry --period-ms 500 --count 10
+```
+
+## M5 Telemetry Contract
+
+Control command:
+
+```text
+0x20 SET_TELEMETRY
+```
+
+Asynchronous channel:
+
+```text
+0x21 MACHINE_TELEMETRY
+message_type = TELEMETRY
+```
+
+Published machine sample fields:
+
+- device state
+- monotonic timestamp
+- temperature
+- vibration RMS
+- current
+- RPM
+- supply voltage
+- status flags
+
+The physical firmware exposes an application API for updating these fields.
+
+M6 will connect real ADC, timer and DMA acquisition to that API.
+
+The simulator values are deterministic synthetic data for protocol and UI testing only.
+
+## Design Constraints
+
+- telemetry is disabled by default;
+- period is bounded to 100–60000 ms;
+- the UART ISR remains byte-only;
+- CRC, parsing and telemetry packing execute in foreground code;
+- missed periods are dropped instead of creating catch-up bursts;
+- no dynamic allocation is required by the embedded telemetry path;
+- CRC detects accidental corruption but is not a security mechanism.
 
 ## Development Phases
 
@@ -81,15 +112,13 @@ Completed.
 Completed.
 
 ### M4 — STM32 UART Transport
-Implemented in source.
+Source implemented; Keil and physical board validation remain a hardware gate.
 
-Physical Keil build and board validation remain required before declaring the hardware path verified.
-
-### M5 — Telemetry
-Next.
+### M5 — Asynchronous Telemetry
+Implemented.
 
 ### M6 — Acquisition
-ADC, timers and DMA.
+Next: ADC, timers, DMA and deterministic sampling.
 
 ### M7 — DSP
 RMS, FFT and spectral features.
@@ -109,4 +138,4 @@ Fuzzing and fault injection.
 ### M12 — Firmware Lifecycle
 Signed firmware updates and rollback protection.
 
-See `docs/m4-stm32-uart.md`.
+See `docs/m5-telemetry.md`.
