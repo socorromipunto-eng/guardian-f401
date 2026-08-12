@@ -1,11 +1,58 @@
-# Device Simulator
+# Guardian F401 Device Simulator
 
-The simulator will implement the same Guardian Protocol behavior as the physical STM32.
+M2 implements a software Guardian device that speaks the same binary protocol planned for the STM32F401 firmware.
 
-It will be used for:
+## Why the Simulator Exists
 
-- console development without hardware
-- deterministic integration tests
-- protocol edge-case testing
-- malformed-message testing
-- CI automation
+The host console must not depend on unfinished physical hardware.
+
+```text
+guardianctl
+     |
+     v
+Guardian Protocol
+     |
+     +------> Python Simulator
+     |
+     `------> STM32F401
+```
+
+Both endpoints will expose the same command contract.
+
+## Supported M2 Commands
+
+- `PING`
+- `DEVICE_INFO`
+- `GET_STATUS`
+
+## Development Transport
+
+M2 uses TCP only as a convenient local byte transport.
+
+The Guardian Protocol itself remains independent from TCP.
+
+The simulator binds to `127.0.0.1` by default so it is not exposed to the local network.
+
+## Run
+
+From the repository root:
+
+```text
+python tools/run_simulator.py
+```
+
+Optional endpoint:
+
+```text
+python tools/run_simulator.py --host 127.0.0.1 --port 9401
+```
+
+Expected startup output:
+
+```text
+Guardian F401 simulator listening on 127.0.0.1:9401
+Commands: PING, DEVICE_INFO, GET_STATUS
+Press Ctrl+C to stop.
+```
+
+M3 will add `guardianctl`, which will connect to this endpoint and exercise the same request/response protocol used later by the physical STM32.

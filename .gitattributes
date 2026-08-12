@@ -1,0 +1,20 @@
+# Normalize source and documentation files to LF inside the repository.
+* text=auto
+
+# Keep C source files deterministic across Windows and Linux build environments.
+*.c text eol=lf
+
+# Keep C header files deterministic across Windows and Linux build environments.
+*.h text eol=lf
+
+# Keep Python source files deterministic across Windows and Linux test environments.
+*.py text eol=lf
+
+# Keep YAML workflow files deterministic across GitHub-hosted runners.
+*.yml text eol=lf
+
+# Keep alternate YAML workflow files deterministic across GitHub-hosted runners.
+*.yaml text eol=lf
+
+# Keep Markdown documentation deterministic across platforms.
+*.md text eol=lf

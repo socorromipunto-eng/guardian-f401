@@ -1,0 +1,52 @@
+# Give the M2 simulator verification workflow a clear GitHub Actions name.
+name: Guardian Simulator Tests
+
+# Run the simulator test suite whenever relevant changes reach GitHub.
+on:
+  # Validate changes pushed to the stable project branch.
+  push:
+    # Restrict direct-push validation to main.
+    branches:
+      # Validate every published main commit.
+      - main
+
+  # Validate proposed simulator changes before merge.
+  pull_request:
+
+# Grant the workflow only the source-read permission it requires.
+permissions:
+  # Allow the checkout action to read repository contents.
+  contents: read
+
+# Define the M2 simulator verification job.
+jobs:
+  # Test payload codecs, device behavior and real loopback TCP integration.
+  simulator:
+    # Use the current GitHub-hosted Ubuntu runner.
+    runs-on: ubuntu-latest
+
+    # Execute every M2 verification step in order.
+    steps:
+      # Download repository source into the isolated runner workspace.
+      - name: Check out repository
+        # Use the current official checkout major release.
+        uses: actions/checkout@v6
+
+      # Install the selected stable Python runtime.
+      - name: Set up Python
+        # Use the current official Python setup major release.
+        uses: actions/setup-python@v6
+        # Configure a deterministic major/minor runtime.
+        with:
+          # Keep compatibility aligned with the existing M1 workflow.
+          python-version: "3.12"
+
+      # Re-run the shared protocol unit tests before simulator integration.
+      - name: Run Guardian Protocol Python tests
+        # Expose only the repository-local protocol package to this process.
+        run: PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
+
+      # Run transport-independent and real loopback simulator tests.
+      - name: Run Guardian simulator tests
+        # Expose both repository-local Python package roots to this process.
+        run: PYTHONPATH=protocol/python:simulator/src python -m unittest discover -s simulator/tests -v

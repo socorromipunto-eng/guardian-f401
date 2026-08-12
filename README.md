@@ -4,23 +4,23 @@ Guardian F401 is an advanced embedded systems portfolio project built around the
 
 ## Purpose
 
-The project is designed to demonstrate:
+The project demonstrates:
 
 - modular STM32 firmware architecture
-- UART communication
-- transport-independent binary protocols
-- deterministic state machines
+- transport-independent binary communication
+- defensive stream parsing
+- host/device protocol contracts
+- software device simulation
+- UART-ready framing
 - telemetry and diagnostics
 - ADC, timers, interrupts and DMA
 - DSP and machine-health analysis
-- defensive protocol parsing
+- deterministic state machines
 - authentication and authorization architecture
 - anti-replay protection
-- host-side tooling
-- device simulation
 - automated testing and fuzzing
 
-## System Architecture
+## Architecture
 
 ```text
 Physical Process
@@ -43,12 +43,38 @@ Guardian Protocol
       |
       +--> guardianctl
       |
-      +--> Device Simulator
+      `--> Device Simulator
 ```
 
-## Guardian Protocol v0.1
+## Implemented Vertical Slice
 
-M1 now defines a real byte-level contract shared by C firmware and Python host tools.
+M2 now provides a real software device behind the protocol.
+
+```text
+Host bytes
+    |
+    v
+Guardian Protocol v0.1
+    |
+    v
+Incremental parser
+    |
+    v
+GuardianDevice
+    |
+    +--> PING
+    +--> DEVICE_INFO
+    `--> GET_STATUS
+    |
+    v
+Guardian response bytes
+```
+
+The simulator currently uses local TCP as a development transport.
+
+The same binary frames are intended for STM32 UART later.
+
+## Guardian Protocol v0.1
 
 ```text
 +-------+---------+------+---------+-------+----------+--------+---------+-------+
@@ -56,7 +82,7 @@ M1 now defines a real byte-level contract shared by C firmware and Python host t
 +-------+---------+------+---------+-------+----------+--------+---------+-------+
 ```
 
-Key properties:
+Implemented properties:
 
 - fixed 12-byte header
 - maximum 256-byte payload
@@ -65,33 +91,24 @@ Key properties:
 - incremental stream parsing
 - bounded STM32 memory
 - canonical C/Python compatibility vectors
+- command-specific payload codecs
 - automated Python and portable C tests
 
-## Repository Structure
+## Run the Simulator
+
+From the repository root:
 
 ```text
-guardian-f401/
-├── firmware/
-│   ├── Core/
-│   ├── App/
-│   ├── Platform/
-│   ├── Protocol/
-│   ├── Security/
-│   ├── Diagnostics/
-│   ├── Acquisition/
-│   ├── DSP/
-│   ├── Control/
-│   ├── Tests/
-│   └── MDK-ARM/
-├── console/
-├── simulator/
-├── protocol/
-├── docs/
-├── tests/
-├── tools/
-├── fuzz/
-└── .github/
+python tools/run_simulator.py
 ```
+
+Default endpoint:
+
+```text
+127.0.0.1:9401
+```
+
+The default loopback bind avoids exposing the development simulator to the LAN.
 
 ## Development Phases
 
@@ -103,17 +120,23 @@ Completed.
 
 Completed.
 
-Binary framing, bounded parsing, sequence correlation, CRC32, C/Python codecs and tests.
-
 ### M2 — Device Simulator
 
-Next.
+Completed.
 
-A software implementation of the future embedded device.
+Implemented command dispatch, binary metadata/status payloads, diagnostics, real loopback TCP transport and integration tests.
 
 ### M3 — guardianctl
 
-A host command-line console using the same protocol as the physical STM32.
+Next.
+
+The host command-line console will implement:
+
+```text
+guardianctl ping
+guardianctl info
+guardianctl status
+```
 
 ### M4 — STM32 UART Transport
 
@@ -153,6 +176,6 @@ Signed firmware update architecture and rollback protection.
 
 ## Current Milestone
 
-M1 — Guardian Protocol v0.1 implemented.
+M2 — Device Simulator implemented.
 
-Next milestone: M2 — Device Simulator.
+Next milestone: M3 — `guardianctl`.

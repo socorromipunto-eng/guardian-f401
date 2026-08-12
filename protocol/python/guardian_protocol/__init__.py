@@ -12,12 +12,26 @@ from .enums import Command, ErrorCode, MessageType, ProtocolResult
 # Re-export the frame representation and canonical codec.
 from .frame import Frame, ProtocolDecodeError, decode_frame, encode_frame
 
+# Re-export command-specific payload models and codecs.
+from .payloads import (
+    DeviceInfo,
+    DeviceState,
+    DeviceStatus,
+    decode_device_info,
+    decode_device_status,
+    encode_device_info,
+    encode_device_status,
+)
+
 # Re-export the incremental stream parser and its diagnostics.
 from .parser import IncrementalParser, ParserStats
 
 # Define the supported public import surface explicitly.
 __all__ = [
     "Command",
+    "DeviceInfo",
+    "DeviceState",
+    "DeviceStatus",
     "ErrorCode",
     "Frame",
     "HEADER_SIZE",
@@ -31,6 +45,10 @@ __all__ = [
     "ProtocolResult",
     "VERSION",
     "crc32_ieee",
+    "decode_device_info",
+    "decode_device_status",
     "decode_frame",
+    "encode_device_info",
+    "encode_device_status",
     "encode_frame",
 ]
