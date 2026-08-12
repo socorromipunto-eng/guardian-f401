@@ -11,6 +11,7 @@ The project demonstrates:
 - defensive stream parsing
 - host/device protocol contracts
 - software device simulation
+- operator-facing host tooling
 - UART-ready framing
 - telemetry and diagnostics
 - ADC, timers, interrupts and DMA
@@ -20,59 +21,38 @@ The project demonstrates:
 - anti-replay protection
 - automated testing and fuzzing
 
-## Architecture
+## Current End-to-End System
+
+M3 provides the first complete operator-to-device software path:
 
 ```text
-Physical Process
-      |
-      v
-Sensors
-      |
-      v
-STM32F401CDU6
-      |
-      +--> Acquisition
-      +--> DSP
-      +--> Diagnostics
-      +--> State Machine
-      +--> Supervisory Control
-      +--> Security
-      |
-      v
-Guardian Protocol
-      |
-      +--> guardianctl
-      |
-      `--> Device Simulator
-```
-
-## Implemented Vertical Slice
-
-M2 now provides a real software device behind the protocol.
-
-```text
-Host bytes
-    |
-    v
+Operator
+   |
+   v
+guardianctl
+   |
+   v
+GuardianClient
+   |
+   v
+GuardianTcpTransport
+   |
+   v
 Guardian Protocol v0.1
-    |
-    v
-Incremental parser
-    |
-    v
-GuardianDevice
-    |
-    +--> PING
-    +--> DEVICE_INFO
-    `--> GET_STATUS
-    |
-    v
-Guardian response bytes
+   |
+   v
+M2 Device Simulator
 ```
 
-The simulator currently uses local TCP as a development transport.
+Available commands:
 
-The same binary frames are intended for STM32 UART later.
+```text
+python tools/guardianctl.py ping
+python tools/guardianctl.py info
+python tools/guardianctl.py status
+```
+
+The same host command model will later use UART to communicate with the STM32F401.
 
 ## Guardian Protocol v0.1
 
@@ -94,21 +74,27 @@ Implemented properties:
 - command-specific payload codecs
 - automated Python and portable C tests
 
-## Run the Simulator
+## Quick Demonstration
 
-From the repository root:
+Start the software device:
 
 ```text
 python tools/run_simulator.py
 ```
 
-Default endpoint:
+In another terminal:
 
 ```text
-127.0.0.1:9401
+python tools/guardianctl.py ping
+python tools/guardianctl.py info
+python tools/guardianctl.py status
 ```
 
-The default loopback bind avoids exposing the development simulator to the LAN.
+JSON is available for automation:
+
+```text
+python tools/guardianctl.py --json status
+```
 
 ## Development Phases
 
@@ -124,23 +110,17 @@ Completed.
 
 Completed.
 
-Implemented command dispatch, binary metadata/status payloads, diagnostics, real loopback TCP transport and integration tests.
-
 ### M3 — guardianctl
 
-Next.
+Completed.
 
-The host command-line console will implement:
-
-```text
-guardianctl ping
-guardianctl info
-guardianctl status
-```
+Implemented typed host operations, request sequence allocation, bounded TCP I/O, response correlation, remote-error handling, human output, JSON output and end-to-end simulator tests.
 
 ### M4 — STM32 UART Transport
 
-Real communication with the STM32F401CDU6.
+Next.
+
+The first physical STM32F401 integration will reuse Guardian Protocol v0.1 instead of inventing a new command path.
 
 ### M5 — Telemetry
 
@@ -176,6 +156,6 @@ Signed firmware update architecture and rollback protection.
 
 ## Current Milestone
 
-M2 — Device Simulator implemented.
+M3 — `guardianctl` implemented.
 
-Next milestone: M3 — `guardianctl`.
+Next milestone: M4 — STM32 UART Transport.
