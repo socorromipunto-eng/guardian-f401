@@ -20,8 +20,8 @@ permissions:
 
 # Define portable embedded middleware verification.
 jobs:
-  # Compile command and telemetry middleware using a strict desktop compiler.
-  embedded-link:
+  # Compile command, telemetry and acquisition middleware using a strict desktop compiler.
+  embedded:
     # Use the current GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
@@ -59,13 +59,13 @@ jobs:
           firmware/Tests/embedded_link_host_test.c
           -o build/embedded_link_host_test
 
-      # Run the existing command middleware regression suite.
+      # Run the command middleware regression suite.
       - name: Run embedded command middleware tests
-        # Fail when assertions detect protocol regressions.
+        # Fail when assertions detect a protocol regression.
         run: ./build/embedded_link_host_test
 
-      # Compile the M5 asynchronous telemetry middleware suite.
-      - name: Compile M5 telemetry middleware tests
+      # Compile the M5 asynchronous telemetry regression suite.
+      - name: Compile telemetry middleware tests
         # Treat every compiler warning as a regression.
         run: >
           gcc
@@ -86,7 +86,30 @@ jobs:
           firmware/Tests/telemetry_host_test.c
           -o build/telemetry_host_test
 
-      # Run the M5 telemetry scheduling and payload tests.
-      - name: Run M5 telemetry middleware tests
+      # Run the M5 telemetry regression suite.
+      - name: Run telemetry middleware tests
         # Fail when assertions detect a telemetry regression.
         run: ./build/telemetry_host_test
+
+      # Compile the M6 portable acquisition processor.
+      - name: Compile M6 acquisition tests
+        # Treat every compiler warning as a regression.
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          firmware/Acquisition/Src/guardian_acquisition.c
+          firmware/Tests/acquisition_host_test.c
+          -o build/acquisition_host_test
+
+      # Run deterministic raw-to-engineering-unit acquisition tests.
+      - name: Run M6 acquisition tests
+        # Fail when assertions detect an acquisition regression.
+        run: ./build/acquisition_host_test

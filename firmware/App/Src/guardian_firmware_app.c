@@ -10,13 +10,13 @@
 /* Define the firmware model name exposed to guardianctl. */
 static const char guardian_model[] = "Guardian-F401-HW";
 
-/* Store the transport-independent middleware instance. */
+/* Store the transport-independent Guardian middleware instance. */
 static guardian_embedded_link_t guardian_link;
 
 /* Store monotonic milliseconds advanced by the existing application tick. */
 static volatile uint32_t guardian_uptime_ms = 0U;
 
-/* Return whole monotonic uptime seconds to middleware. */
+/* Return whole monotonic uptime seconds to Guardian middleware. */
 static uint32_t guardian_firmware_uptime_seconds(
     void *context)
 {
@@ -27,16 +27,19 @@ static uint32_t guardian_firmware_uptime_seconds(
     return guardian_uptime_ms / 1000U;
 }
 
-/* Initialize the complete STM32F401 Guardian physical path. */
+/* Initialize UART, Guardian middleware and deterministic M6 acquisition. */
 int guardian_firmware_app_init(
     uint32_t baud_rate,
     uint32_t uart_irq_priority)
 {
-    /* Store platform-independent I/O callbacks. */
+    /* Store platform-independent Guardian transport callbacks. */
     guardian_embedded_io_t io = {0};
 
     /* Store immutable public device identity. */
     guardian_device_identity_t identity = {0};
+
+    /* Store the M6 reference acquisition configuration. */
+    guardian_stm32f401_acquisition_config_t acquisition_config = {0};
 
     /* Store middleware initialization status. */
     guardian_protocol_result_t result =
@@ -51,22 +54,22 @@ int guardian_firmware_app_init(
         return 0;
     }
 
-    /* Reset application uptime only after hardware initialization succeeds. */
+    /* Reset application uptime only after UART hardware initialization succeeds. */
     guardian_uptime_ms = 0U;
 
-    /* Connect middleware RX to the interrupt-backed USART2 RX queue. */
+    /* Connect Guardian middleware RX to the interrupt-backed USART2 RX queue. */
     io.read_byte =
         guardian_stm32f401_uart2_read_byte;
 
-    /* Connect middleware TX to the interrupt-backed USART2 TX queue. */
+    /* Connect Guardian middleware TX to the interrupt-backed USART2 TX queue. */
     io.write =
         guardian_stm32f401_uart2_write;
 
-    /* Connect middleware uptime to application time. */
+    /* Connect Guardian middleware uptime to application time. */
     io.uptime_seconds =
         guardian_firmware_uptime_seconds;
 
-    /* No platform context is required by the singleton USART2 adapter. */
+    /* No platform context is required by the current singleton USART2 adapter. */
     io.context = NULL;
 
     /* Publish the hardware-specific Guardian model name. */
@@ -76,7 +79,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 5U;
+    identity.firmware_minor = 6U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -85,7 +88,7 @@ int guardian_firmware_app_init(
     identity.device_id =
         guardian_stm32f401_public_device_id();
 
-    /* Initialize parser, command service, telemetry and callbacks. */
+    /* Initialize parser, device service, telemetry and transport callbacks. */
     result =
         guardian_embedded_link_init(
             &guardian_link,
@@ -99,20 +102,49 @@ int guardian_firmware_app_init(
         return 0;
     }
 
+    /* Load documented M6 reference sampling and calibration defaults. */
+    guardian_stm32f401_acquisition_default_config(
+        &acquisition_config);
+
+    /* Initialize TIM2-triggered ADC1 scan, DMA2 double buffering and TIM3 RPM capture. */
+    if (guardian_stm32f401_acquisition_init(
+            &acquisition_config) == 0)
+    {
+        /* Report deterministic acquisition initialization failure. */
+        return 0;
+    }
+
     /* Report successful physical Guardian startup. */
     return 1;
 }
 
-/* Execute bounded command and telemetry work from the main loop. */
+/* Execute bounded acquisition, command and telemetry work from the main loop. */
 void guardian_firmware_app_poll(void)
 {
-    /* Process bounded RX work and at most one due telemetry frame. */
+    /* Store one coherent M6 engineering-unit measurement snapshot. */
+    guardian_machine_measurements_t measurements = {0};
+
+    /* Process at most one completed ADC DMA block per foreground iteration. */
+    int acquisition_result =
+        guardian_stm32f401_acquisition_poll(
+            &measurements);
+
+    /* Publish newly processed hardware measurements into the M5 telemetry engine. */
+    if (acquisition_result > 0)
+    {
+        /* Replace the previous telemetry snapshot atomically at the middleware boundary. */
+        guardian_embedded_link_update_telemetry(
+            &guardian_link,
+            &measurements);
+    }
+
+    /* Process bounded command RX work and emit at most one due telemetry frame. */
     guardian_embedded_link_poll(
         &guardian_link,
         GUARDIAN_EMBEDDED_DEFAULT_RX_BUDGET);
 }
 
-/* Advance monotonic firmware time and telemetry scheduling. */
+/* Advance monotonic firmware time, RPM freshness and telemetry scheduling. */
 void guardian_firmware_app_tick_1ms(void)
 {
     /* Avoid uptime counter wrap so GET_STATUS remains monotonic. */
@@ -121,6 +153,9 @@ void guardian_firmware_app_tick_1ms(void)
         /* Advance one application millisecond. */
         guardian_uptime_ms += 1U;
     }
+
+    /* Advance RPM staleness tracking for the M6 acquisition path. */
+    guardian_stm32f401_acquisition_tick_1ms();
 
     /* Advance the independent M5 telemetry timestamp and scheduler. */
     guardian_embedded_link_tick_1ms(
@@ -131,18 +166,25 @@ void guardian_firmware_app_tick_1ms(void)
 void guardian_firmware_app_set_state(
     guardian_device_state_t state)
 {
-    /* Forward application state into middleware. */
+    /* Forward application state into Guardian middleware. */
     guardian_embedded_link_set_state(
         &guardian_link,
         state);
 }
 
-/* Replace the latest application-provided telemetry measurements. */
+/* Replace the latest telemetry snapshot manually when an application override is required. */
 void guardian_firmware_app_update_telemetry(
     const guardian_machine_measurements_t *measurements)
 {
-    /* Forward the bounded snapshot into middleware. */
+    /* Forward the explicit bounded snapshot into Guardian middleware. */
     guardian_embedded_link_update_telemetry(
         &guardian_link,
         measurements);
+}
+
+/* Return M6 hardware acquisition diagnostics. */
+guardian_stm32f401_acquisition_stats_t guardian_firmware_app_acquisition_stats(void)
+{
+    /* Return the coherent hardware acquisition diagnostic snapshot by value. */
+    return guardian_stm32f401_acquisition_stats();
 }

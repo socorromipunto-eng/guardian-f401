@@ -6,48 +6,47 @@ Target:
 STM32F401CDU6
 ```
 
-## M5 Telemetry
-
-M5 adds a transport-independent asynchronous telemetry engine.
+## Current Physical Pipeline
 
 ```text
-application measurement snapshot
-            |
-            v
-guardian_telemetry
-            |
-            v
-guardian_embedded_link
-            |
-            v
-bounded TX queue
-            |
-            v
-USART2 ISR
+TIM2 4 kHz
+   |
+   v
+ADC1 five-channel scan
+   |
+   v
+DMA2 Stream0 Channel0
+double buffer
+   |
+   v
+guardian_acquisition
+   |
+   +--> vibration RMS
+   +--> current
+   +--> supply
+   +--> internal temperature
+   +--> VREF compensation
+   `--> TIM3 RPM
+   |
+   v
+M5 telemetry
 ```
 
-The application supplies the newest measurement snapshot:
+Reference pins:
 
 ```text
-guardian_firmware_app_update_telemetry(...)
+PA0 -> vibration analog
+PA1 -> current analog
+PA4 -> supply-divider analog
+PA6 -> TIM3_CH1 RPM
+PA2 -> USART2_TX
+PA3 -> USART2_RX
 ```
 
-The existing one-millisecond application tick calls:
+M6 keeps parsing, engineering-unit conversion and telemetry packing out of interrupt context.
 
-```text
-guardian_firmware_app_tick_1ms()
-```
+DMA/ADC/TIM3 IRQ handlers perform bounded state updates only.
 
-The main loop calls:
+External sensor calibration remains explicit and must be replaced for the final physical front-end.
 
-```text
-guardian_firmware_app_poll()
-```
-
-The UART interrupt handler still performs byte movement only.
-
-M5 does not implement sensor acquisition.
-
-M6 will populate the measurement snapshot from ADC, timers and DMA.
-
-See `docs/m5-telemetry.md`.
+See `docs/m6-acquisition.md`.
