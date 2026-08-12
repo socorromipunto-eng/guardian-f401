@@ -12,6 +12,7 @@ from guardian_protocol import (
     DeviceInfo,
     DeviceState,
     DeviceStatus,
+    DspFeatures,
     ErrorCode,
     Frame,
     MachineTelemetry,
@@ -20,6 +21,7 @@ from guardian_protocol import (
     decode_telemetry_config,
     encode_device_info,
     encode_device_status,
+    encode_dsp_features,
     encode_machine_telemetry,
     encode_telemetry_config,
 )
@@ -70,6 +72,9 @@ class GuardianDevice:
 
         # Reserve sequence zero and start asynchronous telemetry at one.
         self._telemetry_sequence = 1
+
+        # Start deterministic synthetic DSP block numbering at one.
+        self._dsp_block_sequence = 1
 
         # Start without an active transport session owning telemetry delivery.
         self._telemetry_owner: object | None = None
@@ -222,6 +227,56 @@ class GuardianDevice:
                 payload = encode_device_status(status)
 
                 # Return the correlated response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M7 GET_DSP_FEATURES.
+            if frame.command == int(Command.GET_DSP_FEATURES):
+
+                # Require the frozen empty request payload.
+                if frame.payload:
+
+                    # Reject undefined DSP request bytes.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Calculate a deterministic synthetic dominant frequency.
+                dominant_centi_hz = (
+                    25000
+                    + ((self._dsp_block_sequence % 4) * 6250)
+                )
+
+                # Build one deterministic software-only DSP feature snapshot.
+                features = DspFeatures(
+                    block_sequence=self._dsp_block_sequence,
+                    sample_rate_hz=4000,
+                    rms_mg=42,
+                    peak_mg=61,
+                    crest_factor_milli=1452,
+                    dominant_frequency_centi_hz=dominant_centi_hz,
+                    dominant_peak_mg=58,
+                    spectral_centroid_centi_hz=41250,
+                    low_band_permille=760,
+                    mid_band_permille=190,
+                    high_band_permille=50,
+                    acquisition_status_flags=0x0011,
+                )
+
+                # Advance the synthetic block sequence for the next host query.
+                self._dsp_block_sequence = (
+                    1
+                    if self._dsp_block_sequence == 0xFFFFFFFF
+                    else self._dsp_block_sequence + 1
+                )
+
+                # Serialize the fixed M7 feature payload.
+                payload = encode_dsp_features(features)
+
+                # Return the correlated feature response.
                 return self._make_response(
                     frame,
                     payload,

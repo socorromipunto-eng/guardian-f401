@@ -237,6 +237,25 @@ void guardian_embedded_link_update_telemetry(
         measurements);
 }
 
+/* Replace the latest M7 DSP feature snapshot exposed by GET_DSP_FEATURES. */
+void guardian_embedded_link_update_dsp(
+    guardian_embedded_link_t *link,
+    const guardian_dsp_features_t *features)
+{
+    /* Ignore missing middleware or feature storage defensively. */
+    if ((link == NULL) || (features == NULL))
+    {
+        /* Return without modifying the previous valid snapshot. */
+        return;
+    }
+
+    /* Copy the complete bounded feature snapshot by value. */
+    link->dsp_features = *features;
+
+    /* Mark the copied feature snapshot ready for host requests. */
+    link->dsp_features_valid = 1U;
+}
+
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(
     guardian_embedded_link_t *link)
@@ -351,6 +370,17 @@ void guardian_embedded_link_poll(
             protocol_result =
                 guardian_telemetry_handle_request(
                     &link->telemetry,
+                    &request,
+                    &output);
+        }
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_GET_DSP_FEATURES)
+        {
+            /* Return the latest immutable M7 feature snapshot or BUSY before the first analysis. */
+            protocol_result =
+                guardian_dsp_handle_request(
+                    &link->dsp_features,
+                    link->dsp_features_valid,
                     &request,
                     &output);
         }

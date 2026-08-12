@@ -24,6 +24,8 @@ from .errors import GuardianCtlError
 
 # Import human and machine-readable presentation helpers.
 from .presentation import (
+    render_dsp_json,
+    render_dsp_text,
     render_info_json,
     render_info_text,
     render_ping_json,
@@ -123,6 +125,12 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands.add_parser(
         "status",
         help="read runtime state and protocol diagnostics",
+    )
+
+    # Register M7 GET_DSP_FEATURES.
+    subcommands.add_parser(
+        "dsp",
+        help="read the latest RMS, FFT and spectral feature snapshot",
     )
 
     # Register live M5 telemetry streaming.
@@ -348,6 +356,25 @@ def main(argv: list[str] | None = None) -> int:
 
                 # Print human-readable output.
                 print(render_status_text(status))
+
+            # Report success.
+            return 0
+
+        # Dispatch GET_DSP_FEATURES.
+        if args.command == "dsp":
+
+            # Execute the latest DSP feature query.
+            features = client.dsp_features()
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable feature output.
+                print(render_dsp_json(features))
+            else:
+
+                # Print human-readable feature output.
+                print(render_dsp_text(features))
 
             # Report success.
             return 0

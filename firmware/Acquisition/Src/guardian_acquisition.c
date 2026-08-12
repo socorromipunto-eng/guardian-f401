@@ -146,6 +146,40 @@ static uint32_t guardian_acquisition_normalize_code(
     return (uint32_t)scaled;
 }
 
+
+/* Scale one signed normalized vibration code into a signed milli-g sample. */
+static int16_t guardian_acquisition_vibration_sample_mg(
+    int32_t normalized_delta,
+    const guardian_acquisition_calibration_t *calibration)
+{
+    /* Promote the signed code before multiplying by the calibration numerator. */
+    int64_t scaled =
+        (int64_t)normalized_delta *
+        (int64_t)calibration->vibration_mg_per_code_num;
+
+    /* Store the positive calibration denominator once. */
+    int64_t denominator =
+        (int64_t)calibration->vibration_mg_per_code_den;
+
+    /* Apply symmetric nearest-integer rounding for positive vibration samples. */
+    if (scaled >= 0)
+    {
+        /* Add half the denominator before signed division. */
+        scaled += denominator / 2;
+    }
+    else
+    {
+        /* Subtract half the denominator before signed division. */
+        scaled -= denominator / 2;
+    }
+
+    /* Convert the calibrated ratio into signed milli-g. */
+    scaled /= denominator;
+
+    /* Clamp the signed result to the fixed DSP sample representation. */
+    return guardian_acquisition_i16(scaled);
+}
+
 /* Validate explicit calibration constants before processing any ADC block. */
 static int guardian_acquisition_calibration_valid(
     const guardian_acquisition_calibration_t *calibration)
@@ -230,11 +264,13 @@ guardian_acquisition_result_t guardian_acquisition_init(
 }
 
 /* Process one complete interleaved ADC scan block into telemetry measurements. */
-guardian_acquisition_result_t guardian_acquisition_process_block(
+guardian_acquisition_result_t guardian_acquisition_process_block_ex(
     guardian_acquisition_t *acquisition,
     const uint16_t *samples,
     size_t sample_count,
-    const guardian_acquisition_aux_t *aux)
+    const guardian_acquisition_aux_t *aux,
+    uint32_t sample_rate_hz,
+    guardian_acquisition_signal_block_t *signal_block)
 {
     /* Accumulate raw channel sums using widths that cannot overflow one practical DMA block. */
     uint64_t channel_sum[GUARDIAN_ACQUISITION_CHANNEL_COUNT] = {0};
@@ -325,6 +361,40 @@ guardian_acquisition_result_t guardian_acquisition_process_block(
     frame_count =
         sample_count /
         GUARDIAN_ACQUISITION_CHANNEL_COUNT;
+
+    /* Reject blocks larger than the fixed M6/M7 DMA and DSP contract. */
+    if (frame_count >
+        GUARDIAN_ACQUISITION_FRAMES_PER_BLOCK)
+    {
+        /* Count the oversized block as invalid. */
+        guardian_acquisition_increment_u32(
+            &acquisition->stats.invalid_blocks);
+
+        /* Report the deterministic bounded-length failure. */
+        return GUARDIAN_ACQUISITION_ERROR_LENGTH;
+    }
+
+    /* Require an explicit sample rate whenever a caller requests a DSP signal block. */
+    if ((signal_block != NULL) &&
+        (sample_rate_hz == 0U))
+    {
+        /* Count the semantically incomplete signal request as invalid. */
+        guardian_acquisition_increment_u32(
+            &acquisition->stats.invalid_blocks);
+
+        /* Report the deterministic bounded-length/configuration failure. */
+        return GUARDIAN_ACQUISITION_ERROR_LENGTH;
+    }
+
+    /* Clear the optional exported signal block before partial population. */
+    if (signal_block != NULL)
+    {
+        /* Remove stale samples and metadata from a previous successful block. */
+        (void)memset(
+            signal_block,
+            0,
+            sizeof(*signal_block));
+    }
 
     /* Accumulate raw averages and detect ADC rail values. */
     for (frame_index = 0U;
@@ -449,6 +519,16 @@ guardian_acquisition_result_t guardian_acquisition_process_block(
         int32_t normalized_delta =
             (int32_t)normalized_vibration -
             (int32_t)acquisition->calibration.vibration_zero_code;
+
+        /* Export the calibrated signed vibration sample when M7 requested a signal block. */
+        if (signal_block != NULL)
+        {
+            /* Convert this normalized sensor delta into signed milli-g for DSP. */
+            signal_block->vibration_mg[frame_index] =
+                guardian_acquisition_vibration_sample_mg(
+                    normalized_delta,
+                    &acquisition->calibration);
+        }
 
         /* Promote before multiplication so squaring cannot overflow signed 32-bit arithmetic. */
         int64_t wide_delta =
@@ -578,12 +658,52 @@ guardian_acquisition_result_t guardian_acquisition_process_block(
     /* Publish the complete coherent measurement snapshot only after successful processing. */
     acquisition->latest = measurements;
 
+    /* Publish optional M7 signal metadata only after every conversion succeeded. */
+    if (signal_block != NULL)
+    {
+        /* Publish the current successfully processed block sequence. */
+        signal_block->sequence =
+            acquisition->next_block_sequence;
+
+        /* Publish the physical sample rate supplied by the platform adapter. */
+        signal_block->sample_rate_hz =
+            sample_rate_hz;
+
+        /* Publish the exact number of valid calibrated vibration samples. */
+        signal_block->sample_count =
+            (uint16_t)frame_count;
+
+        /* Associate acquisition quality flags with the exact DSP input block. */
+        signal_block->status_flags =
+            measurements.status_flags;
+    }
+
+    /* Advance the block sequence modulo 2^32 for the next successful acquisition block. */
+    acquisition->next_block_sequence += 1U;
+
     /* Count the successfully processed block. */
     guardian_acquisition_increment_u32(
         &acquisition->stats.blocks_processed);
 
     /* Report successful processing. */
     return GUARDIAN_ACQUISITION_OK;
+}
+
+/* Preserve the M6 API by processing without exporting a DSP signal block. */
+guardian_acquisition_result_t guardian_acquisition_process_block(
+    guardian_acquisition_t *acquisition,
+    const uint16_t *samples,
+    size_t sample_count,
+    const guardian_acquisition_aux_t *aux)
+{
+    /* Reuse the extended M7 processor without requesting signal export. */
+    return guardian_acquisition_process_block_ex(
+        acquisition,
+        samples,
+        sample_count,
+        aux,
+        0U,
+        NULL);
 }
 
 /* Return the latest successfully processed measurement snapshot. */

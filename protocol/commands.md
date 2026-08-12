@@ -11,6 +11,7 @@ Guardian Protocol `0.1`.
 | `0x01` | `PING` | Empty | ASCII `PONG` |
 | `0x02` | `DEVICE_INFO` | Empty | Binary DeviceInfo schema v1 |
 | `0x10` | `GET_STATUS` | Empty | Binary DeviceStatus schema v1 |
+| `0x11` | `GET_DSP_FEATURES` | Empty | Binary DspFeatures schema v1 |
 | `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
 | `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
@@ -115,3 +116,26 @@ Offset  Size  Field
 The frame `SEQUENCE` field is an independent non-zero telemetry sequence.
 
 All multi-byte values use big-endian order.
+
+
+## GET_DSP_FEATURES Payload
+
+The response payload is fixed at 32 bytes.
+
+```text
+Offset  Size  Field
+0       1     SCHEMA_VERSION = 1
+1       1     RESERVED = 0
+2       4     BLOCK_SEQUENCE
+6       2     SAMPLE_RATE_HZ
+8       2     RMS_MG
+10      2     PEAK_MG
+12      2     CREST_FACTOR_MILLI
+14      4     DOMINANT_FREQUENCY_CENTI_HZ
+18      2     DOMINANT_PEAK_MG
+20      4     SPECTRAL_CENTROID_CENTI_HZ
+24      2     LOW_BAND_PERMILLE
+26      2     MID_BAND_PERMILLE
+28      2     HIGH_BAND_PERMILLE
+30      2     ACQUISITION_STATUS_FLAGS
+```

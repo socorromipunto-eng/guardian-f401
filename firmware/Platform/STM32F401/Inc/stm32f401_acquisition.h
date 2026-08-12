@@ -74,6 +74,12 @@ void guardian_stm32f401_acquisition_default_config(
 int guardian_stm32f401_acquisition_init(
     const guardian_stm32f401_acquisition_config_t *config);
 
+
+/* Process at most one completed DMA block and optionally export the calibrated M7 signal block. */
+int guardian_stm32f401_acquisition_poll_ex(
+    guardian_machine_measurements_t *measurements,
+    guardian_acquisition_signal_block_t *signal_block);
+
 /* Process at most one completed DMA block and return one fresh measurement snapshot. */
 int guardian_stm32f401_acquisition_poll(
     guardian_machine_measurements_t *measurements);

@@ -37,6 +37,9 @@ class Command(IntEnum):
     # Request the current runtime state.
     GET_STATUS = 0x10
 
+    # Request the latest analyzed DSP and spectral feature snapshot.
+    GET_DSP_FEATURES = 0x11
+
     # Configure asynchronous machine telemetry streaming.
     SET_TELEMETRY = 0x20
 

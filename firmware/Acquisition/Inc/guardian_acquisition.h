@@ -138,6 +138,26 @@ typedef struct
     uint16_t hardware_status_flags;
 } guardian_acquisition_aux_t;
 
+
+/* Store one calibrated vibration signal block for foreground DSP. */
+typedef struct
+{
+    /* Store the monotonic successfully processed acquisition block sequence. */
+    uint32_t sequence;
+
+    /* Store the physical vibration sample rate in hertz. */
+    uint32_t sample_rate_hz;
+
+    /* Store the number of valid signed vibration samples. */
+    uint16_t sample_count;
+
+    /* Store calibrated signed vibration acceleration in milli-g. */
+    int16_t vibration_mg[GUARDIAN_ACQUISITION_FRAMES_PER_BLOCK];
+
+    /* Store the acquisition quality flags associated with this exact block. */
+    uint16_t status_flags;
+} guardian_acquisition_signal_block_t;
+
 /* Store cumulative portable acquisition diagnostics. */
 typedef struct
 {
@@ -160,6 +180,9 @@ typedef struct
     /* Store the latest successfully processed engineering-unit measurement snapshot. */
     guardian_machine_measurements_t latest;
 
+    /* Store the next successfully processed signal block sequence. */
+    uint32_t next_block_sequence;
+
     /* Store cumulative portable acquisition diagnostics. */
     guardian_acquisition_stats_t stats;
 } guardian_acquisition_t;
@@ -168,6 +191,16 @@ typedef struct
 guardian_acquisition_result_t guardian_acquisition_init(
     guardian_acquisition_t *acquisition,
     const guardian_acquisition_calibration_t *calibration);
+
+
+/* Process one interleaved ADC block and optionally export calibrated vibration samples for DSP. */
+guardian_acquisition_result_t guardian_acquisition_process_block_ex(
+    guardian_acquisition_t *acquisition,
+    const uint16_t *samples,
+    size_t sample_count,
+    const guardian_acquisition_aux_t *aux,
+    uint32_t sample_rate_hz,
+    guardian_acquisition_signal_block_t *signal_block);
 
 /* Process one complete interleaved ADC scan block into M5 telemetry measurements. */
 guardian_acquisition_result_t guardian_acquisition_process_block(

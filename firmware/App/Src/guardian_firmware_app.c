@@ -13,6 +13,12 @@ static const char guardian_model[] = "Guardian-F401-HW";
 /* Store the transport-independent Guardian middleware instance. */
 static guardian_embedded_link_t guardian_link;
 
+/* Store the latest successfully analyzed M7 DSP feature snapshot. */
+static guardian_dsp_features_t guardian_latest_dsp_features;
+
+/* Store whether at least one M7 DSP feature snapshot is valid. */
+static uint8_t guardian_latest_dsp_valid = 0U;
+
 /* Store monotonic milliseconds advanced by the existing application tick. */
 static volatile uint32_t guardian_uptime_ms = 0U;
 
@@ -79,7 +85,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 6U;
+    identity.firmware_minor = 7U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -101,6 +107,9 @@ int guardian_firmware_app_init(
         /* Report failed startup. */
         return 0;
     }
+
+    /* Start without a valid M7 DSP snapshot until the first acquisition block is analyzed. */
+    guardian_latest_dsp_valid = 0U;
 
     /* Load documented M6 reference sampling and calibration defaults. */
     guardian_stm32f401_acquisition_default_config(
@@ -124,18 +133,43 @@ void guardian_firmware_app_poll(void)
     /* Store one coherent M6 engineering-unit measurement snapshot. */
     guardian_machine_measurements_t measurements = {0};
 
+    /* Store the exact calibrated M6 vibration block consumed by M7 DSP. */
+    guardian_acquisition_signal_block_t signal_block = {0};
+
+    /* Store one newly analyzed M7 feature snapshot. */
+    guardian_dsp_features_t dsp_features = {0};
+
     /* Process at most one completed ADC DMA block per foreground iteration. */
     int acquisition_result =
-        guardian_stm32f401_acquisition_poll(
-            &measurements);
+        guardian_stm32f401_acquisition_poll_ex(
+            &measurements,
+            &signal_block);
 
-    /* Publish newly processed hardware measurements into the M5 telemetry engine. */
+    /* Publish newly processed hardware measurements into M5 telemetry. */
     if (acquisition_result > 0)
     {
         /* Replace the previous telemetry snapshot atomically at the middleware boundary. */
         guardian_embedded_link_update_telemetry(
             &guardian_link,
             &measurements);
+
+        /* Analyze the exact calibrated vibration block outside interrupt context. */
+        if (guardian_dsp_analyze(
+                &signal_block,
+                &dsp_features) == GUARDIAN_DSP_OK)
+        {
+            /* Preserve the latest successful feature snapshot locally. */
+            guardian_latest_dsp_features =
+                dsp_features;
+
+            /* Mark the local snapshot valid. */
+            guardian_latest_dsp_valid = 1U;
+
+            /* Expose the same immutable snapshot through GET_DSP_FEATURES. */
+            guardian_embedded_link_update_dsp(
+                &guardian_link,
+                &dsp_features);
+        }
     }
 
     /* Process bounded command RX work and emit at most one due telemetry frame. */
@@ -187,4 +221,25 @@ guardian_stm32f401_acquisition_stats_t guardian_firmware_app_acquisition_stats(v
 {
     /* Return the coherent hardware acquisition diagnostic snapshot by value. */
     return guardian_stm32f401_acquisition_stats();
+}
+
+
+/* Return the latest local M7 DSP feature snapshot. */
+int guardian_firmware_app_dsp_features(
+    guardian_dsp_features_t *features)
+{
+    /* Reject a missing caller buffer or a device that has not analyzed one block yet. */
+    if ((features == NULL) ||
+        (guardian_latest_dsp_valid == 0U))
+    {
+        /* Report that no valid feature snapshot was returned. */
+        return 0;
+    }
+
+    /* Copy the complete immutable feature snapshot by value. */
+    *features =
+        guardian_latest_dsp_features;
+
+    /* Report one valid feature snapshot. */
+    return 1;
 }

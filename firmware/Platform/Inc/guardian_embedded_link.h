@@ -10,6 +10,9 @@
 /* Include the asynchronous telemetry engine. */
 #include "guardian_telemetry.h"
 
+/* Include the M7 DSP feature snapshot and request handler. */
+#include "guardian_dsp.h"
+
 /* Include size_t for bounded byte budgets and writer lengths. */
 #include <stddef.h>
 
@@ -81,6 +84,12 @@ typedef struct
     /* Store asynchronous telemetry scheduling and measurements. */
     guardian_telemetry_t telemetry;
 
+    /* Store the latest successfully analyzed M7 feature snapshot. */
+    guardian_dsp_features_t dsp_features;
+
+    /* Store whether the latest DSP feature snapshot is ready for host requests. */
+    uint8_t dsp_features_valid;
+
     /* Store platform transport callbacks. */
     guardian_embedded_io_t io;
 
@@ -106,6 +115,12 @@ void guardian_embedded_link_set_state(
 void guardian_embedded_link_update_telemetry(
     guardian_embedded_link_t *link,
     const guardian_machine_measurements_t *measurements);
+
+
+/* Replace the latest M7 DSP feature snapshot exposed by GET_DSP_FEATURES. */
+void guardian_embedded_link_update_dsp(
+    guardian_embedded_link_t *link,
+    const guardian_dsp_features_t *features);
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(

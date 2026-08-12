@@ -91,6 +91,9 @@ typedef enum
     /* Request the current runtime system status. */
     GUARDIAN_COMMAND_GET_STATUS = 0x10,
 
+    /* Request the latest analyzed DSP and spectral feature snapshot. */
+    GUARDIAN_COMMAND_GET_DSP_FEATURES = 0x11,
+
     /* Configure asynchronous machine telemetry streaming. */
     GUARDIAN_COMMAND_SET_TELEMETRY = 0x20,
 

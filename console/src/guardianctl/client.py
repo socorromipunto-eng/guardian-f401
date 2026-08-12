@@ -11,10 +11,12 @@ from guardian_protocol import (
     Command,
     DeviceInfo,
     DeviceStatus,
+    DspFeatures,
     Frame,
     MessageType,
     decode_device_info,
     decode_device_status,
+    decode_dsp_features,
 )
 
 # Import host-side protocol contract errors.
@@ -140,3 +142,24 @@ class GuardianClient:
 
         # Decode fixed-width status payload.
         return decode_device_status(response.payload)
+
+
+    # Read the latest firmware DSP and spectral feature snapshot.
+    def dsp_features(self) -> DspFeatures:
+        """Execute GET_DSP_FEATURES and decode its fixed M7 payload."""
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the empty GET_DSP_FEATURES request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.GET_DSP_FEATURES,
+            sequence=sequence,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode the fixed M7 feature payload.
+        return decode_dsp_features(response.payload)

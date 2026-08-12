@@ -3,43 +3,27 @@ name: Guardian Firmware Middleware Tests
 
 # Run portable C verification whenever changes reach GitHub.
 on:
-  # Validate direct pushes to main.
   push:
-    # Restrict direct-push validation to main.
     branches:
-      # Validate every main commit.
       - main
-
-  # Validate pull requests.
   pull_request:
 
 # Grant only repository read access.
 permissions:
-  # Allow source checkout.
   contents: read
 
-# Define portable embedded middleware verification.
 jobs:
-  # Compile command, telemetry and acquisition middleware using a strict desktop compiler.
   embedded:
-    # Use the current GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
-    # Execute verification steps.
     steps:
-      # Download repository source.
       - name: Check out repository
-        # Use the official current major checkout action.
         uses: actions/checkout@v6
 
-      # Create generated-output directory.
       - name: Prepare build directory
-        # Keep binaries outside source folders.
         run: mkdir -p build
 
-      # Compile the existing command middleware regression suite.
       - name: Compile embedded command middleware tests
-        # Treat every compiler warning as a regression.
         run: >
           gcc
           -std=c11
@@ -51,22 +35,22 @@ jobs:
           -Ifirmware/App/Inc
           -Ifirmware/Platform/Inc
           -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
           firmware/Telemetry/Src/guardian_telemetry.c
+          firmware/DSP/Src/guardian_dsp.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/embedded_link_host_test.c
+          -lm
           -o build/embedded_link_host_test
 
-      # Run the command middleware regression suite.
       - name: Run embedded command middleware tests
-        # Fail when assertions detect a protocol regression.
         run: ./build/embedded_link_host_test
 
-      # Compile the M5 asynchronous telemetry regression suite.
       - name: Compile telemetry middleware tests
-        # Treat every compiler warning as a regression.
         run: >
           gcc
           -std=c11
@@ -78,22 +62,22 @@ jobs:
           -Ifirmware/App/Inc
           -Ifirmware/Platform/Inc
           -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
           firmware/Telemetry/Src/guardian_telemetry.c
+          firmware/DSP/Src/guardian_dsp.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/telemetry_host_test.c
+          -lm
           -o build/telemetry_host_test
 
-      # Run the M5 telemetry regression suite.
       - name: Run telemetry middleware tests
-        # Fail when assertions detect a telemetry regression.
         run: ./build/telemetry_host_test
 
-      # Compile the M6 portable acquisition processor.
       - name: Compile M6 acquisition tests
-        # Treat every compiler warning as a regression.
         run: >
           gcc
           -std=c11
@@ -109,7 +93,26 @@ jobs:
           firmware/Tests/acquisition_host_test.c
           -o build/acquisition_host_test
 
-      # Run deterministic raw-to-engineering-unit acquisition tests.
       - name: Run M6 acquisition tests
-        # Fail when assertions detect an acquisition regression.
         run: ./build/acquisition_host_test
+
+      - name: Compile M7 DSP tests
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
+          firmware/DSP/Src/guardian_dsp.c
+          firmware/Tests/dsp_host_test.c
+          -lm
+          -o build/dsp_host_test
+
+      - name: Run M7 DSP tests
+        run: ./build/dsp_host_test

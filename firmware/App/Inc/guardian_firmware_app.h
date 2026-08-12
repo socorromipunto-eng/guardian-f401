@@ -10,6 +10,9 @@
 /* Include M6 STM32F401 acquisition diagnostics. */
 #include "stm32f401_acquisition.h"
 
+/* Include M7 DSP feature snapshots. */
+#include "guardian_dsp.h"
+
 /* Include fixed-width integer types for baud and tick APIs. */
 #include <stdint.h>
 
@@ -34,5 +37,9 @@ void guardian_firmware_app_update_telemetry(
 
 /* Return M6 hardware acquisition diagnostics for debugger or future protocol use. */
 guardian_stm32f401_acquisition_stats_t guardian_firmware_app_acquisition_stats(void);
+
+/* Return the latest M7 DSP feature snapshot and whether it is valid. */
+int guardian_firmware_app_dsp_features(
+    guardian_dsp_features_t *features);
 
 #endif

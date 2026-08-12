@@ -27,6 +27,15 @@ from .payloads import (
 from .parser import IncrementalParser, ParserStats
 
 
+
+# Re-export M7 DSP feature models and codecs.
+from .dsp import (
+    DSP_SCHEMA_VERSION,
+    DspFeatures,
+    decode_dsp_features,
+    encode_dsp_features,
+)
+
 # Re-export M5 telemetry models, bounds and codecs.
 from .telemetry import (
     DEFAULT_TELEMETRY_PERIOD_MS,
@@ -44,9 +53,11 @@ from .telemetry import (
 __all__ = [
     "Command",
     "DEFAULT_TELEMETRY_PERIOD_MS",
+    "DSP_SCHEMA_VERSION",
     "DeviceInfo",
     "DeviceState",
     "DeviceStatus",
+    "DspFeatures",
     "ErrorCode",
     "Frame",
     "HEADER_SIZE",
@@ -66,11 +77,13 @@ __all__ = [
     "crc32_ieee",
     "decode_device_info",
     "decode_device_status",
+    "decode_dsp_features",
     "decode_frame",
     "decode_machine_telemetry",
     "decode_telemetry_config",
     "encode_device_info",
     "encode_device_status",
+    "encode_dsp_features",
     "encode_frame",
     "encode_machine_telemetry",
     "encode_telemetry_config",

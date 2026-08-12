@@ -4,7 +4,7 @@
 import json
 
 # Import typed protocol models displayed by the CLI.
-from guardian_protocol import DeviceInfo, DeviceStatus
+from guardian_protocol import DeviceInfo, DeviceStatus, DspFeatures
 
 # Import typed PING result.
 from .client import PingResult
@@ -187,6 +187,68 @@ def render_telemetry_json(record: TelemetryRecord) -> str:
             "temperature_centi_c": record.sample.temperature_centi_c,
             "timestamp_ms": record.sample.timestamp_ms,
             "vibration_mg_rms": record.sample.vibration_mg_rms,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one M7 DSP feature snapshot for a human operator.
+def render_dsp_text(features: DspFeatures) -> str:
+    """Return human-readable DSP feature output."""
+
+    # Convert fixed-point frequency fields into hertz.
+    dominant_hz = features.dominant_frequency_centi_hz / 100.0
+
+    # Convert fixed-point spectral centroid into hertz.
+    centroid_hz = features.spectral_centroid_centi_hz / 100.0
+
+    # Convert fixed-point crest factor into a decimal ratio.
+    crest_factor = features.crest_factor_milli / 1000.0
+
+    # Return stable diagnostic lines.
+    return "\n".join(
+        (
+            f"Block: {features.block_sequence}",
+            f"Sample rate: {features.sample_rate_hz} Hz",
+            f"RMS: {features.rms_mg} mg",
+            f"Peak: {features.peak_mg} mg",
+            f"Crest factor: {crest_factor:.3f}",
+            f"Dominant frequency: {dominant_hz:.2f} Hz",
+            f"Dominant peak: {features.dominant_peak_mg} mg",
+            f"Spectral centroid: {centroid_hz:.2f} Hz",
+            (
+                "Band energy: "
+                f"low={features.low_band_permille}‰ "
+                f"mid={features.mid_band_permille}‰ "
+                f"high={features.high_band_permille}‰"
+            ),
+            (
+                "Acquisition flags: "
+                f"0x{features.acquisition_status_flags:04X}"
+            ),
+        )
+    )
+
+
+# Render one M7 DSP feature snapshot as JSON.
+def render_dsp_json(features: DspFeatures) -> str:
+    """Return machine-readable DSP feature output."""
+
+    # Serialize stable field names for scripts and dashboards.
+    return json.dumps(
+        {
+            "acquisition_status_flags": features.acquisition_status_flags,
+            "block_sequence": features.block_sequence,
+            "crest_factor_milli": features.crest_factor_milli,
+            "dominant_frequency_centi_hz": features.dominant_frequency_centi_hz,
+            "dominant_peak_mg": features.dominant_peak_mg,
+            "high_band_permille": features.high_band_permille,
+            "low_band_permille": features.low_band_permille,
+            "mid_band_permille": features.mid_band_permille,
+            "peak_mg": features.peak_mg,
+            "rms_mg": features.rms_mg,
+            "sample_rate_hz": features.sample_rate_hz,
+            "spectral_centroid_centi_hz": features.spectral_centroid_centi_hz,
         },
         sort_keys=True,
     )

@@ -1039,8 +1039,9 @@ int guardian_stm32f401_acquisition_init(
 }
 
 /* Process at most one completed DMA target buffer in foreground code. */
-int guardian_stm32f401_acquisition_poll(
-    guardian_machine_measurements_t *measurements)
+int guardian_stm32f401_acquisition_poll_ex(
+    guardian_machine_measurements_t *measurements,
+    guardian_acquisition_signal_block_t *signal_block)
 {
     /* Store the selected stable DMA target index. */
     uint8_t selected_buffer = 0xFFU;
@@ -1246,13 +1247,15 @@ int guardian_stm32f401_acquisition_poll(
         return 0;
     }
 
-    /* Convert the immutable foreground snapshot into engineering units. */
+    /* Convert the immutable foreground snapshot and export calibrated vibration for M7 DSP. */
     result =
-        guardian_acquisition_process_block(
+        guardian_acquisition_process_block_ex(
             &guardian_acquisition,
             guardian_process_buffer,
             GUARDIAN_ACQUISITION_SAMPLES_PER_BLOCK,
-            &aux);
+            &aux,
+            guardian_config.sample_rate_hz,
+            signal_block);
 
     /* Reject blocks that fail portable reference or calibration validation. */
     if (result != GUARDIAN_ACQUISITION_OK)
@@ -1286,6 +1289,17 @@ int guardian_stm32f401_acquisition_poll(
 
     /* Report exactly one fresh measurement block. */
     return 1;
+}
+
+
+/* Preserve the M6 public API by polling without requesting a calibrated DSP signal block. */
+int guardian_stm32f401_acquisition_poll(
+    guardian_machine_measurements_t *measurements)
+{
+    /* Reuse the extended M7 polling path without signal export. */
+    return guardian_stm32f401_acquisition_poll_ex(
+        measurements,
+        NULL);
 }
 
 /* Advance RPM staleness tracking by one millisecond. */
