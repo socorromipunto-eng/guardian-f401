@@ -16,7 +16,7 @@ DEFAULT_MODEL = "Guardian-F401-SIM"
 # Define the simulated firmware major version.
 DEFAULT_FIRMWARE_MAJOR = 0
 
-# Define the simulated firmware minor version aligned with milestone M2.
+# Define the simulated firmware minor version aligned with the original simulator contract.
 DEFAULT_FIRMWARE_MINOR = 2
 
 # Define the simulated firmware patch version.

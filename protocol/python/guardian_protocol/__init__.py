@@ -28,6 +28,22 @@ from .parser import IncrementalParser, ParserStats
 
 
 
+
+# Re-export M8 machine-health models and codecs.
+from .health import (
+    HEALTH_SCHEMA_VERSION,
+    MAX_BASELINE_SAMPLES,
+    MIN_BASELINE_SAMPLES,
+    BaselineAction,
+    BaselineControl,
+    HealthState,
+    HealthStatus,
+    decode_baseline_control,
+    decode_health_status,
+    encode_baseline_control,
+    encode_health_status,
+)
+
 # Re-export M7 DSP feature models and codecs.
 from .dsp import (
     DSP_SCHEMA_VERSION,
@@ -51,6 +67,8 @@ from .telemetry import (
 
 # Define the supported public import surface explicitly.
 __all__ = [
+    "BaselineAction",
+    "BaselineControl",
     "Command",
     "DEFAULT_TELEMETRY_PERIOD_MS",
     "DSP_SCHEMA_VERSION",
@@ -60,12 +78,17 @@ __all__ = [
     "DspFeatures",
     "ErrorCode",
     "Frame",
+    "HEALTH_SCHEMA_VERSION",
     "HEADER_SIZE",
+    "HealthState",
+    "HealthStatus",
     "IncrementalParser",
     "MAGIC",
+    "MAX_BASELINE_SAMPLES",
     "MAX_FRAME_SIZE",
     "MAX_TELEMETRY_PERIOD_MS",
     "MAX_PAYLOAD_SIZE",
+    "MIN_BASELINE_SAMPLES",
     "MessageType",
     "MIN_TELEMETRY_PERIOD_MS",
     "MachineTelemetry",
@@ -75,16 +98,20 @@ __all__ = [
     "TelemetryConfig",
     "VERSION",
     "crc32_ieee",
+    "decode_baseline_control",
     "decode_device_info",
     "decode_device_status",
     "decode_dsp_features",
+    "decode_health_status",
     "decode_frame",
     "decode_machine_telemetry",
     "decode_telemetry_config",
+    "encode_baseline_control",
     "encode_device_info",
     "encode_device_status",
     "encode_dsp_features",
     "encode_frame",
+    "encode_health_status",
     "encode_machine_telemetry",
     "encode_telemetry_config",
 ]

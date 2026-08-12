@@ -4,7 +4,13 @@
 import json
 
 # Import typed protocol models displayed by the CLI.
-from guardian_protocol import DeviceInfo, DeviceStatus, DspFeatures
+from guardian_protocol import (
+    BaselineControl,
+    DeviceInfo,
+    DeviceStatus,
+    DspFeatures,
+    HealthStatus,
+)
 
 # Import typed PING result.
 from .client import PingResult
@@ -249,6 +255,145 @@ def render_dsp_json(features: DspFeatures) -> str:
             "rms_mg": features.rms_mg,
             "sample_rate_hz": features.sample_rate_hz,
             "spectral_centroid_centi_hz": features.spectral_centroid_centi_hz,
+        },
+        sort_keys=True,
+    )
+
+
+# Map M8 feature identifiers to stable operator-facing names.
+_HEALTH_FEATURE_NAMES = {
+    0: "rms",
+    1: "crest_factor",
+    2: "dominant_frequency",
+    3: "spectral_centroid",
+    4: "low_band",
+    5: "mid_band",
+    6: "high_band",
+    0xFF: "none",
+}
+
+
+# Render one M8 machine-health snapshot for a human operator.
+def render_health_text(status: HealthStatus) -> str:
+    """Return human-readable M8 machine-health output."""
+
+    # Resolve the dominant feature identifier safely.
+    dominant_feature = _HEALTH_FEATURE_NAMES.get(
+        status.dominant_feature,
+        f"unknown({status.dominant_feature})",
+    )
+
+    # Convert fixed-point dominant frequency into hertz.
+    dominant_hz = (
+        status.current_dominant_frequency_centi_hz
+        / 100.0
+    )
+
+    # Convert fixed-point crest factor into a ratio.
+    crest_factor = (
+        status.current_crest_factor_milli
+        / 1000.0
+    )
+
+    # Convert fixed-point maximum deviation into weighted sigma-like units.
+    maximum_deviation = (
+        status.max_deviation_milli
+        / 1000.0
+    )
+
+    # Return stable health diagnostic lines.
+    return "\n".join(
+        (
+            f"Health state: {status.state.name}",
+            (
+                "Baseline: "
+                f"{status.baseline_samples}/"
+                f"{status.baseline_target} samples"
+            ),
+            f"Health score: {status.health_score}/1000",
+            f"Anomaly score: {status.anomaly_score}/1000",
+            f"Max deviation: {maximum_deviation:.3f}",
+            f"Dominant anomaly feature: {dominant_feature}",
+            f"Current RMS: {status.current_rms_mg} mg",
+            f"Current crest factor: {crest_factor:.3f}",
+            f"Current dominant frequency: {dominant_hz:.2f} Hz",
+            (
+                "Baseline RMS: "
+                f"{status.baseline_rms_mean_mg} "
+                f"+/- {status.baseline_rms_std_mg} mg"
+            ),
+            (
+                "Exceeded feature mask: "
+                f"0x{status.exceeded_feature_mask:04X}"
+            ),
+            (
+                "Quality flags: "
+                f"0x{status.quality_flags:04X}"
+            ),
+            f"Rejected inputs: {status.rejected_inputs}",
+        )
+    )
+
+
+# Render one M8 machine-health snapshot as JSON.
+def render_health_json(status: HealthStatus) -> str:
+    """Return machine-readable M8 machine-health output."""
+
+    # Serialize stable field names for dashboards and automation.
+    return json.dumps(
+        {
+            "anomaly_score": status.anomaly_score,
+            "baseline_rms_mean_mg": status.baseline_rms_mean_mg,
+            "baseline_rms_std_mg": status.baseline_rms_std_mg,
+            "baseline_samples": status.baseline_samples,
+            "baseline_target": status.baseline_target,
+            "block_sequence": status.block_sequence,
+            "consecutive_anomalous": status.consecutive_anomalous,
+            "current_crest_factor_milli": (
+                status.current_crest_factor_milli
+            ),
+            "current_dominant_frequency_centi_hz": (
+                status.current_dominant_frequency_centi_hz
+            ),
+            "current_rms_mg": status.current_rms_mg,
+            "dominant_feature": status.dominant_feature,
+            "exceeded_feature_mask": status.exceeded_feature_mask,
+            "health_score": status.health_score,
+            "max_deviation_milli": status.max_deviation_milli,
+            "quality_flags": status.quality_flags,
+            "rejected_inputs": status.rejected_inputs,
+            "state": status.state.name,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one normalized baseline-control acknowledgement for a human.
+def render_baseline_text(control: BaselineControl) -> str:
+    """Return human-readable baseline-control acknowledgement."""
+
+    # Render START with its explicit target.
+    if control.action.name == "START":
+
+        # Return the active bounded baseline target.
+        return (
+            "Baseline learning started: "
+            f"target={control.target_samples} samples"
+        )
+
+    # Render RESET without an irrelevant target.
+    return "Baseline reset: model is UNTRAINED"
+
+
+# Render one normalized baseline-control acknowledgement as JSON.
+def render_baseline_json(control: BaselineControl) -> str:
+    """Return machine-readable baseline-control acknowledgement."""
+
+    # Serialize the normalized device response.
+    return json.dumps(
+        {
+            "action": control.action.name,
+            "target_samples": control.target_samples,
         },
         sort_keys=True,
     )

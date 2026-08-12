@@ -1,22 +1,24 @@
 # Firmware
 
-M7 adds portable foreground DSP on the calibrated M6 vibration block.
+M8 adds a transport-independent runtime machine-health model.
 
 ```text
-64 signed vibration samples in mg
+guardian_dsp_features_t
         |
         v
-guardian_dsp_analyze()
+guardian_health_ingest()
         |
         v
-RMS / peak / crest / FFT / spectral bands
+baseline / anomaly state
         |
         v
-GET_DSP_FEATURES
+GET_HEALTH_STATUS
 ```
 
-No DSP work runs inside ADC, DMA, timer or UART interrupt handlers.
+Baseline learning is explicit, bounded and frozen after completion.
 
-The target still requires a Keil build and physical timing validation.
+No health-model work runs inside ADC, DMA, timer or UART interrupt context.
 
-See `docs/m7-dsp.md`.
+The runtime model is not persisted across reset in M8.
+
+See `docs/m8-health.md`.

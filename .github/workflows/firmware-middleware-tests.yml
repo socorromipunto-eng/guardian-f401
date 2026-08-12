@@ -3,26 +3,34 @@ name: Guardian Firmware Middleware Tests
 
 # Run portable C verification whenever changes reach GitHub.
 on:
+  # Validate direct pushes to main.
   push:
     branches:
       - main
+
+  # Validate pull requests before merge.
   pull_request:
 
 # Grant only repository read access.
 permissions:
   contents: read
 
+# Define strict portable embedded verification.
 jobs:
   embedded:
+    # Use the GitHub-hosted Ubuntu runner.
     runs-on: ubuntu-latest
 
     steps:
+      # Download repository source.
       - name: Check out repository
         uses: actions/checkout@v6
 
+      # Keep generated binaries outside source directories.
       - name: Prepare build directory
         run: mkdir -p build
 
+      # Compile the embedded-link regression suite with M8 dependencies.
       - name: Compile embedded command middleware tests
         run: >
           gcc
@@ -37,19 +45,23 @@ jobs:
           -Ifirmware/Telemetry/Inc
           -Ifirmware/Acquisition/Inc
           -Ifirmware/DSP/Inc
+          -Ifirmware/Health/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
           firmware/Telemetry/Src/guardian_telemetry.c
           firmware/DSP/Src/guardian_dsp.c
+          firmware/Health/Src/guardian_health.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/embedded_link_host_test.c
           -lm
           -o build/embedded_link_host_test
 
+      # Run the embedded-link regression suite.
       - name: Run embedded command middleware tests
         run: ./build/embedded_link_host_test
 
+      # Compile the asynchronous telemetry regression suite with M8 dependencies.
       - name: Compile telemetry middleware tests
         run: >
           gcc
@@ -64,19 +76,23 @@ jobs:
           -Ifirmware/Telemetry/Inc
           -Ifirmware/Acquisition/Inc
           -Ifirmware/DSP/Inc
+          -Ifirmware/Health/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
           firmware/Telemetry/Src/guardian_telemetry.c
           firmware/DSP/Src/guardian_dsp.c
+          firmware/Health/Src/guardian_health.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/telemetry_host_test.c
           -lm
           -o build/telemetry_host_test
 
+      # Run the M5 telemetry regression suite.
       - name: Run telemetry middleware tests
         run: ./build/telemetry_host_test
 
+      # Compile the M6 acquisition regression suite.
       - name: Compile M6 acquisition tests
         run: >
           gcc
@@ -93,9 +109,11 @@ jobs:
           firmware/Tests/acquisition_host_test.c
           -o build/acquisition_host_test
 
+      # Run the M6 acquisition regression suite.
       - name: Run M6 acquisition tests
         run: ./build/acquisition_host_test
 
+      # Compile the M7 DSP regression suite.
       - name: Compile M7 DSP tests
         run: >
           gcc
@@ -114,5 +132,30 @@ jobs:
           -lm
           -o build/dsp_host_test
 
+      # Run the M7 DSP regression suite.
       - name: Run M7 DSP tests
         run: ./build/dsp_host_test
+
+      # Compile the new M8 baseline and anomaly model.
+      - name: Compile M8 health tests
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
+          -Ifirmware/Health/Inc
+          firmware/Health/Src/guardian_health.c
+          firmware/Tests/health_host_test.c
+          -lm
+          -o build/health_host_test
+
+      # Run baseline, anomaly and hysteresis assertions.
+      - name: Run M8 health tests
+        run: ./build/health_host_test

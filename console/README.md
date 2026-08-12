@@ -1,10 +1,12 @@
 # guardianctl
 
-M7 adds the latest DSP feature query.
+M8 adds explicit machine-health baseline lifecycle and status commands.
 
 ```text
-python tools/guardianctl.py dsp
-python tools/guardianctl.py --json dsp
+python tools/guardianctl.py baseline start --samples 64
+python tools/guardianctl.py health
+python tools/guardianctl.py --json health
+python tools/guardianctl.py baseline reset
 ```
 
-The same command works through TCP simulator transport or physical serial transport.
+The same commands use TCP simulator transport or physical serial transport.

@@ -12,6 +12,8 @@ Guardian Protocol `0.1`.
 | `0x02` | `DEVICE_INFO` | Empty | Binary DeviceInfo schema v1 |
 | `0x10` | `GET_STATUS` | Empty | Binary DeviceStatus schema v1 |
 | `0x11` | `GET_DSP_FEATURES` | Empty | Binary DspFeatures schema v1 |
+| `0x12` | `GET_HEALTH_STATUS` | Empty | Binary HealthStatus schema v1 |
+| `0x13` | `BASELINE_CONTROL` | Binary BaselineControl schema v1 | Normalized BaselineControl schema v1 |
 | `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
 | `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
@@ -139,3 +141,68 @@ Offset  Size  Field
 28      2     HIGH_BAND_PERMILLE
 30      2     ACQUISITION_STATUS_FLAGS
 ```
+
+
+## BASELINE_CONTROL Payload
+
+The request and successful response are fixed at 4 bytes.
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ACTION
+2       2     TARGET_SAMPLES
+```
+
+Actions:
+
+```text
+1 START
+2 RESET
+```
+
+`START` requires `TARGET_SAMPLES` between `16` and `1024`.
+
+`RESET` requires `TARGET_SAMPLES = 0`.
+
+The baseline exists only in runtime RAM in M8.
+
+## GET_HEALTH_STATUS Payload
+
+The successful response is fixed at 36 bytes.
+
+```text
+Offset  Size  Field
+------  ----  --------------------------------
+0       1     SCHEMA_VERSION = 1
+1       1     HEALTH_STATE
+2       2     BASELINE_SAMPLES
+4       2     BASELINE_TARGET
+6       2     ANOMALY_SCORE
+8       2     HEALTH_SCORE
+10      2     MAX_DEVIATION_MILLI
+12      1     DOMINANT_FEATURE
+13      1     CONSECUTIVE_ANOMALOUS
+14      2     QUALITY_FLAGS
+16      4     BLOCK_SEQUENCE
+20      2     CURRENT_RMS_MG
+22      2     CURRENT_CREST_FACTOR_MILLI
+24      4     CURRENT_DOMINANT_FREQUENCY_CENTI_HZ
+28      2     BASELINE_RMS_MEAN_MG
+30      2     BASELINE_RMS_STD_MG
+32      2     EXCEEDED_FEATURE_MASK
+34      2     REJECTED_INPUTS
+```
+
+Health states:
+
+```text
+0 UNTRAINED
+1 LEARNING
+2 READY
+3 WARNING
+4 ALARM
+```
+
+The M8 anomaly score is a deterministic statistical distance from an explicitly learned baseline. It is not a safety-certified diagnostic or a probability of failure.

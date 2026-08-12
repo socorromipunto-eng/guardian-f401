@@ -13,6 +13,9 @@
 /* Include M7 DSP feature snapshots. */
 #include "guardian_dsp.h"
 
+/* Include the M8 machine-health snapshot exposed by this application API. */
+#include "guardian_health.h"
+
 /* Include fixed-width integer types for baud and tick APIs. */
 #include <stdint.h>
 
@@ -41,5 +44,8 @@ guardian_stm32f401_acquisition_stats_t guardian_firmware_app_acquisition_stats(v
 /* Return the latest M7 DSP feature snapshot and whether it is valid. */
 int guardian_firmware_app_dsp_features(
     guardian_dsp_features_t *features);
+
+/* Return the current M8 runtime health snapshot. */
+guardian_health_status_t guardian_firmware_app_health_status(void);
 
 #endif

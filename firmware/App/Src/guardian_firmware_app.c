@@ -85,7 +85,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 7U;
+    identity.firmware_minor = 8U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -242,4 +242,13 @@ int guardian_firmware_app_dsp_features(
 
     /* Report one valid feature snapshot. */
     return 1;
+}
+
+
+/* Return the current M8 runtime machine-health snapshot. */
+guardian_health_status_t guardian_firmware_app_health_status(void)
+{
+    /* Return the transport-independent model snapshot by value. */
+    return guardian_embedded_link_health_status(
+        &guardian_link);
 }

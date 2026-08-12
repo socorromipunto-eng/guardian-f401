@@ -1,23 +1,22 @@
 # Guardian F401 Device Simulator
 
-The simulator implements Guardian commands plus M5 asynchronous telemetry.
+The simulator implements M8 baseline and machine-health commands.
 
-## Run
+Start the simulator:
 
 ```text
 python tools/run_simulator.py
 ```
 
-## Live Telemetry
-
-In another terminal:
+Then:
 
 ```text
-python tools/guardianctl.py telemetry --period-ms 500 --count 10
+python tools/guardianctl.py baseline start --samples 64
+python tools/guardianctl.py health
 ```
 
-The simulator generates deterministic synthetic values only for transport, parser, scheduling and UI verification.
+The simulator fast-forwards deterministic healthy baseline samples immediately.
 
-Real sensor acquisition remains M6.
+This behavior is for software-only protocol and UI demonstration.
 
-The simulator binds to `127.0.0.1` by default.
+Real STM32 firmware learns baseline samples from successive M7 acquisition blocks.

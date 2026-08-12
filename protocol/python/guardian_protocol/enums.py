@@ -40,6 +40,12 @@ class Command(IntEnum):
     # Request the latest analyzed DSP and spectral feature snapshot.
     GET_DSP_FEATURES = 0x11
 
+    # Request the current M8 machine-health model snapshot.
+    GET_HEALTH_STATUS = 0x12
+
+    # Start or reset explicit M8 baseline learning.
+    BASELINE_CONTROL = 0x13
+
     # Configure asynchronous machine telemetry streaming.
     SET_TELEMETRY = 0x20
 

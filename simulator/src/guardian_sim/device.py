@@ -8,6 +8,8 @@ from threading import RLock
 
 # Import shared Guardian Protocol models and codecs.
 from guardian_protocol import (
+    BaselineAction,
+    BaselineControl,
     Command,
     DeviceInfo,
     DeviceState,
@@ -18,16 +20,22 @@ from guardian_protocol import (
     MachineTelemetry,
     MessageType,
     TelemetryConfig,
+    decode_baseline_control,
     decode_telemetry_config,
     encode_device_info,
     encode_device_status,
+    encode_baseline_control,
     encode_dsp_features,
+    encode_health_status,
     encode_machine_telemetry,
     encode_telemetry_config,
 )
 
 # Import immutable simulator identity configuration.
 from .config import SimulatorConfig
+
+# Import the M8 baseline and anomaly model.
+from .health import SimulatorHealthModel
 
 
 # Implement command behavior independently from TCP packet boundaries.
@@ -75,6 +83,9 @@ class GuardianDevice:
 
         # Start deterministic synthetic DSP block numbering at one.
         self._dsp_block_sequence = 1
+
+        # Start the M8 simulator health model untrained.
+        self._health = SimulatorHealthModel()
 
         # Start without an active transport session owning telemetry delivery.
         self._telemetry_owner: object | None = None
@@ -244,39 +255,97 @@ class GuardianDevice:
                         ErrorCode.INVALID_PAYLOAD,
                     )
 
-                # Calculate a deterministic synthetic dominant frequency.
-                dominant_centi_hz = (
-                    25000
-                    + ((self._dsp_block_sequence % 4) * 6250)
-                )
+                # Build the next deterministic healthy software-only DSP snapshot.
+                features = self._next_dsp_features()
 
-                # Build one deterministic software-only DSP feature snapshot.
-                features = DspFeatures(
-                    block_sequence=self._dsp_block_sequence,
-                    sample_rate_hz=4000,
-                    rms_mg=42,
-                    peak_mg=61,
-                    crest_factor_milli=1452,
-                    dominant_frequency_centi_hz=dominant_centi_hz,
-                    dominant_peak_mg=58,
-                    spectral_centroid_centi_hz=41250,
-                    low_band_permille=760,
-                    mid_band_permille=190,
-                    high_band_permille=50,
-                    acquisition_status_flags=0x0011,
-                )
-
-                # Advance the synthetic block sequence for the next host query.
-                self._dsp_block_sequence = (
-                    1
-                    if self._dsp_block_sequence == 0xFFFFFFFF
-                    else self._dsp_block_sequence + 1
-                )
+                # Feed the same snapshot into the M8 health model.
+                self._health.ingest(features)
 
                 # Serialize the fixed M7 feature payload.
                 payload = encode_dsp_features(features)
 
                 # Return the correlated feature response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M8 GET_HEALTH_STATUS.
+            if frame.command == int(Command.GET_HEALTH_STATUS):
+
+                # Require the frozen empty request payload.
+                if frame.payload:
+
+                    # Reject undefined health-query bytes.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Serialize the current immutable M8 health snapshot.
+                payload = encode_health_status(
+                    self._health.status()
+                )
+
+                # Return the correlated health response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M8 BASELINE_CONTROL.
+            if frame.command == int(Command.BASELINE_CONTROL):
+
+                # Decode and validate the shared fixed control payload.
+                try:
+
+                    # Decode the requested baseline lifecycle operation.
+                    control = decode_baseline_control(
+                        frame.payload
+                    )
+                except ValueError:
+
+                    # Reject malformed or out-of-policy baseline control.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Start a fresh explicit baseline when requested.
+                if control.action == BaselineAction.START:
+
+                    # Reset and begin the bounded learning session.
+                    self._health.start(
+                        control.target_samples
+                    )
+
+                    # Fast-forward deterministic healthy samples for software-only demos.
+                    for _ in range(control.target_samples):
+
+                        # Generate one healthy DSP vector.
+                        features = self._next_dsp_features()
+
+                        # Learn the same M8 baseline semantics used by firmware.
+                        self._health.ingest(features)
+                else:
+
+                    # Erase the runtime baseline.
+                    self._health.reset()
+
+                # Echo the normalized shared control payload.
+                payload = encode_baseline_control(
+                    BaselineControl(
+                        action=control.action,
+                        target_samples=(
+                            control.target_samples
+                            if control.action
+                            == BaselineAction.START
+                            else 0
+                        ),
+                    )
+                )
+
+                # Return the correlated normalized response.
                 return self._make_response(
                     frame,
                     payload,
@@ -364,6 +433,55 @@ class GuardianDevice:
                 frame,
                 ErrorCode.UNKNOWN_COMMAND,
             )
+
+    # Create the next deterministic healthy synthetic DSP feature snapshot.
+    def _next_dsp_features(self) -> DspFeatures:
+        """Return one bounded healthy DSP snapshot for M7/M8 software tests."""
+
+        # Use a small repeating healthy variation while preserving the original first M7 value.
+        variation = (
+            0,
+            1,
+            -1,
+            2,
+            -2,
+        )[
+            (self._dsp_block_sequence - 1) % 5
+        ]
+
+        # Preserve the original first synthetic RMS at exactly 42 milli-g.
+        rms_mg = 42 + variation
+
+        # Preserve a healthy dominant-frequency neighborhood around 250 Hz.
+        dominant_centi_hz = 25000 + (
+            variation * 125
+        )
+
+        # Build one deterministic software-only feature snapshot.
+        features = DspFeatures(
+            block_sequence=self._dsp_block_sequence,
+            sample_rate_hz=4000,
+            rms_mg=rms_mg,
+            peak_mg=61,
+            crest_factor_milli=1452,
+            dominant_frequency_centi_hz=dominant_centi_hz,
+            dominant_peak_mg=58,
+            spectral_centroid_centi_hz=41250,
+            low_band_permille=760,
+            mid_band_permille=190,
+            high_band_permille=50,
+            acquisition_status_flags=0x0011,
+        )
+
+        # Advance the synthetic block sequence while reserving zero.
+        self._dsp_block_sequence = (
+            1
+            if self._dsp_block_sequence == 0xFFFFFFFF
+            else self._dsp_block_sequence + 1
+        )
+
+        # Return the immutable shared protocol model.
+        return features
 
     # Create one due deterministic synthetic telemetry frame.
     def poll_telemetry(

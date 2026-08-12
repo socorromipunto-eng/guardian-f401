@@ -13,6 +13,9 @@
 /* Include the M7 DSP feature snapshot and request handler. */
 #include "guardian_dsp.h"
 
+/* Include the M8 runtime baseline and anomaly model. */
+#include "guardian_health.h"
+
 /* Include size_t for bounded byte budgets and writer lengths. */
 #include <stddef.h>
 
@@ -90,6 +93,9 @@ typedef struct
     /* Store whether the latest DSP feature snapshot is ready for host requests. */
     uint8_t dsp_features_valid;
 
+    /* Store the complete M8 runtime baseline and anomaly model. */
+    guardian_health_t health;
+
     /* Store platform transport callbacks. */
     guardian_embedded_io_t io;
 
@@ -121,6 +127,11 @@ void guardian_embedded_link_update_telemetry(
 void guardian_embedded_link_update_dsp(
     guardian_embedded_link_t *link,
     const guardian_dsp_features_t *features);
+
+
+/* Return the current immutable M8 machine-health snapshot by value. */
+guardian_health_status_t guardian_embedded_link_health_status(
+    const guardian_embedded_link_t *link);
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(

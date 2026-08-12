@@ -94,6 +94,12 @@ typedef enum
     /* Request the latest analyzed DSP and spectral feature snapshot. */
     GUARDIAN_COMMAND_GET_DSP_FEATURES = 0x11,
 
+    /* Request the current M8 machine-health model snapshot. */
+    GUARDIAN_COMMAND_GET_HEALTH_STATUS = 0x12,
+
+    /* Start or reset explicit M8 baseline learning. */
+    GUARDIAN_COMMAND_BASELINE_CONTROL = 0x13,
+
     /* Configure asynchronous machine telemetry streaming. */
     GUARDIAN_COMMAND_SET_TELEMETRY = 0x20,
 

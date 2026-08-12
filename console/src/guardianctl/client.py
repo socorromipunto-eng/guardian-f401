@@ -8,15 +8,21 @@ from dataclasses import dataclass
 
 # Import shared command and payload codecs.
 from guardian_protocol import (
+    BaselineAction,
+    BaselineControl,
     Command,
     DeviceInfo,
     DeviceStatus,
     DspFeatures,
     Frame,
+    HealthStatus,
     MessageType,
     decode_device_info,
+    decode_baseline_control,
     decode_device_status,
     decode_dsp_features,
+    decode_health_status,
+    encode_baseline_control,
 )
 
 # Import host-side protocol contract errors.
@@ -163,3 +169,113 @@ class GuardianClient:
 
         # Decode the fixed M7 feature payload.
         return decode_dsp_features(response.payload)
+
+
+    # Read the current M8 machine-health snapshot.
+    def health_status(self) -> HealthStatus:
+        """Execute GET_HEALTH_STATUS and decode its fixed M8 payload."""
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the empty health-status request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.GET_HEALTH_STATUS,
+            sequence=sequence,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode the fixed M8 health payload.
+        return decode_health_status(response.payload)
+
+    # Start a fresh bounded M8 baseline learning session.
+    def start_baseline(
+        self,
+        target_samples: int,
+    ) -> BaselineControl:
+        """Execute BASELINE_CONTROL START and return normalized configuration."""
+
+        # Build and validate the shared baseline-control payload.
+        control = BaselineControl(
+            action=BaselineAction.START,
+            target_samples=target_samples,
+        )
+
+        # Encode before transport side effects so invalid targets fail locally.
+        payload = encode_baseline_control(control)
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the baseline-start request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.BASELINE_CONTROL,
+            sequence=sequence,
+            payload=payload,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode and validate the device-normalized response.
+        normalized = decode_baseline_control(
+            response.payload
+        )
+
+        # Require the response to preserve START semantics.
+        if normalized != control:
+
+            # Reject a contradictory remote baseline configuration.
+            raise ProtocolClientError(
+                "device returned an unexpected baseline configuration"
+            )
+
+        # Return the normalized active configuration.
+        return normalized
+
+    # Erase the runtime M8 baseline.
+    def reset_baseline(self) -> BaselineControl:
+        """Execute BASELINE_CONTROL RESET."""
+
+        # Build the frozen reset payload.
+        control = BaselineControl(
+            action=BaselineAction.RESET,
+            target_samples=0,
+        )
+
+        # Encode the reset request.
+        payload = encode_baseline_control(control)
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the baseline-reset request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.BASELINE_CONTROL,
+            sequence=sequence,
+            payload=payload,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode the normalized response.
+        normalized = decode_baseline_control(
+            response.payload
+        )
+
+        # Require exact RESET acknowledgement.
+        if normalized != control:
+
+            # Reject contradictory remote semantics.
+            raise ProtocolClientError(
+                "device did not acknowledge baseline reset"
+            )
+
+        # Return the normalized reset response.
+        return normalized

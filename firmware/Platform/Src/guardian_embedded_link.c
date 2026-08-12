@@ -193,6 +193,10 @@ guardian_protocol_result_t guardian_embedded_link_init(
     guardian_telemetry_init(
         &link->telemetry);
 
+    /* Initialize the M8 runtime health model in the explicit UNTRAINED state. */
+    guardian_health_init(
+        &link->health);
+
     /* Initialize immutable command-service identity. */
     result =
         guardian_device_service_init(
@@ -254,6 +258,28 @@ void guardian_embedded_link_update_dsp(
 
     /* Mark the copied feature snapshot ready for host requests. */
     link->dsp_features_valid = 1U;
+
+    /* Ingest the exact same feature snapshot into the frozen-baseline health model. */
+    guardian_health_ingest(
+        &link->health,
+        features);
+}
+
+/* Return the current immutable M8 machine-health snapshot by value. */
+guardian_health_status_t guardian_embedded_link_health_status(
+    const guardian_embedded_link_t *link)
+{
+    /* Return deterministic untrained status for a missing middleware pointer. */
+    if (link == NULL)
+    {
+        /* Delegate null handling to the health module. */
+        return guardian_health_status(
+            NULL);
+    }
+
+    /* Return the current bounded model snapshot by value. */
+    return guardian_health_status(
+        &link->health);
 }
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
@@ -381,6 +407,18 @@ void guardian_embedded_link_poll(
                 guardian_dsp_handle_request(
                     &link->dsp_features,
                     link->dsp_features_valid,
+                    &request,
+                    &output);
+        }
+        else if ((request.command ==
+                  (uint8_t)GUARDIAN_COMMAND_GET_HEALTH_STATUS) ||
+                 (request.command ==
+                  (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL))
+        {
+            /* Route M8 baseline lifecycle and health queries to the health model. */
+            protocol_result =
+                guardian_health_handle_request(
+                    &link->health,
                     &request,
                     &output);
         }

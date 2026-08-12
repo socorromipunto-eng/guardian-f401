@@ -24,8 +24,12 @@ from .errors import GuardianCtlError
 
 # Import human and machine-readable presentation helpers.
 from .presentation import (
+    render_baseline_json,
+    render_baseline_text,
     render_dsp_json,
     render_dsp_text,
+    render_health_json,
+    render_health_text,
     render_info_json,
     render_info_text,
     render_ping_json,
@@ -131,6 +135,44 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands.add_parser(
         "dsp",
         help="read the latest RMS, FFT and spectral feature snapshot",
+    )
+
+    # Register M8 GET_HEALTH_STATUS.
+    subcommands.add_parser(
+        "health",
+        help="read baseline state, anomaly score and machine-health status",
+    )
+
+    # Register M8 baseline lifecycle control.
+    baseline_parser = subcommands.add_parser(
+        "baseline",
+        help="start or reset the runtime machine-health baseline",
+    )
+
+    # Create required baseline action subcommands.
+    baseline_actions = baseline_parser.add_subparsers(
+        dest="baseline_action",
+        required=True,
+    )
+
+    # Register explicit baseline learning.
+    baseline_start = baseline_actions.add_parser(
+        "start",
+        help="start a fresh bounded baseline learning session",
+    )
+
+    # Configure the explicit baseline target.
+    baseline_start.add_argument(
+        "--samples",
+        type=int,
+        default=64,
+        help="accepted DSP samples required for baseline completion (16-1024, default: 64)",
+    )
+
+    # Register runtime baseline reset.
+    baseline_actions.add_parser(
+        "reset",
+        help="erase the runtime baseline and anomaly state",
     )
 
     # Register live M5 telemetry streaming.
@@ -375,6 +417,53 @@ def main(argv: list[str] | None = None) -> int:
 
                 # Print human-readable feature output.
                 print(render_dsp_text(features))
+
+            # Report success.
+            return 0
+
+        # Dispatch M8 GET_HEALTH_STATUS.
+        if args.command == "health":
+
+            # Execute the current machine-health query.
+            health = client.health_status()
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable health output.
+                print(render_health_json(health))
+            else:
+
+                # Print human-readable health output.
+                print(render_health_text(health))
+
+            # Report success.
+            return 0
+
+        # Dispatch M8 baseline lifecycle control.
+        if args.command == "baseline":
+
+            # Start a fresh explicit baseline.
+            if args.baseline_action == "start":
+
+                # Execute the bounded baseline-start command.
+                control = client.start_baseline(
+                    args.samples
+                )
+            else:
+
+                # Execute runtime baseline reset.
+                control = client.reset_baseline()
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable acknowledgement.
+                print(render_baseline_json(control))
+            else:
+
+                # Print human-readable acknowledgement.
+                print(render_baseline_text(control))
 
             # Report success.
             return 0
