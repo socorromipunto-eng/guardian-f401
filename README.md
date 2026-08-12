@@ -46,6 +46,27 @@ Guardian Protocol
       +--> Device Simulator
 ```
 
+## Guardian Protocol v0.1
+
+M1 now defines a real byte-level contract shared by C firmware and Python host tools.
+
+```text
++-------+---------+------+---------+-------+----------+--------+---------+-------+
+| MAGIC | VERSION | TYPE | COMMAND | FLAGS | SEQUENCE | LENGTH | PAYLOAD | CRC32 |
++-------+---------+------+---------+-------+----------+--------+---------+-------+
+```
+
+Key properties:
+
+- fixed 12-byte header
+- maximum 256-byte payload
+- big-endian multi-byte fields
+- IEEE CRC32
+- incremental stream parsing
+- bounded STM32 memory
+- canonical C/Python compatibility vectors
+- automated Python and portable C tests
+
 ## Repository Structure
 
 ```text
@@ -75,46 +96,63 @@ guardian-f401/
 ## Development Phases
 
 ### M0 — Repository Foundation
-Architecture, threat model, protocol documentation and project organization.
+
+Completed.
 
 ### M1 — Guardian Protocol v0.1
-Binary framing, sequence numbers, CRC, commands and error model.
+
+Completed.
+
+Binary framing, bounded parsing, sequence correlation, CRC32, C/Python codecs and tests.
 
 ### M2 — Device Simulator
+
+Next.
+
 A software implementation of the future embedded device.
 
 ### M3 — guardianctl
+
 A host command-line console using the same protocol as the physical STM32.
 
 ### M4 — STM32 UART Transport
+
 Real communication with the STM32F401CDU6.
 
 ### M5 — Telemetry
+
 Asynchronous measurements, diagnostics and event reporting.
 
 ### M6 — Acquisition
+
 ADC, timers, DMA and deterministic data capture.
 
 ### M7 — DSP
+
 RMS, FFT, spectral features and signal processing.
 
 ### M8 — Machine Health
+
 Baseline modeling and anomaly detection.
 
 ### M9 — Supervisory Control
+
 State machine, faults and controlled outputs.
 
 ### M10 — Security
+
 Authentication, authorization, session management and anti-replay controls.
 
 ### M11 — Robustness
+
 Fuzzing, malformed frames, fault injection and recovery testing.
 
 ### M12 — Firmware Lifecycle
+
 Signed firmware update architecture and rollback protection.
 
 ## Current Milestone
 
-M0 — Repository Foundation.
+M1 — Guardian Protocol v0.1 implemented.
 
-Next milestone: Guardian Protocol v0.1.
+Next milestone: M2 — Device Simulator.

@@ -1,0 +1,85 @@
+# Give the workflow a clear name in the GitHub Actions interface.
+name: Guardian Protocol Tests
+
+# Run protocol verification on pushes and pull requests that modify relevant files.
+on:
+  # Validate changes pushed directly to repository branches.
+  push:
+    # Restrict automatic runs to the main development branch.
+    branches:
+      # Validate every push to main.
+      - main
+
+  # Validate proposed changes before they are merged.
+  pull_request:
+
+# Grant only the repository read permission required by checkout.
+permissions:
+  # Allow the workflow to read repository source files.
+  contents: read
+
+# Define independent jobs so Python and portable C compatibility are both visible.
+jobs:
+  # Validate the host-side Python implementation.
+  python-protocol:
+    # Use the current GitHub-hosted Ubuntu environment.
+    runs-on: ubuntu-latest
+
+    # Execute the Python protocol validation steps.
+    steps:
+      # Download the repository source into the runner workspace.
+      - name: Check out repository
+        # Use the maintained checkout action.
+        uses: actions/checkout@v6
+
+      # Install the selected CPython runtime.
+      - name: Set up Python
+        # Use the maintained Python setup action.
+        uses: actions/setup-python@v6
+        # Configure the runtime version deterministically.
+        with:
+          # Use a stable Python version without external package dependencies.
+          python-version: "3.12"
+
+      # Run every standard-library Python protocol unit test.
+      - name: Run Python protocol tests
+        # Add the protocol package directory only for this test process.
+        run: PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
+
+  # Compile the STM32-independent C protocol layer using a strict host compiler.
+  c-protocol:
+    # Use the current GitHub-hosted Ubuntu environment.
+    runs-on: ubuntu-latest
+
+    # Execute the portable C validation steps.
+    steps:
+      # Download the repository source into the runner workspace.
+      - name: Check out repository
+        # Use the maintained checkout action.
+        uses: actions/checkout@v6
+
+      # Create a dedicated directory for generated host test binaries.
+      - name: Prepare build directory
+        # Keep generated build products outside the source folders.
+        run: mkdir -p build
+
+      # Compile the portable protocol and parser with strict diagnostics enabled.
+      - name: Compile C protocol host tests
+        # Treat warnings as failures so portability regressions are visible.
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          firmware/Protocol/Src/guardian_protocol.c
+          firmware/Protocol/Src/guardian_parser.c
+          firmware/Tests/protocol_host_test.c
+          -o build/protocol_host_test
+
+      # Execute the compiled host-side C test binary.
+      - name: Run C protocol host tests
+        # Fail the workflow immediately if any C assertion fails.
+        run: ./build/protocol_host_test
