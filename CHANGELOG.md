@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to Guardian F401 are documented in this file.
+## [Unreleased]
+
+### Post-publication metadata
+
+- Recorded the Zenodo DOI for Guardian F401 v0.13.0: https://doi.org/10.5281/zenodo.21923859
+- Recorded the concept DOI representing all Guardian F401 versions: https://doi.org/10.5281/zenodo.21923858
+- Recorded the public GitHub release and ORCID authorship linkage.
+- Added a consolidated publication record without modifying the immutable
+  0.13.0 tag or its published ZIP artifact.
 
 ## [0.13.0] - 2026-08-13
 
