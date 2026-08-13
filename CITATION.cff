@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you reference Guardian F401, please cite the archived release."
+title: "Guardian F401: Deterministic Embedded Decision Assurance for Machine Health, Cybersecurity, and Supervisory Control"
+version: "0.13.0"
+date-released: "2026-08-13"
+type: software
+authors:
+  - given-names: "Antonio José"
+    family-names: "Socorro Marín"
+    orcid: "https://orcid.org/0009-0007-9089-9222"
+repository-code: "https://github.com/socorromipunto-eng/guardian-f401"
+url: "https://github.com/socorromipunto-eng/guardian-f401"
+abstract: >-
+  Guardian F401 is an experimental STM32F401CDU6 embedded research platform
+  combining deterministic signal acquisition, DSP and spectral analysis,
+  machine-health state evaluation, supervisory control, authenticated command
+  handling, robustness testing, and a portable signed-firmware lifecycle. It
+  investigates a trust boundary in which analytics and future AI components
+  provide recommendations while deterministic policy retains operational
+  authority. Software and local Keil compilation milestones are documented;
+  physical board qualification and safety certification are not claimed.
+keywords:
+  - "embedded systems"
+  - "STM32F401"
+  - "cybersecurity"
+  - "firmware integrity"
+  - "deterministic control"
+  - "decision assurance"
+  - "Edge AI"
+  - "digital signal processing"
+  - "machine condition monitoring"

@@ -1,0 +1,65 @@
+Guardian F401 Proprietary License
+Version 1.0 - 2026
+
+Copyright (c) 2026 Antonio José Socorro Marín. All rights reserved.
+
+1. Scope
+
+This license applies to the original Guardian F401 source code, firmware,
+software, protocol definitions, documentation, architecture, test material and
+other original content distributed with this repository (the "Work"), except
+for third-party materials that are expressly identified as subject to separate
+terms.
+
+2. Public visibility is not a grant of rights
+
+The Work is made publicly visible for research communication, technical review,
+citation and evaluation. Public visibility, downloading, archival by Zenodo,
+or availability through GitHub does not place the Work in the public domain and
+does not create an open-source license.
+
+3. Permitted acts
+
+You may view the Work and make only those temporary or incidental copies needed
+to access it through the hosting or archival service. You may cite and link to
+the Work in accordance with applicable law and accepted scholarly practice.
+
+4. Restricted acts
+
+Unless prior written permission is obtained from the copyright holder, no
+permission is granted to copy, reproduce, modify, adapt, translate, distribute,
+redistribute, publish derivative works, sublicense, sell, commercially exploit,
+incorporate the Work into another product or service, or use the Work to deploy
+or control physical equipment.
+
+5. Safety and security restriction
+
+The Work is experimental research software. It is not a certified functional-
+safety system, industrial-safety controller, cybersecurity-certified product,
+medical device, automotive safety controller or other certified safety-critical
+system. It must not be used as the sole mechanism for protecting people,
+machinery, equipment, property or critical operations.
+
+6. No warranty
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+NONINFRINGEMENT, SECURITY, AVAILABILITY OR CORRECTNESS. TO THE MAXIMUM EXTENT
+PERMITTED BY LAW, THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY CLAIM,
+DAMAGE OR OTHER LIABILITY ARISING FROM THE WORK OR ITS USE.
+
+7. Third-party materials
+
+Third-party software, libraries, headers, tools, trademarks and other materials
+remain subject to their respective licenses, notices and terms. Nothing in this
+license expands rights in those materials.
+
+8. Separate permissions
+
+Research collaboration, evaluation, reproduction, derivative-development and
+commercial licenses may be available under a separate written agreement from
+the copyright holder.
+
+9. Reservation of rights
+
+All rights not expressly granted are reserved by Antonio José Socorro Marín.
