@@ -1,0 +1,30 @@
+{
+    "schema_version":  1,
+    "generated_utc":  "2026-08-13T17:41:21.9474123Z",
+    "source_repository":  "[LOCAL SOURCE REPOSITORY REDACTED]",
+    "prepared_repository":  "[LOCAL STAGING DIRECTORY REDACTED]",
+    "in_place":  false,
+    "release_version":  "0.13.0",
+    "publication_performed":  false,
+    "zenodo_enabled":  false,
+    "doi_reserved":  false,
+    "license":  "Guardian F401 Proprietary License 1.0 - All Rights Reserved",
+    "author":  "Antonio José Socorro Marín",
+    "orcid":  "0009-0007-9089-9222",
+    "physical_hardware_validation":  "PENDING",
+    "validations":  [
+                        {
+                            "Name":  "Keil manifest validation",
+                            "Status":  "PASS",
+                            "Detail":  "Guardian M13 Keil source/include manifest: PASS"
+                        }
+                    ],
+    "evidence_privacy_sanitization":  {
+                                          "status":  "PASS",
+                                          "reason":  "Local user paths removed from public evidence copy",
+                                          "original_keil_log_sha256":  "A7BE9FB7B201A5D85B266E12D0AC8955624699087E1DB3DEA67C93272A3A8FAF",
+                                          "published_keil_log_sha256":  "0612CDF844E2AC98D8E6FBBBE3E357227335A10D6F5E24B84AAA8ACFBD3A706A",
+                                          "original_evidence_preserved":  true,
+                                          "technical_build_content_changed":  false
+                                      }
+}

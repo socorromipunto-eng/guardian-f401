@@ -78,6 +78,34 @@ Physical completion still requires a real Keil target build, STM32F401CDU6 board
 
 See `docs/m13-hardware-validation.md`.
 
+
+## Release and citation
+
+Project release: 0.13.0  
+Guardian Protocol: 0.1  
+Firmware semantic version: .13.0
+
+Author: Antonio José Socorro Marín  
+ORCID: https://orcid.org/0009-0007-9089-9222
+
+Citation metadata is provided in CITATION.cff. This release is governed by
+the proprietary terms in LICENSE; public visibility does not create an
+open-source license. Physical board qualification and safety certification are
+not claimed. See docs/release-evidence-v0.13.0.md.
+
+## Reproducible software validation
+
+`	ext
+python tools/validate_keil_manifest.py
+PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
+PYTHONPATH=protocol/python:simulator/src python -m unittest discover -s simulator/tests -v
+PYTHONPATH=protocol/python:simulator/src:console/src python -m unittest discover -s console/tests -v
+`
+
+The GitHub Actions workflows also compile and execute the portable C suites,
+STM32F401 compile contract and bounded robustness campaigns. These checks do
+not replace a Keil target build or physical hardware qualification.
+
 <!-- GUARDIAN-F401-RIGHTS-START -->
 
 ## Licensing and commercial use
