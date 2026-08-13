@@ -21,6 +21,7 @@ from guardian_protocol import (
     Frame,
     HealthStatus,
     MessageType,
+    SecurityStatus,
     decode_device_info,
     decode_baseline_control,
     decode_control_command_result,
@@ -28,12 +29,19 @@ from guardian_protocol import (
     decode_device_status,
     decode_dsp_features,
     decode_health_status,
+    decode_security_status,
     encode_baseline_control,
     encode_control_command,
 )
 
+# Import immutable M10 host security configuration.
+from .config import SecurityClientConfig
+
 # Import host-side protocol contract errors.
 from .errors import ProtocolClientError
+
+# Import the M10 authenticated-session manager.
+from .security_client import GuardianSecuritySession
 
 # Import request sequence allocation.
 from .sequence import SequenceManager
@@ -63,6 +71,7 @@ class GuardianClient:
         self,
         transport: ExchangeTransport | None = None,
         sequence_manager: SequenceManager | None = None,
+        security_config: SecurityClientConfig | None = None,
     ) -> None:
 
         # Use explicit transport or default local TCP.
@@ -71,6 +80,17 @@ class GuardianClient:
         # Use explicit sequence allocator or start from one.
         self._sequence_manager = sequence_manager or SequenceManager()
 
+        # Create M10 authenticated-session state only when credentials were supplied.
+        self._security_session = (
+            GuardianSecuritySession(
+                transport=self._transport,
+                sequence_manager=self._sequence_manager,
+                config=security_config,
+            )
+            if security_config is not None
+            else None
+        )
+
     # Expose configured exchange transport.
     @property
     def transport(self) -> ExchangeTransport:
@@ -78,6 +98,76 @@ class GuardianClient:
 
         # Return transport without changing state.
         return self._transport
+
+    # Read public M10 security/session diagnostics without authentication.
+    def security_status(self) -> SecurityStatus:
+        """Execute GET_SECURITY_STATUS and decode its fixed public payload."""
+
+        # Allocate request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the empty security-status request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.GET_SECURITY_STATUS,
+            sequence=sequence,
+        )
+
+        # Execute ordinary read-only transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode fixed M10 public diagnostics.
+        return decode_security_status(
+            response.payload
+        )
+
+    # Explicitly establish a new authenticated M10 session.
+    def authenticate_security(self):
+        """Authenticate using configured M10 credentials and return session metadata."""
+
+        # Require credentials for an explicit handshake.
+        if self._security_session is None:
+
+            # Reject missing host provisioning before transport side effects.
+            raise ProtocolClientError(
+                "M10 security credentials are not configured"
+            )
+
+        # Establish a fresh challenge-response session.
+        return self._security_session.authenticate()
+
+    # Execute one privileged command through M10 when credentials are configured.
+    def _privileged_exchange(
+        self,
+        command: Command,
+        payload: bytes,
+    ) -> Frame:
+        """Use SECURE_COMMAND when configured, otherwise preserve legacy direct mode."""
+
+        # Use authenticated, authorized and anti-replay-protected wrapping when available.
+        if self._security_session is not None:
+
+            # Execute one M10 protected operation.
+            return self._security_session.exchange(
+                int(command),
+                payload,
+            )
+
+        # Preserve M8/M9 compatibility with explicitly insecure simulator mode.
+        sequence = self._sequence_manager.next()
+
+        # Build the legacy direct privileged request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=command,
+            sequence=sequence,
+            payload=payload,
+        )
+
+        # Execute the legacy direct exchange.
+        return self._transport.exchange(
+            request
+        )
 
     # Verify connectivity and measure response latency.
     def ping(self) -> PingResult:
@@ -214,19 +304,11 @@ class GuardianClient:
         # Encode before transport side effects so invalid targets fail locally.
         payload = encode_baseline_control(control)
 
-        # Allocate one request correlation sequence.
-        sequence = self._sequence_manager.next()
-
-        # Build the baseline-start request.
-        request = Frame(
-            message_type=MessageType.REQUEST,
-            command=Command.BASELINE_CONTROL,
-            sequence=sequence,
-            payload=payload,
+        # Execute BASELINE_CONTROL through M10 when credentials are configured.
+        response = self._privileged_exchange(
+            Command.BASELINE_CONTROL,
+            payload,
         )
-
-        # Execute one synchronous transport exchange.
-        response = self._transport.exchange(request)
 
         # Decode and validate the device-normalized response.
         normalized = decode_baseline_control(
@@ -257,19 +339,11 @@ class GuardianClient:
         # Encode the reset request.
         payload = encode_baseline_control(control)
 
-        # Allocate one request correlation sequence.
-        sequence = self._sequence_manager.next()
-
-        # Build the baseline-reset request.
-        request = Frame(
-            message_type=MessageType.REQUEST,
-            command=Command.BASELINE_CONTROL,
-            sequence=sequence,
-            payload=payload,
+        # Execute BASELINE_CONTROL through M10 when credentials are configured.
+        response = self._privileged_exchange(
+            Command.BASELINE_CONTROL,
+            payload,
         )
-
-        # Execute one synchronous transport exchange.
-        response = self._transport.exchange(request)
 
         # Decode the normalized response.
         normalized = decode_baseline_control(
@@ -324,19 +398,11 @@ class GuardianClient:
             command
         )
 
-        # Allocate one request correlation sequence.
-        sequence = self._sequence_manager.next()
-
-        # Build the fixed control request.
-        request = Frame(
-            message_type=MessageType.REQUEST,
-            command=Command.CONTROL_COMMAND,
-            sequence=sequence,
-            payload=payload,
+        # Execute CONTROL_COMMAND through M10 when credentials are configured.
+        response = self._privileged_exchange(
+            Command.CONTROL_COMMAND,
+            payload,
         )
-
-        # Execute one synchronous transport exchange.
-        response = self._transport.exchange(request)
 
         # Decode the normalized successful command result.
         result = decode_control_command_result(

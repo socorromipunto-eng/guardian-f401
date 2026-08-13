@@ -3,16 +3,20 @@
 # Re-export the typed high-level Guardian client.
 from .client import GuardianClient, PingResult
 
-# Re-export immutable TCP and serial configuration.
-from .config import ClientConfig, SerialConfig
+# Re-export immutable TCP, serial and M10 security configuration.
+from .config import ClientConfig, SecurityClientConfig, SerialConfig
 
 # Re-export expected host-side error types.
 from .errors import (
     GuardianCtlError,
     ProtocolClientError,
     RemoteDeviceError,
+    SecurityConfigurationError,
     TransportError,
 )
+
+# Re-export M10 authenticated-session manager.
+from .security_client import GuardianSecuritySession
 
 # Re-export physical UART transport.
 from .serial_transport import GuardianSerialTransport
@@ -32,11 +36,14 @@ __all__ = [
     "ExchangeTransport",
     "GuardianClient",
     "GuardianCtlError",
+    "GuardianSecuritySession",
     "GuardianSerialTransport",
     "GuardianTcpTransport",
     "PingResult",
     "ProtocolClientError",
     "RemoteDeviceError",
+    "SecurityClientConfig",
+    "SecurityConfigurationError",
     "SequenceManager",
     "TelemetryMonitor",
     "TelemetryRecord",

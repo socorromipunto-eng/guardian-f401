@@ -223,6 +223,163 @@ static void guardian_embedded_transmit(
         &link->stats.tx_frames);
 }
 
+/* Build one ordinary correlated Guardian response header. */
+static void guardian_embedded_make_response(
+    const guardian_frame_t *request,
+    guardian_frame_t *response)
+{
+    /* Clear response storage before populating fields. */
+    (void)memset(
+        response,
+        0,
+        sizeof(*response));
+
+    /* Publish successful response semantics. */
+    response->message_type =
+        GUARDIAN_MESSAGE_RESPONSE;
+
+    /* Preserve command correlation. */
+    response->command =
+        request->command;
+
+    /* Use protocol v0.1 flags. */
+    response->flags =
+        GUARDIAN_SUPPORTED_FLAGS;
+
+    /* Preserve request sequence correlation. */
+    response->sequence =
+        request->sequence;
+}
+
+/* Build one ordinary correlated Guardian ERROR frame. */
+static void guardian_embedded_make_error(
+    const guardian_frame_t *request,
+    guardian_frame_t *response,
+    guardian_error_code_t error)
+{
+    /* Clear response storage before populating fields. */
+    (void)memset(
+        response,
+        0,
+        sizeof(*response));
+
+    /* Publish ERROR semantics. */
+    response->message_type =
+        GUARDIAN_MESSAGE_ERROR;
+
+    /* Preserve command correlation. */
+    response->command =
+        request->command;
+
+    /* Use protocol v0.1 flags. */
+    response->flags =
+        GUARDIAN_SUPPORTED_FLAGS;
+
+    /* Preserve request sequence correlation. */
+    response->sequence =
+        request->sequence;
+
+    /* Publish the canonical one-byte error payload. */
+    response->payload_length = 1U;
+
+    /* Store the selected Guardian error identifier. */
+    response->payload[0] =
+        (uint8_t)error;
+}
+
+/* Map internal M10 security outcomes into existing Guardian wire errors. */
+static guardian_error_code_t guardian_embedded_security_error(
+    guardian_security_result_t result)
+{
+    /* Report strict replay rejection explicitly. */
+    if (result ==
+        GUARDIAN_SECURITY_ERROR_REPLAY)
+    {
+        /* Use the reserved M1 replay error now activated by M10. */
+        return GUARDIAN_ERROR_REPLAY_DETECTED;
+    }
+
+    /* Report proof, tag, missing-session and provisioning failures as unauthorized. */
+    if (result ==
+        GUARDIAN_SECURITY_ERROR_UNAUTHORIZED)
+    {
+        /* Use the reserved M1 authorization error now activated by M10. */
+        return GUARDIAN_ERROR_UNAUTHORIZED;
+    }
+
+    /* Report malformed security payloads as invalid payload. */
+    if (result ==
+        GUARDIAN_SECURITY_ERROR_INVALID_PAYLOAD)
+    {
+        /* Preserve ordinary command payload diagnostics. */
+        return GUARDIAN_ERROR_INVALID_PAYLOAD;
+    }
+
+    /* Treat entropy/output/internal failures as internal errors. */
+    return GUARDIAN_ERROR_INTERNAL;
+}
+
+/* Execute one authenticated privileged M8/M9 command without re-entering outer dispatch. */
+static guardian_protocol_result_t guardian_embedded_dispatch_privileged(
+    guardian_embedded_link_t *link,
+    const guardian_frame_t *request,
+    guardian_frame_t *response)
+{
+    /* Route M8 baseline lifecycle changes. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL)
+    {
+        /* Execute the existing bounded M8 handler. */
+        guardian_protocol_result_t result =
+            guardian_health_handle_request(
+                &link->health,
+                request,
+                response);
+
+        /* Re-evaluate M9 after successful baseline lifecycle mutation. */
+        if ((result ==
+             GUARDIAN_PROTOCOL_OK) &&
+            (response->message_type ==
+             GUARDIAN_MESSAGE_RESPONSE))
+        {
+            /* Enforce M9 readiness/fault policy immediately. */
+            guardian_embedded_update_control_health(
+                link);
+        }
+
+        /* Return the existing handler result. */
+        return result;
+    }
+
+    /* Route M9 safety-gated supervisory actions. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND)
+    {
+        /* Execute existing M9 control policy. */
+        guardian_protocol_result_t result =
+            guardian_control_handle_request(
+                &link->control,
+                request,
+                response);
+
+        /* Reflect M9 state through legacy status/telemetry. */
+        guardian_embedded_sync_control_state(
+            link);
+
+        /* Return the existing handler result. */
+        return result;
+    }
+
+    /* Reject unclassified secure inner commands. */
+    guardian_embedded_make_error(
+        request,
+        response,
+        GUARDIAN_ERROR_UNKNOWN_COMMAND);
+
+    /* Report successful ERROR construction. */
+    return GUARDIAN_PROTOCOL_OK;
+}
+
 /* Initialize the complete transport-independent communication path. */
 guardian_protocol_result_t guardian_embedded_link_init(
     guardian_embedded_link_t *link,
@@ -275,6 +432,13 @@ guardian_protocol_result_t guardian_embedded_link_init(
     /* Initialize M9 supervision disabled, output-safe and interlock-open. */
     guardian_control_init(
         &link->control);
+
+    /* Initialize M10 security unprovisioned with compatibility gate disabled at this layer. */
+    guardian_security_init(
+        &link->security);
+
+    /* Preserve low-level M9 compatibility until the application explicitly requires M10. */
+    link->security_required = 0U;
 
     /* Initialize immutable command-service identity. */
     result =
@@ -482,6 +646,67 @@ uint8_t guardian_embedded_link_run_permit(
         &link->control);
 }
 
+/* Install M10 PSK provisioning and cryptographic nonce callback. */
+guardian_security_result_t guardian_embedded_link_configure_security(
+    guardian_embedded_link_t *link,
+    const guardian_security_config_t *config)
+{
+    /* Reject missing middleware storage. */
+    if (link == NULL)
+    {
+        /* Report invalid caller state. */
+        return GUARDIAN_SECURITY_ERROR_NULL_ARGUMENT;
+    }
+
+    /* Delegate validated secret provisioning to the M10 module. */
+    return guardian_security_configure(
+        &link->security,
+        config);
+}
+
+/* Enable or disable direct privileged-command rejection. */
+void guardian_embedded_link_require_security(
+    guardian_embedded_link_t *link,
+    uint8_t required)
+{
+    /* Ignore missing middleware storage defensively. */
+    if (link == NULL)
+    {
+        /* Return without changing policy. */
+        return;
+    }
+
+    /* Normalize the application-selected security gate. */
+    link->security_required =
+        (required != 0U)
+        ? 1U
+        : 0U;
+}
+
+/* Return public M10 security diagnostics by value. */
+guardian_security_status_t guardian_embedded_link_security_status(
+    guardian_embedded_link_t *link)
+{
+    /* Delegate deterministic null handling to the security module. */
+    if (link == NULL)
+    {
+        /* Return unconfigured empty status. */
+        return guardian_security_status(
+            NULL,
+            0U);
+    }
+
+    /* Read monotonic time from the platform boundary. */
+    uint32_t now_seconds =
+        link->io.uptime_seconds(
+            link->io.context);
+
+    /* Return public diagnostics with inactivity expiry applied. */
+    return guardian_security_status(
+        &link->security,
+        now_seconds);
+}
+
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(
     guardian_embedded_link_t *link)
@@ -588,9 +813,220 @@ void guardian_embedded_link_poll(
         guardian_embedded_increment_u32(
             &link->stats.rx_frames);
 
-        /* Route M5 telemetry configuration to the telemetry engine. */
+        /* Read one monotonic timestamp for M10 session expiry and handshake state. */
+        uint32_t now_seconds =
+            link->io.uptime_seconds(
+                link->io.context);
+
+        /* Route M10 AUTH_BEGIN challenge generation. */
         if (request.command ==
-            (uint8_t)GUARDIAN_COMMAND_SET_TELEMETRY)
+            (uint8_t)GUARDIAN_COMMAND_AUTH_BEGIN)
+        {
+            /* Build the ordinary outer response header. */
+            guardian_embedded_make_response(
+                &request,
+                &output);
+
+            /* Process the fixed challenge request into the response payload. */
+            guardian_security_result_t security_result =
+                guardian_security_auth_begin(
+                    &link->security,
+                    request.payload,
+                    request.payload_length,
+                    now_seconds,
+                    output.payload,
+                    GUARDIAN_MAX_PAYLOAD_SIZE,
+                    &output.payload_length);
+
+            /* Convert security failures into existing Guardian ERROR semantics. */
+            if (security_result !=
+                GUARDIAN_SECURITY_OK)
+            {
+                /* Build one correlated plain outer error. */
+                guardian_embedded_make_error(
+                    &request,
+                    &output,
+                    guardian_embedded_security_error(
+                        security_result));
+            }
+        }
+        /* Route M10 AUTH_FINISH client proof verification. */
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_AUTH_FINISH)
+        {
+            /* Build the ordinary outer response header. */
+            guardian_embedded_make_response(
+                &request,
+                &output);
+
+            /* Verify the client proof and activate a session. */
+            guardian_security_result_t security_result =
+                guardian_security_auth_finish(
+                    &link->security,
+                    request.payload,
+                    request.payload_length,
+                    now_seconds,
+                    output.payload,
+                    GUARDIAN_MAX_PAYLOAD_SIZE,
+                    &output.payload_length);
+
+            /* Convert security failures into existing Guardian ERROR semantics. */
+            if (security_result !=
+                GUARDIAN_SECURITY_OK)
+            {
+                /* Build one correlated plain outer error. */
+                guardian_embedded_make_error(
+                    &request,
+                    &output,
+                    guardian_embedded_security_error(
+                        security_result));
+            }
+        }
+        /* Route public M10 session diagnostics. */
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_GET_SECURITY_STATUS)
+        {
+            /* Reject undefined status-query payload bytes. */
+            if (request.payload_length != 0U)
+            {
+                /* Build a normal invalid-payload error. */
+                guardian_embedded_make_error(
+                    &request,
+                    &output,
+                    GUARDIAN_ERROR_INVALID_PAYLOAD);
+            }
+            else
+            {
+                /* Read one public security snapshot. */
+                guardian_security_status_t status =
+                    guardian_security_status(
+                        &link->security,
+                        now_seconds);
+
+                /* Build successful outer response semantics. */
+                guardian_embedded_make_response(
+                    &request,
+                    &output);
+
+                /* Encode public diagnostics without secret material. */
+                guardian_security_result_t security_result =
+                    guardian_security_encode_status_payload(
+                        &status,
+                        output.payload,
+                        GUARDIAN_MAX_PAYLOAD_SIZE,
+                        &output.payload_length);
+
+                /* Treat impossible encoding failure as internal error. */
+                if (security_result !=
+                    GUARDIAN_SECURITY_OK)
+                {
+                    /* Replace the response with one internal error. */
+                    guardian_embedded_make_error(
+                        &request,
+                        &output,
+                        GUARDIAN_ERROR_INTERNAL);
+                }
+            }
+        }
+        /* Route one authenticated and anti-replay-protected privileged command. */
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_SECURE_COMMAND)
+        {
+            /* Store one authenticated inner request. */
+            guardian_frame_t inner_request = {0};
+
+            /* Store one authenticated inner application result. */
+            guardian_frame_t inner_response = {0};
+
+            /* Store the verified strict request counter for response authentication. */
+            uint64_t secure_counter = 0ULL;
+
+            /* Authenticate, validate session identity and enforce strict counter ordering. */
+            guardian_security_result_t security_result =
+                guardian_security_unwrap_request(
+                    &link->security,
+                    &request,
+                    now_seconds,
+                    &inner_request,
+                    &secure_counter);
+
+            /* Return plain outer errors when secure-envelope validation itself fails. */
+            if (security_result !=
+                GUARDIAN_SECURITY_OK)
+            {
+                /* Map authentication/replay failure to the published error registry. */
+                guardian_embedded_make_error(
+                    &request,
+                    &output,
+                    guardian_embedded_security_error(
+                        security_result));
+            }
+            else
+            {
+                /* Enforce the authenticated role before privileged dispatch. */
+                if (guardian_security_authorize(
+                        &link->security,
+                        inner_request.command) == 0)
+                {
+                    /* Build an authenticated inner authorization error. */
+                    guardian_embedded_make_error(
+                        &inner_request,
+                        &inner_response,
+                        GUARDIAN_ERROR_UNAUTHORIZED);
+                }
+                else
+                {
+                    /* Execute only the explicitly classified M8/M9 privileged surface. */
+                    protocol_result =
+                        guardian_embedded_dispatch_privileged(
+                            link,
+                            &inner_request,
+                            &inner_response);
+                }
+
+                /* Wrap both successful and application ERROR results with response authenticity. */
+                if (protocol_result ==
+                    GUARDIAN_PROTOCOL_OK)
+                {
+                    /* Authenticate the complete inner response. */
+                    security_result =
+                        guardian_security_wrap_response(
+                            &link->security,
+                            &request,
+                            secure_counter,
+                            &inner_response,
+                            &output);
+
+                    /* Convert impossible wrapping failure into a plain internal error. */
+                    if (security_result !=
+                        GUARDIAN_SECURITY_OK)
+                    {
+                        /* Build one correlated internal failure. */
+                        guardian_embedded_make_error(
+                            &request,
+                            &output,
+                            guardian_embedded_security_error(
+                                security_result));
+                    }
+                }
+            }
+        }
+        /* Reject legacy direct privileged commands when the application enables the M10 gate. */
+        else if ((link->security_required != 0U) &&
+                 ((request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL) ||
+                  (request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND)))
+        {
+            /* Require authenticated SECURE_COMMAND wrapping instead. */
+            guardian_embedded_make_error(
+                &request,
+                &output,
+                GUARDIAN_ERROR_UNAUTHORIZED);
+        }
+        /* Route M5 telemetry configuration to the telemetry engine. */
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_SET_TELEMETRY)
         {
             /* Process and normalize the telemetry configuration. */
             protocol_result =
@@ -610,53 +1046,58 @@ void guardian_embedded_link_poll(
                     &request,
                     &output);
         }
-        else if ((request.command ==
-                  (uint8_t)GUARDIAN_COMMAND_GET_HEALTH_STATUS) ||
-                 (request.command ==
-                  (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL))
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_GET_HEALTH_STATUS)
         {
-            /* Route M8 baseline lifecycle and health queries to the health model. */
+            /* Route the public M8 health query. */
             protocol_result =
                 guardian_health_handle_request(
                     &link->health,
                     &request,
                     &output);
-
-            /* Re-evaluate M9 when a baseline command may have changed M8 readiness. */
-            if ((protocol_result ==
-                 GUARDIAN_PROTOCOL_OK) &&
-                (request.command ==
-                 (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL) &&
-                (output.message_type ==
-                 GUARDIAN_MESSAGE_RESPONSE))
-            {
-                /* Enforce safe-off if baseline reset/start made health unready. */
-                guardian_embedded_update_control_health(
-                    link);
-            }
         }
-        else if ((request.command ==
-                  (uint8_t)GUARDIAN_COMMAND_GET_CONTROL_STATUS) ||
-                 (request.command ==
-                  (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND))
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL)
         {
-            /* Route M9 status and safety-gated host actions to supervisory control. */
+            /* Preserve M8/M9 direct compatibility only when the M10 gate is disabled. */
+            protocol_result =
+                guardian_embedded_dispatch_privileged(
+                    link,
+                    &request,
+                    &output);
+        }
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_GET_CONTROL_STATUS)
+        {
+            /* Route the public M9 control-status query. */
             protocol_result =
                 guardian_control_handle_request(
                     &link->control,
                     &request,
                     &output);
 
-            /* Reflect successful or faulting M9 command effects through legacy device state. */
+            /* Reflect current M9 state through legacy device status. */
             guardian_embedded_sync_control_state(
                 link);
+        }
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND)
+        {
+            /* Preserve M9 direct compatibility only when the M10 gate is disabled. */
+            protocol_result =
+                guardian_embedded_dispatch_privileged(
+                    link,
+                    &request,
+                    &output);
         }
         else
         {
             /* Build runtime diagnostics before the current response increments TX. */
-            runtime = guardian_embedded_runtime(link);
+            runtime =
+                guardian_embedded_runtime(
+                    link);
 
-            /* Dispatch the existing deterministic device commands. */
+            /* Dispatch the existing deterministic read-only device commands. */
             protocol_result =
                 guardian_device_service_handle(
                     &link->service,

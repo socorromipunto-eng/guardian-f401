@@ -3,8 +3,11 @@
 # Import argparse for the dependency-free CLI.
 import argparse
 
-# Import shared M9 supervisory action identifiers.
-from guardian_protocol import ControlAction
+# Import os for environment-based M10 credential configuration.
+import os
+
+# Import shared M9 action and M10 authorization identifiers.
+from guardian_protocol import ControlAction, SecurityRole
 
 # Import sys for explicit stdout and stderr routing.
 import sys
@@ -19,6 +22,7 @@ from .config import (
     DEFAULT_SERIAL_BAUD,
     DEFAULT_TIMEOUT_SECONDS,
     ClientConfig,
+    SecurityClientConfig,
     SerialConfig,
 )
 
@@ -41,6 +45,10 @@ from .presentation import (
     render_info_text,
     render_ping_json,
     render_ping_text,
+    render_authenticated_session_json,
+    render_authenticated_session_text,
+    render_security_status_json,
+    render_security_status_text,
     render_status_json,
     render_status_text,
     render_telemetry_json,
@@ -112,6 +120,28 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="emit JSON or JSON Lines output",
+    )
+
+
+    # Configure the optional M10 PSK from command line or environment.
+    parser.add_argument(
+        "--psk-hex",
+        default=os.environ.get("GUARDIAN_PSK_HEX"),
+        help=(
+            "64 hexadecimal characters for the 256-bit M10 PSK; "
+            "defaults to GUARDIAN_PSK_HEX"
+        ),
+    )
+
+    # Configure the requested authenticated authorization role.
+    parser.add_argument(
+        "--role",
+        choices=("observer", "operator", "admin"),
+        default=os.environ.get("GUARDIAN_ROLE", "operator").lower(),
+        help=(
+            "M10 authenticated role "
+            "(observer, operator, admin; default: operator)"
+        ),
     )
 
     # Create the required command registry.
@@ -218,6 +248,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="clear latched faults only after safe recovery conditions pass",
     )
 
+    # Register M10 authenticated-session diagnostics and handshake testing.
+    security_parser = subcommands.add_parser(
+        "security",
+        help="inspect or test M10 authenticated-session security",
+    )
+
+    # Create required M10 security actions.
+    security_actions = security_parser.add_subparsers(
+        dest="security_action",
+        required=True,
+    )
+
+    # Register public GET_SECURITY_STATUS.
+    security_actions.add_parser(
+        "status",
+        help="read public provisioning/session/replay diagnostics",
+    )
+
+    # Register an explicit challenge-response authentication test.
+    security_actions.add_parser(
+        "authenticate",
+        help="perform AUTH_BEGIN/AUTH_FINISH using the configured PSK",
+    )
+
     # Register live M5 telemetry streaming.
     telemetry_parser = subcommands.add_parser(
         "telemetry",
@@ -268,6 +322,54 @@ def build_endpoint_config(
     )
 
 
+# Build optional M10 host security configuration.
+def build_security_config(
+    args: argparse.Namespace,
+) -> SecurityClientConfig | None:
+    """Return validated M10 credentials or None when no PSK was supplied."""
+
+    # Preserve legacy/insecure compatibility when no PSK was configured.
+    if not args.psk_hex:
+
+        # Report absence of M10 client credentials.
+        return None
+
+    # Require exact 64-character hexadecimal encoding.
+    if len(args.psk_hex) != 64:
+
+        # Reject wrong key width before transport side effects.
+        raise ValueError(
+            "M10 PSK must contain exactly 64 hexadecimal characters"
+        )
+
+    # Decode the hexadecimal PSK.
+    try:
+
+        # Convert human configuration into exact 32-byte key material.
+        psk = bytes.fromhex(
+            args.psk_hex
+        )
+    except ValueError as exc:
+
+        # Reject non-hexadecimal input.
+        raise ValueError(
+            "M10 PSK contains non-hexadecimal characters"
+        ) from exc
+
+    # Map CLI role text into the shared wire enum.
+    role = {
+        "observer": SecurityRole.OBSERVER,
+        "operator": SecurityRole.OPERATOR,
+        "admin": SecurityRole.ADMIN,
+    }[args.role]
+
+    # Return immutable validated security configuration.
+    return SecurityClientConfig(
+        psk=psk,
+        role=role,
+    )
+
+
 # Build a synchronous request-response transport from endpoint configuration.
 def build_transport(
     config: ClientConfig | SerialConfig,
@@ -299,6 +401,9 @@ def main(argv: list[str] | None = None) -> int:
 
         # Build immutable TCP or physical serial configuration.
         endpoint_config = build_endpoint_config(args)
+
+        # Build optional M10 authentication configuration.
+        security_config = build_security_config(args)
     except ValueError as exc:
 
         # Print configuration failure to stderr.
@@ -372,8 +477,11 @@ def main(argv: list[str] | None = None) -> int:
     # Build the existing synchronous request-response transport.
     transport = build_transport(endpoint_config)
 
-    # Create the high-level typed Guardian client.
-    client = GuardianClient(transport=transport)
+    # Create the high-level typed Guardian client with optional M10 credentials.
+    client = GuardianClient(
+        transport=transport,
+        security_config=security_config,
+    )
 
     # Normalize expected synchronous operational failures.
     try:
@@ -479,6 +587,59 @@ def main(argv: list[str] | None = None) -> int:
 
                 # Print human-readable health output.
                 print(render_health_text(health))
+
+            # Report success.
+            return 0
+
+        # Dispatch M10 security diagnostics or explicit authentication.
+        if args.command == "security":
+
+            # Read public security status without requiring a PSK.
+            if args.security_action == "status":
+
+                # Execute GET_SECURITY_STATUS.
+                status = client.security_status()
+
+                # Select JSON output.
+                if args.json:
+
+                    # Print machine-readable public diagnostics.
+                    print(render_security_status_json(status))
+                else:
+
+                    # Print human-readable public diagnostics.
+                    print(render_security_status_text(status))
+
+                # Report success.
+                return 0
+
+            # Require configured credentials for explicit authentication.
+            if security_config is None:
+
+                # Print a concise local configuration error.
+                print(
+                    (
+                        "guardianctl: M10 authentication requires "
+                        "--psk-hex or GUARDIAN_PSK_HEX"
+                    ),
+                    file=sys.stderr,
+                )
+
+                # Return configuration failure status.
+                return 2
+
+            # Execute a complete challenge-response authentication.
+            session = client.authenticate_security()
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable session metadata.
+                print(render_authenticated_session_json(session))
+            else:
+
+                # Print human-readable session metadata.
+                print(render_authenticated_session_text(session))
 
             # Report success.
             return 0

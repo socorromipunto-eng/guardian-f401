@@ -1,14 +1,28 @@
 # guardianctl
 
-M9 adds supervisory-control status and safety-gated actions.
+M10 adds optional authenticated sessions for privileged commands.
+
+Configure credentials with:
 
 ```text
-python tools/guardianctl.py control status
-python tools/guardianctl.py control arm
-python tools/guardianctl.py control disarm
-python tools/guardianctl.py control clear-fault
+--psk-hex <64 hex characters>
+--role operator
 ```
 
-The protocol deliberately has no host RUN/START action in M9.
+or:
 
-Use `baseline start` before ARM.
+```text
+GUARDIAN_PSK_HEX
+GUARDIAN_ROLE
+```
+
+Commands:
+
+```text
+python tools/guardianctl.py security status
+python tools/guardianctl.py security authenticate
+python tools/guardianctl.py baseline start --samples 64
+python tools/guardianctl.py control arm
+```
+
+When a PSK is configured, baseline/control operations use `SECURE_COMMAND` automatically.

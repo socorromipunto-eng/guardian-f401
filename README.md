@@ -1,53 +1,64 @@
 # Guardian F401
 
-Guardian F401 is an STM32F401CDU6 embedded machine-health and supervisory-control platform.
+Guardian F401 is an STM32F401CDU6 embedded machine-health, supervisory-control and secure command platform.
 
 ## Current Pipeline
 
 ```text
-Sensors
-  |
-  v
 M6 acquisition
   |
-  v
 M7 DSP / FFT
   |
-  v
-M8 healthy baseline + anomaly model
+M8 machine-health baseline
   |
-  v
-M9 supervisory-control policy
+M9 supervisory control
   |
-  +--> local interlock
-  +--> local-only run request
-  +--> degraded operation
-  +--> fault latching
-  `--> logical safe run permit
+M10 authenticated privileged command channel
+  |
+  +--> HMAC-SHA-256
+  +--> mutual PSK proof
+  +--> role authorization
+  `--> strict uint64 anti-replay counter
 ```
 
-## M9 Safety Property
+## M10 Security Demo
 
-The host has no RUN or START command.
-
-`control arm` only arms supervision and leaves the logical permit safe-off.
-
-The actual run request remains local to firmware/application integration.
-
-## Host Demo
+Start the software simulator with security enforcement:
 
 ```text
-python tools/run_simulator.py
+python tools/run_simulator.py --secure
+```
+
+Set the intentionally public demo-only key:
+
+```text
+GUARDIAN_PSK_HEX =
+00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f
+```
+
+Then:
+
+```text
+python tools/guardianctl.py security authenticate
 python tools/guardianctl.py baseline start --samples 64
 python tools/guardianctl.py control arm
-python tools/guardianctl.py control status
+python tools/guardianctl.py security status
 ```
 
-Safe disable:
+The demo key must never be used on physical hardware.
+
+Production firmware does not embed a PSK in the repository.
+
+## Protected Commands
 
 ```text
-python tools/guardianctl.py control disarm
+BASELINE_CONTROL -> OPERATOR
+CONTROL_COMMAND  -> OPERATOR
 ```
+
+M10 protects privileged command authenticity, authorization and replay.
+
+It does not encrypt payloads.
 
 ## Milestones
 
@@ -69,8 +80,10 @@ M7 DSP / FFT / spectral features — completed.
 
 M8 machine-health baseline + anomaly detection — completed.
 
-M9 supervisory control + fault policy — implemented.
+M9 supervisory control + fault policy — completed.
 
-M10 authenticated sessions + authorization + anti-replay — next.
+M10 authenticated sessions + authorization + anti-replay — implemented.
 
-See `docs/m9-control.md`.
+M11 robustness / fuzzing / fault injection — next.
+
+See `docs/m10-security.md`.

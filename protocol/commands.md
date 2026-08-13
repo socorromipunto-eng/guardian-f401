@@ -16,6 +16,10 @@ Guardian Protocol `0.1`.
 | `0x13` | `BASELINE_CONTROL` | Binary BaselineControl schema v1 | Normalized BaselineControl schema v1 |
 | `0x14` | `GET_CONTROL_STATUS` | Empty | Binary ControlStatus schema v1 |
 | `0x15` | `CONTROL_COMMAND` | Binary ControlCommand schema v1 | Binary ControlCommandResult schema v1 |
+| `0x30` | `AUTH_BEGIN` | Binary AuthBegin schema v1 | Binary AuthChallenge schema v1 |
+| `0x31` | `AUTH_FINISH` | Binary AuthFinish schema v1 | Binary AuthenticatedSession schema v1 |
+| `0x32` | `GET_SECURITY_STATUS` | Empty | Binary SecurityStatus schema v1 |
+| `0x33` | `SECURE_COMMAND` | Authenticated secure envelope | Authenticated secure envelope |
 | `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
 | `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
@@ -301,3 +305,156 @@ Fault bits:
 0x0008 OUTPUT_FAILURE
 0x0010 OUTPUT_UNAVAILABLE
 ```
+
+
+## M10 Authenticated Sessions
+
+M10 preserves the original Guardian frame format.
+
+Security is carried inside command payloads.
+
+The M10 reference profile uses:
+
+```text
+PSK:              32 bytes / 256 bits
+Hash:             SHA-256
+MAC:              HMAC-SHA-256
+Transmitted tag:  first 16 bytes / 128 bits
+Client nonce:     16 bytes
+Device nonce:     16 bytes
+Session counter:  unsigned 64-bit
+Byte order:       big-endian
+```
+
+The PSK is never transmitted.
+
+### AUTH_BEGIN request
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     REQUESTED_ROLE
+2       16    CLIENT_NONCE
+```
+
+Roles:
+
+```text
+0 NONE
+1 OBSERVER
+2 OPERATOR
+3 ADMIN
+```
+
+### AUTH_BEGIN response
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     GRANTED_ROLE
+2       4     SESSION_ID
+6       16    DEVICE_NONCE
+22      16    SERVER_PROOF
+```
+
+`SERVER_PROOF` is the first 16 bytes of HMAC-SHA-256 over the domain-separated handshake transcript.
+
+The client verifies this proof before sending its own proof.
+
+### AUTH_FINISH request
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ROLE
+2       4     SESSION_ID
+6       16    CLIENT_PROOF
+```
+
+### AUTH_FINISH response
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ROLE
+2       4     SESSION_ID
+6       2     SESSION_TIMEOUT_SECONDS
+```
+
+A per-session 256-bit HMAC key is derived from the PSK, role, session identifier and both nonces using a separate HMAC domain label.
+
+### SECURE_COMMAND request
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       4     SESSION_ID
+5       8     COUNTER
+13      1     INNER_COMMAND
+14      2     INNER_PAYLOAD_LENGTH
+16      N     INNER_PAYLOAD
+16+N    16    TAG
+```
+
+The request tag authenticates:
+
+```text
+domain label
+schema
+session id
+counter
+outer Guardian sequence
+inner command
+inner payload length
+inner payload
+```
+
+M10 uses a strict synchronous anti-replay policy:
+
+```text
+first counter = 1
+accepted counter = exactly next_counter
+duplicate counter -> REPLAY_DETECTED
+skipped counter -> REPLAY_DETECTED
+```
+
+If delivery becomes ambiguous after a transport failure, the host establishes a fresh session rather than guessing the device counter.
+
+### SECURE_COMMAND response
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       4     SESSION_ID
+5       8     COUNTER
+13      1     INNER_MESSAGE_TYPE
+14      1     INNER_COMMAND
+15      2     INNER_PAYLOAD_LENGTH
+17      N     INNER_PAYLOAD
+17+N    16    TAG
+```
+
+Application errors such as `BUSY` or `UNAUTHORIZED` can therefore be returned inside an authenticated response envelope.
+
+### Protected M10 command policy
+
+The reference protected surface is:
+
+```text
+BASELINE_CONTROL -> minimum role OPERATOR
+CONTROL_COMMAND  -> minimum role OPERATOR
+```
+
+The STM32 application enables direct privileged-command rejection by default.
+
+Read-only status queries remain available without authentication in M10.
+
+Asynchronous telemetry remains CRC-protected rather than HMAC-protected in this milestone.
+
+M10 provides authenticity, authorization and replay protection for privileged commands. It does not provide confidentiality/encryption.

@@ -4,7 +4,12 @@
 import argparse
 
 # Import published simulator defaults and immutable configuration.
-from .config import DEFAULT_HOST, DEFAULT_PORT, SimulatorConfig
+from .config import (
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+    DEFAULT_SECURITY_PSK_HEX,
+    SimulatorConfig,
+)
 
 # Import the foreground TCP simulator runner.
 from .server import run_server
@@ -34,13 +39,39 @@ def parse_args() -> SimulatorConfig:
         help=f"TCP port (default: {DEFAULT_PORT})",
     )
 
+    # Enable the M10 privileged-command security gate explicitly.
+    parser.add_argument(
+        "--secure",
+        action="store_true",
+        help="require M10 authenticated wrapping for baseline/control commands",
+    )
+
+    # Allow an explicit simulator-only PSK override.
+    parser.add_argument(
+        "--psk-hex",
+        default=DEFAULT_SECURITY_PSK_HEX,
+        help="64 hexadecimal characters for the simulator M10 PSK",
+    )
+
     # Parse arguments supplied by the current process.
     args = parser.parse_args()
 
-    # Convert parsed values into the immutable validated simulator configuration.
+    # Require exact 256-bit hexadecimal key material.
+    if len(args.psk_hex) != 64:
+        raise SystemExit("--psk-hex must contain exactly 64 hexadecimal characters")
+
+    # Decode the simulator PSK.
+    try:
+        security_psk = bytes.fromhex(args.psk_hex)
+    except ValueError as exc:
+        raise SystemExit("--psk-hex contains non-hexadecimal characters") from exc
+
+    # Convert parsed values into immutable validated simulator configuration.
     return SimulatorConfig(
         host=args.host,
         port=args.port,
+        security_enabled=args.secure,
+        security_psk=security_psk,
     )
 
 

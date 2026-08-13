@@ -19,6 +19,9 @@
 /* Include the M9 supervisory-control snapshot exposed by this application API. */
 #include "guardian_control.h"
 
+/* Include the M10 provisioning and public security-status types. */
+#include "guardian_security.h"
+
 /* Include fixed-width integer types for baud and tick APIs. */
 #include <stdint.h>
 
@@ -66,3 +69,11 @@ uint8_t guardian_firmware_app_run_permit(void);
 guardian_control_status_t guardian_firmware_app_control_status(void);
 
 #endif
+
+
+/* Install a provisioned M10 PSK and cryptographic nonce source. */
+guardian_security_result_t guardian_firmware_app_configure_security(
+    const guardian_security_config_t *config);
+
+/* Return public M10 authentication/session diagnostics. */
+guardian_security_status_t guardian_firmware_app_security_status(void);

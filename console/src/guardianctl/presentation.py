@@ -12,6 +12,8 @@ from guardian_protocol import (
     DeviceStatus,
     DspFeatures,
     HealthStatus,
+    AuthenticatedSession,
+    SecurityStatus,
 )
 
 # Import typed PING result.
@@ -536,6 +538,99 @@ def render_control_result_json(
             "action": result.action.name,
             "run_permit": result.run_permit,
             "state": result.state.name,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one public M10 security-status snapshot for a human operator.
+def render_security_status_text(
+    status: SecurityStatus,
+) -> str:
+    """Return human-readable M10 security diagnostics."""
+
+    # Return stable security diagnostic lines.
+    return "\n".join(
+        (
+            (
+                "Security provisioned: "
+                f"{'yes' if status.configured else 'no'}"
+            ),
+            (
+                "Authenticated session: "
+                f"{'active' if status.active else 'none'}"
+            ),
+            f"Active role: {status.active_role.name}",
+            f"Session ID: 0x{status.session_id:08X}",
+            f"Next secure counter: {status.next_counter}",
+            f"Session timeout: {status.timeout_seconds} s",
+            f"Remaining lifetime: {status.remaining_seconds} s",
+            f"Authentication successes: {status.auth_successes}",
+            f"Authentication failures: {status.auth_failures}",
+            f"Replay rejections: {status.replay_rejections}",
+            (
+                "Authorization rejections: "
+                f"{status.unauthorized_rejections}"
+            ),
+        )
+    )
+
+
+# Render one public M10 security-status snapshot as JSON.
+def render_security_status_json(
+    status: SecurityStatus,
+) -> str:
+    """Return machine-readable M10 security diagnostics."""
+
+    # Serialize stable fields without secret material.
+    return json.dumps(
+        {
+            "active": status.active,
+            "active_role": status.active_role.name,
+            "auth_failures": status.auth_failures,
+            "auth_successes": status.auth_successes,
+            "configured": status.configured,
+            "next_counter": status.next_counter,
+            "remaining_seconds": status.remaining_seconds,
+            "replay_rejections": status.replay_rejections,
+            "session_id": status.session_id,
+            "timeout_seconds": status.timeout_seconds,
+            "unauthorized_rejections": status.unauthorized_rejections,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one successful M10 authentication for a human operator.
+def render_authenticated_session_text(
+    session: AuthenticatedSession,
+) -> str:
+    """Return human-readable M10 session establishment output."""
+
+    # Return concise authenticated-session metadata.
+    return "\n".join(
+        (
+            "Authentication: SUCCESS",
+            f"Role: {session.role.name}",
+            f"Session ID: 0x{session.session_id:08X}",
+            f"Timeout: {session.timeout_seconds} s",
+        )
+    )
+
+
+# Render one successful M10 authentication as JSON.
+def render_authenticated_session_json(
+    session: AuthenticatedSession,
+) -> str:
+    """Return machine-readable M10 session establishment output."""
+
+    # Serialize public session metadata only.
+    return json.dumps(
+        {
+            "authenticated": True,
+            "role": session.role.name,
+            "session_id": session.session_id,
+            "timeout_seconds": session.timeout_seconds,
         },
         sort_keys=True,
     )

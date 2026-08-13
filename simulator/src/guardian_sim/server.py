@@ -191,7 +191,14 @@ def run_server(
 
         # Print the supported synchronous command set.
         print(
-            "Commands: PING, DEVICE_INFO, GET_STATUS, SET_TELEMETRY"
+            "Commands: PING, DEVICE_INFO, GET_STATUS, SET_TELEMETRY, "
+            "AUTH_BEGIN, AUTH_FINISH, GET_SECURITY_STATUS, SECURE_COMMAND"
+        )
+
+        # Print the selected M10 privileged-command policy.
+        print(
+            "M10 privileged security: "
+            + ("ENABLED" if active_config.security_enabled else "compatibility mode")
         )
 
         # Print the asynchronous channel.

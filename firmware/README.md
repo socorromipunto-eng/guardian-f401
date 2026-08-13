@@ -1,32 +1,25 @@
 # Firmware
 
-M9 adds transport-independent supervisory control.
+M10 adds portable PSK authenticated sessions around privileged M8/M9 commands.
 
 ```text
-M8 health
-local interlock
-local run request
-      |
-      v
-guardian_control
-      |
-      v
-logical run permit
+AUTH_BEGIN
+AUTH_FINISH
+SECURE_COMMAND
+GET_SECURITY_STATUS
 ```
 
-Host ARM cannot assert the permit directly.
-
-Application integration APIs:
+Portable modules:
 
 ```text
-guardian_firmware_app_set_local_run_request()
-guardian_firmware_app_set_interlock_closed()
-guardian_firmware_app_run_permit()
-guardian_firmware_app_control_status()
+firmware/Security/Src/guardian_crypto.c
+firmware/Security/Src/guardian_security.c
 ```
 
-Startup is safe-off with interlock open.
+The STM32 application requires secure wrapping for baseline/control commands by default.
 
-The logical output must be connected to final board-specific hardware by the product integration layer.
+No production PSK is stored in the repository.
 
-See `docs/m9-control.md`.
+Board/product integration must supply a high-entropy 32-byte PSK and cryptographically strong nonce callback.
+
+See `docs/m10-security.md`.

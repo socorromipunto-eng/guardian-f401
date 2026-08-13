@@ -19,6 +19,9 @@
 /* Include the M9 supervisory-control policy and safe-output abstraction. */
 #include "guardian_control.h"
 
+/* Include the M10 authenticated-session and anti-replay policy. */
+#include "guardian_security.h"
+
 /* Include size_t for bounded byte budgets and writer lengths. */
 #include <stddef.h>
 
@@ -102,6 +105,12 @@ typedef struct
     /* Store the complete M9 supervisory-control runtime. */
     guardian_control_t control;
 
+    /* Store the complete M10 authenticated-session runtime. */
+    guardian_security_t security;
+
+    /* Require protected wrapping for privileged commands when non-zero. */
+    uint8_t security_required;
+
     /* Store platform transport callbacks. */
     guardian_embedded_io_t io;
 
@@ -162,6 +171,21 @@ guardian_control_status_t guardian_embedded_link_control_status(
 /* Return the currently applied logical M9 run permit. */
 uint8_t guardian_embedded_link_run_permit(
     const guardian_embedded_link_t *link);
+
+
+/* Install M10 PSK provisioning and cryptographic nonce callback. */
+guardian_security_result_t guardian_embedded_link_configure_security(
+    guardian_embedded_link_t *link,
+    const guardian_security_config_t *config);
+
+/* Enable or disable direct privileged-command rejection. */
+void guardian_embedded_link_require_security(
+    guardian_embedded_link_t *link,
+    uint8_t required);
+
+/* Return public M10 security diagnostics by value. */
+guardian_security_status_t guardian_embedded_link_security_status(
+    guardian_embedded_link_t *link);
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(

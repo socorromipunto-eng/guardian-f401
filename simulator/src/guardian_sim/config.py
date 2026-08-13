@@ -3,6 +3,9 @@
 # Import dataclass for a compact immutable simulator configuration.
 from dataclasses import dataclass
 
+# Import the shared M10 authorization role registry.
+from guardian_protocol import SecurityRole
+
 
 # Define the default TCP host used for local-only simulator access.
 DEFAULT_HOST = "127.0.0.1"
@@ -25,6 +28,15 @@ DEFAULT_FIRMWARE_PATCH = 0
 # Define a recognizable 32-bit identifier reserved for the default simulator instance.
 DEFAULT_DEVICE_ID = 0xF4010001
 
+
+# Define one intentionally public simulator-only M10 demonstration PSK.
+DEFAULT_SECURITY_PSK_HEX = "00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
+
+# Keep security disabled by default so M2-M9 compatibility demos remain unchanged.
+DEFAULT_SECURITY_ENABLED = False
+
+# Grant the demo key operator authority but not future administrative authority.
+DEFAULT_SECURITY_MAX_ROLE = SecurityRole.OPERATOR
 
 # Store immutable simulator identity and network configuration.
 @dataclass(frozen=True, slots=True)
@@ -52,7 +64,16 @@ class SimulatorConfig:
     # Publish one stable unsigned device identifier.
     device_id: int = DEFAULT_DEVICE_ID
 
-    # Validate network and identity values immediately after construction.
+    # Require M10 authenticated wrapping for privileged commands when enabled.
+    security_enabled: bool = DEFAULT_SECURITY_ENABLED
+
+    # Store the simulator-only PSK as exactly 32 immutable bytes.
+    security_psk: bytes = bytes.fromhex(DEFAULT_SECURITY_PSK_HEX)
+
+    # Store the maximum role accepted for this simulator PSK.
+    security_max_role: SecurityRole = DEFAULT_SECURITY_MAX_ROLE
+
+    # Validate network, identity and security values immediately after construction.
     def __post_init__(self) -> None:
 
         # Reject empty bind addresses because their exposure semantics are ambiguous.
@@ -78,3 +99,19 @@ class SimulatorConfig:
 
             # Raise a precise configuration error.
             raise ValueError("device_id must fit in an unsigned 32-bit field")
+
+        # Require exactly one 256-bit demo/provisioned PSK.
+        if len(self.security_psk) != 32:
+
+            # Reject ambiguous security configuration.
+            raise ValueError("security_psk must contain exactly 32 bytes")
+
+        # Require a published non-zero authorization ceiling.
+        if self.security_max_role not in (
+            SecurityRole.OBSERVER,
+            SecurityRole.OPERATOR,
+            SecurityRole.ADMIN,
+        ):
+
+            # Reject undefined authorization policy.
+            raise ValueError("security_max_role must be OBSERVER, OPERATOR or ADMIN")

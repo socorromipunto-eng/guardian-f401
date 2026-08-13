@@ -1,16 +1,25 @@
 # Guardian F401 Device Simulator
 
-The simulator implements M9 supervisory-control commands.
+M10 secure mode is opt-in so earlier compatibility demos remain unchanged.
+
+Start secure mode:
 
 ```text
-python tools/run_simulator.py
-python tools/guardianctl.py baseline start --samples 64
-python tools/guardianctl.py control arm
-python tools/guardianctl.py control status
+python tools/run_simulator.py --secure
 ```
 
-The simulator interlock is closed and its logical output boundary is available by default.
+The intentionally public test/demo PSK is:
 
-ARM remains safe-off because local run request is false.
+```text
+00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f
+```
 
-Focused tests can change local run request and interlock through the simulator model without exposing those operations as host protocol commands.
+Set the same key in guardianctl:
+
+```text
+$env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
+python tools/guardianctl.py security authenticate
+python tools/guardianctl.py baseline start --samples 64
+```
+
+Never use the simulator demo key on physical hardware.

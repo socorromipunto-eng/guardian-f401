@@ -3,6 +3,9 @@
 # Import dataclass for immutable connection configuration objects.
 from dataclasses import dataclass
 
+# Import shared M10 role and PSK validation.
+from guardian_protocol import SecurityRole, validate_psk
+
 
 # Define the simulator development host used by default.
 DEFAULT_HOST = "127.0.0.1"
@@ -103,3 +106,50 @@ class SerialConfig:
 
         # Render port and baud rate deterministically.
         return f"{self.port}@{self.baud_rate}"
+
+
+# Store immutable M10 host authentication configuration.
+@dataclass(frozen=True, slots=True)
+class SecurityClientConfig:
+    """Guardian M10 PSK authentication settings."""
+
+    # Store exactly one 256-bit pre-shared key.
+    psk: bytes
+
+    # Request OPERATOR authorization by default for M8/M9 state-changing commands.
+    role: SecurityRole = SecurityRole.OPERATOR
+
+    # Validate key width and role immediately.
+    def __post_init__(self) -> None:
+
+        # Normalize the PSK into immutable bytes.
+        normalized_psk = validate_psk(
+            self.psk
+        )
+
+        # Replace bytes-like input with validated immutable bytes.
+        object.__setattr__(
+            self,
+            "psk",
+            normalized_psk,
+        )
+
+        # Normalize the requested role.
+        normalized_role = SecurityRole(
+            self.role
+        )
+
+        # Reject the absence of an authentication role.
+        if normalized_role == SecurityRole.NONE:
+
+            # Require an actual authorization role.
+            raise ValueError(
+                "security role cannot be NONE"
+            )
+
+        # Preserve the normalized enum value.
+        object.__setattr__(
+            self,
+            "role",
+            normalized_role,
+        )

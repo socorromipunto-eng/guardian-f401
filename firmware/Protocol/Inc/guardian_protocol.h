@@ -110,7 +110,19 @@ typedef enum
     GUARDIAN_COMMAND_SET_TELEMETRY = 0x20,
 
     /* Identify asynchronous machine telemetry frames. */
-    GUARDIAN_COMMAND_MACHINE_TELEMETRY = 0x21
+    GUARDIAN_COMMAND_MACHINE_TELEMETRY = 0x21,
+
+    /* Start one M10 authenticated challenge-response handshake. */
+    GUARDIAN_COMMAND_AUTH_BEGIN = 0x30,
+
+    /* Finish one M10 authenticated challenge-response handshake. */
+    GUARDIAN_COMMAND_AUTH_FINISH = 0x31,
+
+    /* Request public M10 session-security diagnostics. */
+    GUARDIAN_COMMAND_GET_SECURITY_STATUS = 0x32,
+
+    /* Carry one authenticated, authorized and anti-replay-protected command. */
+    GUARDIAN_COMMAND_SECURE_COMMAND = 0x33
 } guardian_command_t;
 
 /* Define application and protocol error identifiers carried in ERROR payloads. */

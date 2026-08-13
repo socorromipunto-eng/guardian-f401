@@ -19,6 +19,7 @@ from guardian_protocol import (
     DspFeatures,
     ErrorCode,
     Frame,
+    SecureRequest,
     MachineTelemetry,
     MessageType,
     TelemetryConfig,
@@ -33,6 +34,7 @@ from guardian_protocol import (
     encode_dsp_features,
     encode_health_status,
     encode_machine_telemetry,
+    encode_security_status,
     encode_telemetry_config,
 )
 
@@ -44,6 +46,14 @@ from .health import SimulatorHealthModel
 
 # Import the M9 supervisory-control model.
 from .control import SimulatorControlModel
+
+# Import the M10 authenticated-session simulator engine.
+from .security import (
+    SimulatorAuthenticationError,
+    SimulatorAuthorizationError,
+    SimulatorReplayError,
+    SimulatorSecurity,
+)
 
 
 # Implement command behavior independently from TCP packet boundaries.
@@ -101,6 +111,13 @@ class GuardianDevice:
         # Synchronize initial M8 health into M9 input state.
         self._control.update_health(
             self._health.status()
+        )
+
+        # Configure the M10 simulator authentication engine.
+        self._security = SimulatorSecurity(
+            psk=self._config.security_psk,
+            max_role=self._config.security_max_role,
+            enabled=self._config.security_enabled,
         )
 
         # Start without an active transport session owning telemetry delivery.
@@ -185,6 +202,170 @@ class GuardianDevice:
                 return self._make_error(
                     frame,
                     ErrorCode.MALFORMED_FRAME,
+                )
+
+            # Dispatch M10 AUTH_BEGIN.
+            if frame.command == int(Command.AUTH_BEGIN):
+
+                # Build one unpredictable device challenge and server proof.
+                try:
+
+                    # Process the fixed authentication challenge request.
+                    payload = self._security.begin(
+                        frame.payload,
+                        time.monotonic(),
+                    )
+                except SimulatorAuthorizationError:
+
+                    # Reject attempted role escalation.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.UNAUTHORIZED,
+                    )
+                except ValueError:
+
+                    # Reject malformed authentication payload.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Return the correlated challenge response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M10 AUTH_FINISH.
+            if frame.command == int(Command.AUTH_FINISH):
+
+                # Verify the client proof and activate the new session.
+                try:
+
+                    # Process the fixed client proof.
+                    payload = self._security.finish(
+                        frame.payload,
+                        time.monotonic(),
+                    )
+                except SimulatorAuthenticationError:
+
+                    # Reject invalid challenge response.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.UNAUTHORIZED,
+                    )
+                except ValueError:
+
+                    # Reject malformed authentication payload.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Return the correlated authenticated-session acknowledgement.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M10 GET_SECURITY_STATUS.
+            if frame.command == int(Command.GET_SECURITY_STATUS):
+
+                # Require the frozen empty request payload.
+                if frame.payload:
+
+                    # Reject undefined status-query bytes.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Build one public session diagnostics snapshot.
+                payload = encode_security_status(
+                    self._security.status(
+                        time.monotonic()
+                    )
+                )
+
+                # Return the correlated public security status.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M10 authenticated privileged command envelope.
+            if frame.command == int(Command.SECURE_COMMAND):
+
+                # Authenticate the complete inner request and enforce strict counter ordering.
+                try:
+
+                    # Decode the verified secure inner request.
+                    secure_request = self._security.unwrap(
+                        frame.payload,
+                        frame.sequence,
+                        time.monotonic(),
+                    )
+                except SimulatorReplayError:
+
+                    # Reject duplicate or skipped counters explicitly.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.REPLAY_DETECTED,
+                    )
+                except SimulatorAuthenticationError:
+
+                    # Reject absent session, wrong session or invalid HMAC.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.UNAUTHORIZED,
+                    )
+
+                # Enforce authenticated role authorization before application dispatch.
+                try:
+
+                    # Require the minimum role for the privileged command.
+                    self._security.authorize(
+                        secure_request.inner_command
+                    )
+                except SimulatorAuthorizationError:
+
+                    # Build an authenticated inner UNAUTHORIZED result.
+                    inner_response = self._make_inner_error(
+                        secure_request.inner_command,
+                        frame.sequence,
+                        ErrorCode.UNAUTHORIZED,
+                    )
+                else:
+
+                    # Dispatch only explicitly protected M8/M9 state-changing commands.
+                    inner_response = self._process_secure_privileged(
+                        secure_request,
+                        frame.sequence,
+                    )
+
+                # Authenticate the complete inner response.
+                try:
+
+                    # Encode the M10 secure response envelope.
+                    payload = self._security.wrap(
+                        secure_request.counter,
+                        frame.sequence,
+                        inner_response.message_type,
+                        inner_response.command,
+                        inner_response.payload,
+                    )
+                except SimulatorAuthenticationError:
+
+                    # Fail closed if session state disappeared unexpectedly.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.UNAUTHORIZED,
+                    )
+
+                # Return one ordinary correlated outer response carrying the authenticated result.
+                return self._make_response(
+                    frame,
+                    payload,
                 )
 
             # Dispatch PING.
@@ -315,6 +496,22 @@ class GuardianDevice:
                 return self._make_response(
                     frame,
                     payload,
+                )
+
+            # Require authenticated wrapping for privileged M8/M9 commands in M10 secure mode.
+            if (
+                self._security.enabled
+                and frame.command
+                in (
+                    int(Command.BASELINE_CONTROL),
+                    int(Command.CONTROL_COMMAND),
+                )
+            ):
+
+                # Reject legacy direct state-changing commands.
+                return self._make_error(
+                    frame,
+                    ErrorCode.UNAUTHORIZED,
                 )
 
             # Dispatch M8 BASELINE_CONTROL.
@@ -542,6 +739,189 @@ class GuardianDevice:
                 frame,
                 ErrorCode.UNKNOWN_COMMAND,
             )
+
+    # Build one inner successful response without counting a second transmitted frame.
+    @staticmethod
+    def _make_inner_response(
+        command: int,
+        sequence: int,
+        payload: bytes,
+    ) -> Frame:
+        """Return one response to be authenticated inside SECURE_COMMAND."""
+
+        # Return immutable inner response semantics.
+        return Frame(
+            message_type=MessageType.RESPONSE,
+            command=command,
+            sequence=sequence,
+            payload=payload,
+        )
+
+    # Build one inner error while preserving semantic diagnostics but not double-counting TX.
+    def _make_inner_error(
+        self,
+        command: int,
+        sequence: int,
+        error: ErrorCode,
+    ) -> Frame:
+        """Return one authenticated inner ERROR result."""
+
+        # Preserve the latest semantic error identifier.
+        self._last_error = int(error)
+
+        # Count the application/security semantic failure.
+        self._protocol_errors = min(
+            0xFFFFFFFF,
+            self._protocol_errors + 1,
+        )
+
+        # Return one inner error frame without incrementing outer TX diagnostics.
+        return Frame(
+            message_type=MessageType.ERROR,
+            command=command,
+            sequence=sequence,
+            payload=bytes((int(error),)),
+        )
+
+    # Dispatch one already-authenticated and authorized privileged inner command.
+    def _process_secure_privileged(
+        self,
+        secure_request: SecureRequest,
+        sequence: int,
+    ) -> Frame:
+        """Execute M8/M9 state-changing operations after M10 verification."""
+
+        # Dispatch protected M8 BASELINE_CONTROL.
+        if secure_request.inner_command == int(Command.BASELINE_CONTROL):
+
+            # Decode and validate the shared M8 control payload.
+            try:
+
+                # Decode the requested baseline lifecycle operation.
+                control = decode_baseline_control(
+                    secure_request.inner_payload
+                )
+            except ValueError:
+
+                # Return an authenticated application error.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+
+            # Start a fresh explicit baseline when requested.
+            if control.action == BaselineAction.START:
+
+                # Reset and begin bounded baseline learning.
+                self._health.start(
+                    control.target_samples
+                )
+
+                # Fast-forward deterministic healthy samples for software-only demos.
+                for _ in range(control.target_samples):
+
+                    # Generate one healthy M7 feature vector.
+                    features = self._next_dsp_features()
+
+                    # Learn the same M8 baseline semantics used by firmware.
+                    self._health.ingest(features)
+            else:
+
+                # Erase the runtime baseline.
+                self._health.reset()
+
+            # Re-evaluate M9 after baseline lifecycle changed M8 readiness.
+            self._control.update_health(
+                self._health.status()
+            )
+
+            # Synchronize any resulting M9 state through legacy device state.
+            self._sync_control_state()
+
+            # Encode the normalized M8 control result.
+            payload = encode_baseline_control(
+                BaselineControl(
+                    action=control.action,
+                    target_samples=(
+                        control.target_samples
+                        if control.action == BaselineAction.START
+                        else 0
+                    ),
+                )
+            )
+
+            # Return an authenticated inner successful response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                payload,
+            )
+
+        # Dispatch protected M9 CONTROL_COMMAND.
+        if secure_request.inner_command == int(Command.CONTROL_COMMAND):
+
+            # Decode and validate the M9 host action.
+            try:
+
+                # Decode shared control semantics.
+                command = decode_control_command(
+                    secure_request.inner_payload
+                )
+            except ValueError:
+
+                # Return authenticated invalid-payload error.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+
+            # Execute the safety-gated M9 action.
+            try:
+
+                # Apply the simulator control policy.
+                result = self._control.action(
+                    command.action
+                )
+            except RuntimeError:
+
+                # Return authenticated policy-denied result.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.BUSY,
+                )
+            except ValueError:
+
+                # Return authenticated malformed-action result.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+
+            # Reflect M9 state through legacy GET_STATUS and telemetry.
+            self._sync_control_state()
+
+            # Encode the normalized successful action result.
+            payload = encode_control_command_result(
+                result
+            )
+
+            # Return authenticated inner successful response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                payload,
+            )
+
+        # Reject any command not explicitly included in the M10 protected surface.
+        return self._make_inner_error(
+            secure_request.inner_command,
+            sequence,
+            ErrorCode.UNKNOWN_COMMAND,
+        )
 
     # Map M9 state into the legacy device-state field used by GET_STATUS and telemetry.
     def _sync_control_state(self) -> None:

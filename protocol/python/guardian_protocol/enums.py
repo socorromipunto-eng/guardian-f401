@@ -58,6 +58,18 @@ class Command(IntEnum):
     # Identify asynchronous machine telemetry frames.
     MACHINE_TELEMETRY = 0x21
 
+    # Start one M10 authenticated challenge-response handshake.
+    AUTH_BEGIN = 0x30
+
+    # Finish one M10 authenticated challenge-response handshake.
+    AUTH_FINISH = 0x31
+
+    # Request public M10 security/session diagnostics.
+    GET_SECURITY_STATUS = 0x32
+
+    # Carry one authenticated, authorized and anti-replay-protected command.
+    SECURE_COMMAND = 0x33
+
 
 # Define error identifiers carried by ERROR frame payloads.
 class ErrorCode(IntEnum):

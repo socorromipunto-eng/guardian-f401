@@ -14,6 +14,11 @@ class TransportError(GuardianCtlError):
     """Raised when the Guardian transport cannot complete a request."""
 
 
+# Represent missing or invalid M10 host security configuration.
+class SecurityConfigurationError(GuardianCtlError):
+    """Raised when a protected operation has no usable M10 credentials."""
+
+
 # Represent protocol responses that violate host-side correlation expectations.
 class ProtocolClientError(GuardianCtlError):
     """Raised when a decoded response violates the host protocol contract."""

@@ -109,7 +109,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 9U;
+    identity.firmware_minor = 10U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -131,6 +131,11 @@ int guardian_firmware_app_init(
         /* Report failed startup. */
         return 0;
     }
+
+    /* Require M10 authenticated wrapping for privileged baseline/control commands. */
+    guardian_embedded_link_require_security(
+        &guardian_link,
+        1U);
 
     /* Start the application-visible logical output in the de-energized state. */
     guardian_control_output_shadow = 0U;
@@ -339,5 +344,24 @@ guardian_control_status_t guardian_firmware_app_control_status(void)
 {
     /* Return the transport-independent M9 snapshot by value. */
     return guardian_embedded_link_control_status(
+        &guardian_link);
+}
+
+
+/* Install a provisioned M10 PSK and cryptographic nonce source. */
+guardian_security_result_t guardian_firmware_app_configure_security(
+    const guardian_security_config_t *config)
+{
+    /* Delegate validated provisioning to the transport-independent middleware. */
+    return guardian_embedded_link_configure_security(
+        &guardian_link,
+        config);
+}
+
+/* Return public M10 authentication/session diagnostics. */
+guardian_security_status_t guardian_firmware_app_security_status(void)
+{
+    /* Return public diagnostics without exposing key or session-key material. */
+    return guardian_embedded_link_security_status(
         &guardian_link);
 }
