@@ -82,8 +82,10 @@ See `docs/m13-hardware-validation.md`.
 
 ## Licensing and commercial use
 
+Copyright (c) 2026 **Antonio José Socorro Marín**. All rights reserved.
+
 The original Guardian F401 code is **not released under an open-source
-license**. Copyright is reserved.
+license**. No general commercial license is granted.
 
 Public visibility of this repository does not grant additional permission for
 commercial use, redistribution, modification, sublicensing, or incorporation
@@ -91,8 +93,7 @@ of the original Guardian F401 code into another product or service, except for
 rights provided by applicable law and GitHub's Terms of Service for public
 repositories.
 
-Commercial licensing may be available separately. Contact the repository owner
-for licensing inquiries.
+Commercial licensing may be available separately from **Antonio José Socorro Marín**.
 
 Third-party components remain subject to their own licenses and copyright
 notices. See `COPYRIGHT` and `NOTICE` for additional information.
