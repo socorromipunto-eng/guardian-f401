@@ -1,0 +1,11 @@
+firmware/Protocol/Inc
+firmware/App/Inc
+firmware/Platform/Inc
+firmware/Platform/STM32F401/Inc
+firmware/Telemetry/Inc
+firmware/Acquisition/Inc
+firmware/DSP/Inc
+firmware/Health/Inc
+firmware/Control/Inc
+firmware/Security/Inc
+firmware/Firmware/Inc

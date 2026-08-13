@@ -1,26 +1,39 @@
 # guardianctl
 
-M12 adds signed firmware package inspection and ADMIN-authenticated upload.
+M13 keeps all previous guardianctl protocol, telemetry, health, control, security and firmware-lifecycle commands.
 
-Public lifecycle status:
-
-```text
-python tools/guardianctl.py firmware status
-```
-
-Secure upload requires an M10 PSK and the `ADMIN` role:
+It also adds a separate read-only physical qualification runner:
 
 ```text
-$env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
-python tools/guardianctl.py --role admin firmware upload demo-m12.gfu
+python tools/hardware_validation.py --serial-port COM5
 ```
 
-Explicitly mark the verified candidate pending activation:
+The runner uses the existing public guardianctl serial transport and writes:
 
 ```text
-python tools/guardianctl.py --role admin firmware upload demo-m12.gfu --activate
+hardware-validation.json
 ```
 
-The host validates `.gfu` framing, signed image size and SHA-256 before contacting the device.
+Default physical qualification observes:
 
-Boot confirmation is deliberately not a remote guardianctl command because confirmation advances the device rollback floor.
+```text
+PING
+DEVICE_INFO
+GET_STATUS
+GET_SECURITY_STATUS
+GET_FIRMWARE_STATUS
+GET_CONTROL_STATUS
+telemetry
+DSP features
+health status
+```
+
+It deliberately excludes baseline changes, control actions, authentication and firmware upload.
+
+Install the existing serial dependency first:
+
+```text
+python -m pip install -r console/requirements-serial.txt
+```
+
+See `docs/m13-hardware-validation.md`.

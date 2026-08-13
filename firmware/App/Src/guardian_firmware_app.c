@@ -7,6 +7,9 @@
 /* Include the STM32F401 USART2 platform adapter. */
 #include "stm32f401_uart2.h"
 
+/* Include the M13 hardware startup qualification API. */
+#include "guardian_stm32f401_preflight.h"
+
 /* Define the firmware model name exposed to guardianctl. */
 static const char guardian_model[] = "Guardian-F401-HW";
 
@@ -24,6 +27,9 @@ static volatile uint8_t guardian_control_output_shadow = 0U;
 
 /* Store monotonic milliseconds advanced by the existing application tick. */
 static volatile uint32_t guardian_uptime_ms = 0U;
+
+/* Preserve the most recent non-invasive M13 hardware startup qualification report. */
+static guardian_stm32f401_preflight_report_t guardian_preflight_report;
 
 /* Return whole monotonic uptime seconds to Guardian middleware. */
 static uint32_t guardian_firmware_uptime_seconds(
@@ -75,7 +81,16 @@ int guardian_firmware_app_init(
     guardian_protocol_result_t result =
         GUARDIAN_PROTOCOL_OK;
 
-    /* Initialize the physical USART2 command channel first. */
+    /* Verify target clocks, UART timing, factory identity and calibration before peripheral setup. */
+    if (guardian_stm32f401_preflight_run(
+            baud_rate,
+            &guardian_preflight_report) == 0)
+    {
+        /* Fail closed before enabling Guardian transport or acquisition peripherals. */
+        return 0;
+    }
+
+    /* Initialize the physical USART2 command channel only after hardware qualification succeeds. */
     if (guardian_stm32f401_uart2_init(
             baud_rate,
             uart_irq_priority) == 0)
@@ -109,7 +124,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 12U;
+    identity.firmware_minor = 13U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -272,6 +287,13 @@ void guardian_firmware_app_update_telemetry(
     guardian_embedded_link_update_telemetry(
         &guardian_link,
         measurements);
+}
+
+/* Return the most recent M13 hardware startup preflight snapshot. */
+guardian_stm32f401_preflight_report_t guardian_firmware_app_preflight(void)
+{
+    /* Return the immutable startup qualification snapshot by value. */
+    return guardian_preflight_report;
 }
 
 /* Return M6 hardware acquisition diagnostics. */

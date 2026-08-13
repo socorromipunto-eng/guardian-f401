@@ -1,17 +1,11 @@
 /* Include the public STM32F401 USART2 adapter declarations. */
 #include "stm32f401_uart2.h"
 
+/* Include the shared STM32F401CDU6 compile-time target contract. */
+#include "guardian_stm32f401_target.h"
+
 /* Include official ST CMSIS peripheral definitions from the Keil/ST device pack. */
 #include "stm32f4xx.h"
-
-/* Define the USART alternate-function number for PA2 and PA3. */
-#define GUARDIAN_USART2_AF ((uint32_t)7U)
-
-/* Define the GPIO pin number used for USART2 TX. */
-#define GUARDIAN_USART2_TX_PIN ((uint32_t)2U)
-
-/* Define the GPIO pin number used for USART2 RX. */
-#define GUARDIAN_USART2_RX_PIN ((uint32_t)3U)
 
 /* Define one two-bit GPIO field mask. */
 #define GUARDIAN_GPIO_TWO_BIT_MASK ((uint32_t)0x3U)
@@ -165,69 +159,69 @@ int guardian_stm32f401_uart2_init(
 
     /* Clear PA2 mode. */
     GPIOA->MODER &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_TX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_TX_PIN * 2U));
 
     /* Select alternate-function mode for PA2. */
     GPIOA->MODER |=
-        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_USART2_TX_PIN * 2U));
+        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_STM32F401_USART2_TX_PIN * 2U));
 
     /* Clear PA3 mode. */
     GPIOA->MODER &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_RX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Select alternate-function mode for PA3. */
     GPIOA->MODER |=
-        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_USART2_RX_PIN * 2U));
+        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Configure PA2 push-pull. */
-    GPIOA->OTYPER &= ~(1UL << GUARDIAN_USART2_TX_PIN);
+    GPIOA->OTYPER &= ~(1UL << GUARDIAN_STM32F401_USART2_TX_PIN);
 
     /* Configure PA3 push-pull field consistently. */
-    GPIOA->OTYPER &= ~(1UL << GUARDIAN_USART2_RX_PIN);
+    GPIOA->OTYPER &= ~(1UL << GUARDIAN_STM32F401_USART2_RX_PIN);
 
     /* Clear PA2 speed. */
     GPIOA->OSPEEDR &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_TX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_TX_PIN * 2U));
 
     /* Select medium speed for PA2. */
     GPIOA->OSPEEDR |=
-        (1UL << (GUARDIAN_USART2_TX_PIN * 2U));
+        (1UL << (GUARDIAN_STM32F401_USART2_TX_PIN * 2U));
 
     /* Clear PA3 speed. */
     GPIOA->OSPEEDR &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_RX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Select medium speed for PA3. */
     GPIOA->OSPEEDR |=
-        (1UL << (GUARDIAN_USART2_RX_PIN * 2U));
+        (1UL << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Disable internal pull on PA2. */
     GPIOA->PUPDR &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_TX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_TX_PIN * 2U));
 
     /* Clear PA3 pull configuration. */
     GPIOA->PUPDR &=
-        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_USART2_RX_PIN * 2U));
+        ~(GUARDIAN_GPIO_TWO_BIT_MASK << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Enable a weak pull-up on PA3 to hold UART idle when disconnected. */
     GPIOA->PUPDR |=
-        (1UL << (GUARDIAN_USART2_RX_PIN * 2U));
+        (1UL << (GUARDIAN_STM32F401_USART2_RX_PIN * 2U));
 
     /* Clear PA2 alternate-function field. */
     GPIOA->AFR[0] &=
-        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_USART2_TX_PIN * 4U));
+        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_STM32F401_USART2_TX_PIN * 4U));
 
     /* Select AF7 USART2 for PA2. */
     GPIOA->AFR[0] |=
-        (GUARDIAN_USART2_AF << (GUARDIAN_USART2_TX_PIN * 4U));
+        (GUARDIAN_STM32F401_USART2_AF << (GUARDIAN_STM32F401_USART2_TX_PIN * 4U));
 
     /* Clear PA3 alternate-function field. */
     GPIOA->AFR[0] &=
-        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_USART2_RX_PIN * 4U));
+        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_STM32F401_USART2_RX_PIN * 4U));
 
     /* Select AF7 USART2 for PA3. */
     GPIOA->AFR[0] |=
-        (GUARDIAN_USART2_AF << (GUARDIAN_USART2_RX_PIN * 4U));
+        (GUARDIAN_STM32F401_USART2_AF << (GUARDIAN_STM32F401_USART2_RX_PIN * 4U));
 
     /* Disable USART2 before configuration. */
     USART2->CR1 = 0U;

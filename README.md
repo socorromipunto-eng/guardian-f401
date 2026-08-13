@@ -18,43 +18,31 @@ M10 authenticated privileged commands
 M11 robustness / fuzzing / fault injection
   |
 M12 signed firmware lifecycle / anti-rollback
+  |
+M13 STM32F401 hardware / Keil qualification
 ```
 
-## M12 Simulator Demo
+## M13 Hardware Qualification
 
-Start secure mode:
+M13 adds a compile-time STM32F401CDU6 contract, fail-closed startup preflight, Keil bring-up manifests and a read-only serial qualification report.
+
+Keil integration files:
 
 ```text
-python tools/run_simulator.py --secure
+firmware/MDK-ARM/Templates/main_guardian.c
+firmware/MDK-ARM/guardian-f401-keil-sources.txt
+firmware/MDK-ARM/guardian-f401-keil-includes.txt
+firmware/MDK-ARM/guardian-f401-keil-checklist.md
 ```
 
-Configure the public simulator M10 PSK:
+Physical serial qualification:
 
 ```text
-$env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
+python -m pip install -r console/requirements-serial.txt
+python tools/hardware_validation.py --serial-port COM5 --output hardware-validation.json
 ```
 
-Build a simulator-only signed package:
-
-```text
-python tools/build_firmware_package.py demo --output demo-m12.gfu
-```
-
-Upload it with ADMIN authorization and mark it pending activation:
-
-```text
-python tools/guardianctl.py --role admin firmware upload demo-m12.gfu --activate
-```
-
-Inspect lifecycle state:
-
-```text
-python tools/guardianctl.py firmware status
-```
-
-The demo signing backend is intentionally test-only.
-
-Production uses the M12 signature-verification callback with trusted public-key storage.
+The default physical qualification does not arm control, change baselines, authenticate privileged sessions or upload firmware.
 
 ## Milestones
 
@@ -82,8 +70,10 @@ M10 authenticated sessions + authorization + anti-replay — completed.
 
 M11 robustness + fuzzing + fault injection — completed.
 
-M12 secure firmware lifecycle + rollback protection — implemented.
+M12 secure firmware lifecycle + rollback protection — completed.
 
-The next engineering gate is physical STM32F401 integration: Keil target build, bootloader/flash layout, trusted Ed25519 verification, persistent metadata and power-loss testing.
+M13 hardware integration + Keil/STM32F401 validation — implemented.
 
-See `docs/m12-firmware-lifecycle.md`.
+Physical completion still requires a real Keil target build, STM32F401CDU6 board, bench wiring and a generated hardware-validation JSON report.
+
+See `docs/m13-hardware-validation.md`.

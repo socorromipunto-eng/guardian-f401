@@ -1,29 +1,46 @@
 # Firmware
 
-M12 adds a transport-independent secure firmware lifecycle on top of M10 authenticated ADMIN commands.
+M13 adds the STM32F401CDU6 hardware qualification layer around the existing M4/M6 physical adapters.
 
-Portable lifecycle source:
-
-```text
-firmware/Firmware/Inc/guardian_firmware_lifecycle.h
-firmware/Firmware/Src/guardian_firmware_lifecycle.c
-```
-
-The module implements:
+New target contract:
 
 ```text
-signed release manifest parsing
-sequential candidate staging policy
-SHA-256 image verification
-trusted signature-verifier callback
-monotonic anti-rollback policy
-pending activation state
-local boot confirmation
-safe rollback state
+firmware/Platform/STM32F401/Inc/guardian_stm32f401_target.h
 ```
 
-Production firmware embeds no private signing key.
+New startup preflight:
 
-Board integration must supply staging storage, trusted public-key verification, atomic pending-image metadata and atomic rollback-floor persistence.
+```text
+firmware/Platform/STM32F401/Inc/guardian_stm32f401_preflight.h
+firmware/Platform/STM32F401/Src/guardian_stm32f401_preflight.c
+```
 
-See `docs/m12-firmware-lifecycle.md`.
+The preflight validates:
+
+```text
+HCLK/APB clock limits
+USART2 baud representability/error
+factory UID presence
+VREFINT calibration presence
+temperature calibration presence/order
+```
+
+`guardian_firmware_app_init()` now fails before peripheral startup when the preflight contract fails.
+
+The physical hardware firmware reports:
+
+```text
+0.13.0
+```
+
+Keil source/include manifests and the minimal standalone `main()` template are under:
+
+```text
+firmware/MDK-ARM
+```
+
+The committed `firmware/Tests/CMSISStub` directory is only a host CI compile contract.
+
+Never add that test stub to the physical Keil target.
+
+See `docs/m13-hardware-validation.md`.

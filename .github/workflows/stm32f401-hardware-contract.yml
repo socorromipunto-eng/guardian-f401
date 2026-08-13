@@ -1,0 +1,180 @@
+name: Guardian STM32F401 Hardware Contract
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  target-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the exact Guardian revision under qualification.
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      # Install a stable Python runtime for hardware-validation unit tests.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # Validate that the standalone Keil source/include manifests resolve cleanly.
+      - name: Validate M13 Keil manifests
+        run: python tools/validate_keil_manifest.py
+
+      # Run the M13 read-only qualification-plan/report tests.
+      - name: Run M13 hardware validation tests
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src:fuzz/python
+        run: python -m unittest discover -s console/tests -p "test_hardware_validation.py" -v
+
+      # Create isolated target compile output.
+      - name: Prepare target contract build directory
+        run: mkdir -p build/m13-target
+
+      # Compile the direct-register USART2 adapter against the committed CMSIS-shaped contract.
+      - name: Compile STM32F401 USART2 target source
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Platform/STM32F401/Inc
+          -c
+          firmware/Platform/STM32F401/Src/stm32f401_uart2.c
+          -o build/m13-target/stm32f401_uart2.o
+
+      # Compile the standalone USART2 interrupt wrapper.
+      - name: Compile STM32F401 USART2 IRQ wrapper
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Platform/STM32F401/Inc
+          -c
+          firmware/Platform/STM32F401/Src/stm32f401_uart2_irq.c
+          -o build/m13-target/stm32f401_uart2_irq.o
+
+      # Compile ADC/TIM/DMA acquisition code against the same target contract.
+      - name: Compile STM32F401 acquisition target source
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
+          -Ifirmware/Platform/STM32F401/Inc
+          -c
+          firmware/Platform/STM32F401/Src/stm32f401_acquisition.c
+          -o build/m13-target/stm32f401_acquisition.o
+
+      # Compile the standalone acquisition interrupt wrappers.
+      - name: Compile STM32F401 acquisition IRQ wrappers
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/Platform/STM32F401/Inc
+          -c
+          firmware/Platform/STM32F401/Src/stm32f401_acquisition_irq.c
+          -o build/m13-target/stm32f401_acquisition_irq.o
+
+      # Compile the fail-closed M13 clock/UID/calibration preflight.
+      - name: Compile STM32F401 hardware preflight
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Platform/STM32F401/Inc
+          -c
+          firmware/Platform/STM32F401/Src/guardian_stm32f401_preflight.c
+          -o build/m13-target/guardian_stm32f401_preflight.o
+
+      # Compile the complete target-facing firmware application translation unit.
+      - name: Compile Guardian firmware application target source
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Platform/Inc
+          -Ifirmware/Platform/STM32F401/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
+          -Ifirmware/Health/Inc
+          -Ifirmware/Control/Inc
+          -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
+          -c
+          firmware/App/Src/guardian_firmware_app.c
+          -o build/m13-target/guardian_firmware_app.o
+
+      # Compile the exact Keil/CMSIS main-loop template.
+      - name: Compile Keil bring-up main template
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -DSTM32F401xE
+          -Ifirmware/Tests/CMSISStub
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/App/Inc
+          -Ifirmware/Platform/Inc
+          -Ifirmware/Platform/STM32F401/Inc
+          -Ifirmware/Telemetry/Inc
+          -Ifirmware/Acquisition/Inc
+          -Ifirmware/DSP/Inc
+          -Ifirmware/Health/Inc
+          -Ifirmware/Control/Inc
+          -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
+          -c
+          firmware/MDK-ARM/Templates/main_guardian.c
+          -o build/m13-target/main_guardian.o

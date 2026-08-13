@@ -1,0 +1,42 @@
+# Guardian F401 M13 Keil source manifest
+
+# Add this template as the application entry point.
+firmware/MDK-ARM/Templates/main_guardian.c
+
+# Guardian Protocol v0.1.
+firmware/Protocol/Src/guardian_protocol.c
+firmware/Protocol/Src/guardian_parser.c
+
+# Device/application integration.
+firmware/App/Src/guardian_device_service.c
+firmware/App/Src/guardian_firmware_app.c
+
+# Transport-independent embedded link.
+firmware/Platform/Src/guardian_embedded_link.c
+
+# STM32F401CDU6 target qualification and physical adapters.
+firmware/Platform/STM32F401/Src/guardian_stm32f401_preflight.c
+firmware/Platform/STM32F401/Src/stm32f401_uart2.c
+firmware/Platform/STM32F401/Src/stm32f401_uart2_irq.c
+firmware/Platform/STM32F401/Src/stm32f401_acquisition.c
+firmware/Platform/STM32F401/Src/stm32f401_acquisition_irq.c
+
+# Acquisition and telemetry.
+firmware/Acquisition/Src/guardian_acquisition.c
+firmware/Telemetry/Src/guardian_telemetry.c
+
+# DSP and machine-health pipeline.
+firmware/DSP/Src/guardian_dsp.c
+firmware/Health/Src/guardian_health.c
+
+# Supervisory control.
+firmware/Control/Src/guardian_control.c
+
+# M10 authenticated sessions and cryptographic primitives.
+firmware/Security/Src/guardian_crypto.c
+firmware/Security/Src/guardian_security.c
+
+# M12 signed firmware lifecycle policy.
+firmware/Firmware/Src/guardian_firmware_lifecycle.c
+
+# The Keil/ST Device Pack supplies startup_stm32f401xe.s and system_stm32f4xx.c.

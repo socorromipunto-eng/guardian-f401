@@ -10,6 +10,9 @@
 /* Include M6 STM32F401 acquisition diagnostics. */
 #include "stm32f401_acquisition.h"
 
+/* Include the M13 STM32F401 startup qualification report. */
+#include "guardian_stm32f401_preflight.h"
+
 /* Include M7 DSP feature snapshots. */
 #include "guardian_dsp.h"
 
@@ -46,6 +49,9 @@ void guardian_firmware_app_set_state(
 /* Replace the latest telemetry snapshot manually when an application override is required. */
 void guardian_firmware_app_update_telemetry(
     const guardian_machine_measurements_t *measurements);
+
+/* Return the most recent M13 hardware startup preflight snapshot. */
+guardian_stm32f401_preflight_report_t guardian_firmware_app_preflight(void);
 
 /* Return M6 hardware acquisition diagnostics for debugger or future protocol use. */
 guardian_stm32f401_acquisition_stats_t guardian_firmware_app_acquisition_stats(void);

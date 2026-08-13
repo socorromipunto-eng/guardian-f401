@@ -1,29 +1,14 @@
 /* Include the public STM32F401 acquisition adapter declarations. */
 #include "stm32f401_acquisition.h"
 
+/* Include the shared STM32F401CDU6 compile-time target contract. */
+#include "guardian_stm32f401_target.h"
+
 /* Include official ST CMSIS peripheral declarations supplied by the Keil device pack. */
 #include "stm32f4xx.h"
 
 /* Include uintptr_t for portable pointer-to-register address conversion. */
 #include <stdint.h>
-
-/* Define the factory VREFINT calibration half-word address from the STM32F401xD/xE datasheet. */
-#define GUARDIAN_VREFINT_CAL_ADDRESS ((uintptr_t)0x1FFF7A2AUL)
-
-/* Define the factory 30 C temperature calibration half-word address. */
-#define GUARDIAN_TEMP_CAL_30_ADDRESS ((uintptr_t)0x1FFF7A2CUL)
-
-/* Define the factory 110 C temperature calibration half-word address. */
-#define GUARDIAN_TEMP_CAL_110_ADDRESS ((uintptr_t)0x1FFF7A2EUL)
-
-/* Define ADC input pin numbers used by the M6 reference design. */
-#define GUARDIAN_ADC_VIBRATION_PIN ((uint32_t)0U)
-#define GUARDIAN_ADC_CURRENT_PIN ((uint32_t)1U)
-#define GUARDIAN_ADC_SUPPLY_PIN ((uint32_t)4U)
-
-/* Define the RPM input pin and alternate-function selection. */
-#define GUARDIAN_RPM_PIN ((uint32_t)6U)
-#define GUARDIAN_RPM_AF ((uint32_t)2U)
 
 /* Define GPIO register field helpers. */
 #define GUARDIAN_GPIO_MODE_MASK ((uint32_t)0x3U)
@@ -384,23 +369,23 @@ static void guardian_stm32f401_gpio_rpm(void)
 {
     /* Clear the PA6 mode field. */
     GPIOA->MODER &=
-        ~(GUARDIAN_GPIO_MODE_MASK << (GUARDIAN_RPM_PIN * 2U));
+        ~(GUARDIAN_GPIO_MODE_MASK << (GUARDIAN_STM32F401_RPM_PIN * 2U));
 
     /* Select alternate-function mode for PA6. */
     GPIOA->MODER |=
-        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_RPM_PIN * 2U));
+        (GUARDIAN_GPIO_MODE_AF << (GUARDIAN_STM32F401_RPM_PIN * 2U));
 
     /* Disable internal pulls so the external sensor/front-end defines the logic level. */
     GPIOA->PUPDR &=
-        ~(GUARDIAN_GPIO_MODE_MASK << (GUARDIAN_RPM_PIN * 2U));
+        ~(GUARDIAN_GPIO_MODE_MASK << (GUARDIAN_STM32F401_RPM_PIN * 2U));
 
     /* Clear the PA6 AFRL field. */
     GPIOA->AFR[0] &=
-        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_RPM_PIN * 4U));
+        ~(GUARDIAN_GPIO_AF_MASK << (GUARDIAN_STM32F401_RPM_PIN * 4U));
 
     /* Select AF2 TIM3_CH1 for PA6. */
     GPIOA->AFR[0] |=
-        (GUARDIAN_RPM_AF << (GUARDIAN_RPM_PIN * 4U));
+        (GUARDIAN_STM32F401_RPM_AF << (GUARDIAN_STM32F401_RPM_PIN * 4U));
 }
 
 /* Configure TIM2 update events as the deterministic ADC scan trigger. */
@@ -820,17 +805,17 @@ void guardian_stm32f401_acquisition_default_config(
     /* Read the factory VREFINT calibration acquired at 3.3 V. */
     config->calibration.vrefint_cal_code =
         guardian_stm32f401_factory_u16(
-            GUARDIAN_VREFINT_CAL_ADDRESS);
+            GUARDIAN_STM32F401_VREFINT_CAL_ADDRESS);
 
     /* Read the factory temperature calibration acquired at 30 C. */
     config->calibration.temperature_cal_30_code =
         guardian_stm32f401_factory_u16(
-            GUARDIAN_TEMP_CAL_30_ADDRESS);
+            GUARDIAN_STM32F401_TEMP_CAL_30_ADDRESS);
 
     /* Read the factory temperature calibration acquired at 110 C. */
     config->calibration.temperature_cal_110_code =
         guardian_stm32f401_factory_u16(
-            GUARDIAN_TEMP_CAL_110_ADDRESS);
+            GUARDIAN_STM32F401_TEMP_CAL_110_ADDRESS);
 
     /* Use midscale as a reference zero-g placeholder for an analog vibration front-end. */
     config->calibration.vibration_zero_code = 2048U;
@@ -964,15 +949,15 @@ int guardian_stm32f401_acquisition_init(
 
     /* Configure PA0 as analog vibration input. */
     guardian_stm32f401_gpio_analog(
-        GUARDIAN_ADC_VIBRATION_PIN);
+        GUARDIAN_STM32F401_VIBRATION_PIN);
 
     /* Configure PA1 as analog current input. */
     guardian_stm32f401_gpio_analog(
-        GUARDIAN_ADC_CURRENT_PIN);
+        GUARDIAN_STM32F401_CURRENT_PIN);
 
     /* Configure PA4 as analog supply-divider input. */
     guardian_stm32f401_gpio_analog(
-        GUARDIAN_ADC_SUPPLY_PIN);
+        GUARDIAN_STM32F401_SUPPLY_PIN);
 
     /* Configure PA6 AF2 as TIM3_CH1 RPM input capture. */
     guardian_stm32f401_gpio_rpm();
