@@ -18,3 +18,6 @@
 
 # Keep Markdown documentation deterministic across platforms.
 *.md text eol=lf
+
+# Keep binary fuzz corpus entries byte-exact across every platform.
+*.bin -text

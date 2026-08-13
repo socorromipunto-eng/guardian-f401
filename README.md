@@ -1,6 +1,6 @@
 # Guardian F401
 
-Guardian F401 is an STM32F401CDU6 embedded machine-health, supervisory-control and secure command platform.
+Guardian F401 is an STM32F401CDU6 embedded machine-health, supervisory-control and secure-command platform.
 
 ## Current Pipeline
 
@@ -13,52 +13,39 @@ M8 machine-health baseline
   |
 M9 supervisory control
   |
-M10 authenticated privileged command channel
+M10 authenticated privileged commands
   |
-  +--> HMAC-SHA-256
-  +--> mutual PSK proof
-  +--> role authorization
-  `--> strict uint64 anti-replay counter
+M11 robustness / fuzzing / fault injection
 ```
 
-## M10 Security Demo
+## M11 Robustness Demo
 
-Start the software simulator with security enforcement:
+Run one deterministic defensive campaign:
 
 ```text
-python tools/run_simulator.py --secure
+python tools/run_robustness.py --seed 0xC0FFEE11 --iterations 1000
 ```
 
-Set the intentionally public demo-only key:
+Expected summary:
 
 ```text
-GUARDIAN_PSK_HEX =
-00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f
+Guardian M11 robustness campaign: PASS
+Parser recovery: 1000/1000
+Secure tamper rejection: 1000/1000
+Exact replay rejections: 1
+Counter-gap rejections: 1
 ```
 
-Then:
+M11 also includes:
 
 ```text
-python tools/guardianctl.py security authenticate
-python tools/guardianctl.py baseline start --samples 64
-python tools/guardianctl.py control arm
-python tools/guardianctl.py security status
+GCC ASan/UBSan parser mutation driver
+GCC ASan/UBSan security mutation driver
+Clang libFuzzer parser harness
+Clang libFuzzer secure-envelope harness
+committed parser/security seed corpora
+GitHub Actions robustness gate
 ```
-
-The demo key must never be used on physical hardware.
-
-Production firmware does not embed a PSK in the repository.
-
-## Protected Commands
-
-```text
-BASELINE_CONTROL -> OPERATOR
-CONTROL_COMMAND  -> OPERATOR
-```
-
-M10 protects privileged command authenticity, authorization and replay.
-
-It does not encrypt payloads.
 
 ## Milestones
 
@@ -82,8 +69,10 @@ M8 machine-health baseline + anomaly detection — completed.
 
 M9 supervisory control + fault policy — completed.
 
-M10 authenticated sessions + authorization + anti-replay — implemented.
+M10 authenticated sessions + authorization + anti-replay — completed.
 
-M11 robustness / fuzzing / fault injection — next.
+M11 robustness + fuzzing + fault injection — implemented.
 
-See `docs/m10-security.md`.
+M12 secure firmware lifecycle — next.
+
+See `docs/m11-robustness.md`.

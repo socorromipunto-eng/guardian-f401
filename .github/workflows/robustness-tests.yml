@@ -1,0 +1,149 @@
+name: Guardian Robustness Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  robustness:
+    runs-on: ubuntu-latest
+
+    env:
+      ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+
+    steps:
+      # Check out the exact repository revision under test.
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      # Install one stable Python runtime for deterministic M11 campaigns.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # Run focused Python mutation and fault-injection tests.
+      - name: Run M11 Python robustness tests
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src:fuzz/python
+        run: python -m unittest discover -s fuzz/python/tests -v
+
+      # Run a larger reproducible deterministic mutation campaign.
+      - name: Run deterministic M11 robustness campaign
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src:fuzz/python
+        run: python tools/run_robustness.py --seed 0xC0FFEE11 --iterations 1000
+
+      # Create isolated output storage for sanitizer and libFuzzer binaries.
+      - name: Create build directory
+        run: mkdir -p build
+
+      # Compile the C parser mutation driver with memory and undefined-behavior sanitizers.
+      - name: Compile parser mutation driver with ASan and UBSan
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -O1
+          -g
+          -fno-omit-frame-pointer
+          -fsanitize=address,undefined
+          -Ifirmware/Protocol/Inc
+          firmware/Protocol/Src/guardian_protocol.c
+          firmware/Protocol/Src/guardian_parser.c
+          fuzz/c/parser_mutation_driver.c
+          -o build/parser_mutation_driver
+
+      # Run ten thousand deterministic malformed-stream cases under sanitizers.
+      - name: Run parser mutation driver
+        run: ./build/parser_mutation_driver 10000
+
+      # Compile the C secure-envelope mutation driver with memory and UB sanitizers.
+      - name: Compile security mutation driver with ASan and UBSan
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -O1
+          -g
+          -fno-omit-frame-pointer
+          -fsanitize=address,undefined
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/Security/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/Security/Src/guardian_security.c
+          fuzz/c/security_mutation_driver.c
+          -o build/security_mutation_driver
+
+      # Run ten thousand after-MAC tamper/replay/counter-gap cases under sanitizers.
+      - name: Run security mutation driver
+        run: ./build/security_mutation_driver 10000
+
+      # Compile the production parser as a libFuzzer target with ASan and UBSan.
+      - name: Compile parser libFuzzer target
+        run: >
+          clang
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -O1
+          -g
+          -fno-omit-frame-pointer
+          -fsanitize=fuzzer,address,undefined
+          -Ifirmware/Protocol/Inc
+          firmware/Protocol/Src/guardian_protocol.c
+          firmware/Protocol/Src/guardian_parser.c
+          fuzz/c/parser_libfuzzer.c
+          -o build/parser_fuzzer
+
+      # Run a bounded parser libFuzzer campaign from committed seed inputs.
+      - name: Run parser libFuzzer smoke campaign
+        run: >
+          ./build/parser_fuzzer
+          fuzz/corpus/parser
+          -runs=5000
+          -max_len=512
+          -timeout=2
+
+      # Compile the M10 secure-envelope decoder as a libFuzzer target.
+      - name: Compile security libFuzzer target
+        run: >
+          clang
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -O1
+          -g
+          -fno-omit-frame-pointer
+          -fsanitize=fuzzer,address,undefined
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/Security/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/Security/Src/guardian_security.c
+          fuzz/c/security_libfuzzer.c
+          -o build/security_fuzzer
+
+      # Run a bounded security libFuzzer campaign including a valid authenticated corpus seed.
+      - name: Run security libFuzzer smoke campaign
+        run: >
+          ./build/security_fuzzer
+          fuzz/corpus/security
+          -runs=5000
+          -max_len=512
+          -timeout=2
