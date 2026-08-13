@@ -12,6 +12,7 @@ from guardian_protocol import (
     DeviceStatus,
     DspFeatures,
     HealthStatus,
+    FirmwareStatus,
     AuthenticatedSession,
     SecurityStatus,
 )
@@ -631,6 +632,61 @@ def render_authenticated_session_json(
             "role": session.role.name,
             "session_id": session.session_id,
             "timeout_seconds": session.timeout_seconds,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one public M12 firmware lifecycle snapshot for a human operator.
+def render_firmware_status_text(
+    status: FirmwareStatus,
+) -> str:
+    """Return human-readable M12 firmware lifecycle diagnostics."""
+
+    # Build a semantic candidate version string.
+    candidate_version = (
+        f"{status.firmware_major}."
+        f"{status.firmware_minor}."
+        f"{status.firmware_patch}"
+    )
+
+    # Return stable lifecycle diagnostic lines.
+    return "\n".join(
+        (
+            f"Firmware lifecycle: {status.state.name}",
+            f"Failure: {status.failure.name}",
+            f"Active version counter: {status.active_version_counter}",
+            f"Rollback floor: {status.rollback_floor}",
+            f"Candidate version counter: {status.candidate_version_counter}",
+            f"Candidate semantic version: {candidate_version}",
+            f"Bytes staged: {status.bytes_received}/{status.image_size}",
+            f"Verifier key ID: {status.key_id}",
+            f"Signature algorithm: 0x{status.signature_algorithm:02X}",
+        )
+    )
+
+
+# Render one public M12 firmware lifecycle snapshot as JSON.
+def render_firmware_status_json(
+    status: FirmwareStatus,
+) -> str:
+    """Return machine-readable M12 firmware lifecycle diagnostics."""
+
+    # Serialize stable lifecycle fields.
+    return json.dumps(
+        {
+            "active_version_counter": status.active_version_counter,
+            "bytes_received": status.bytes_received,
+            "candidate_version_counter": status.candidate_version_counter,
+            "failure": status.failure.name,
+            "firmware_major": status.firmware_major,
+            "firmware_minor": status.firmware_minor,
+            "firmware_patch": status.firmware_patch,
+            "image_size": status.image_size,
+            "key_id": status.key_id,
+            "rollback_floor": status.rollback_floor,
+            "signature_algorithm": status.signature_algorithm,
+            "state": status.state.name,
         },
         sort_keys=True,
     )

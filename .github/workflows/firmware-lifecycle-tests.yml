@@ -1,0 +1,76 @@
+name: Guardian Firmware Lifecycle Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware-lifecycle:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the exact repository revision under test.
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      # Install a stable Python runtime for protocol/simulator/console lifecycle tests.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # Run the shared M12 package/manifest codec tests.
+      - name: Run Guardian Protocol firmware lifecycle tests
+        env:
+          PYTHONPATH: protocol/python
+        run: python -m unittest discover -s protocol/python/tests -p "test_firmware.py" -v
+
+      # Run the simulator lifecycle policy tests.
+      - name: Run simulator firmware lifecycle tests
+        env:
+          PYTHONPATH: protocol/python:simulator/src
+        run: python -m unittest discover -s simulator/tests -p "test_firmware.py" -v
+
+      # Run the real-TCP guardianctl ADMIN firmware upload tests.
+      - name: Run guardianctl firmware lifecycle tests
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src
+        run: python -m unittest discover -s console/tests -p "test_firmware_client.py" -v
+
+      # Run the public guardianctl firmware command grammar over real TCP.
+      - name: Run guardianctl firmware CLI tests
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src
+        run: python -m unittest discover -s console/tests -p "test_cli_firmware.py" -v
+
+      # Build one simulator-only signed package and verify the offline package tool path.
+      - name: Build M12 demo firmware package
+        env:
+          PYTHONPATH: protocol/python:simulator/src:console/src
+        run: python tools/build_firmware_package.py demo --output build-demo.gfu
+
+      # Compile the portable lifecycle with strict diagnostics.
+      - name: Compile M12 firmware lifecycle host tests
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/Protocol/Inc
+          -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
+          firmware/Tests/firmware_lifecycle_host_test.c
+          -o firmware_lifecycle_host_test
+
+      # Run signed-image, anti-rollback, confirmation and safe-rollback assertions.
+      - name: Run M12 firmware lifecycle host tests
+        run: ./firmware_lifecycle_host_test

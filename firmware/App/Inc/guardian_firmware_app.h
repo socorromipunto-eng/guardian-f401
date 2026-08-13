@@ -22,6 +22,9 @@
 /* Include the M10 provisioning and public security-status types. */
 #include "guardian_security.h"
 
+/* Include M12 firmware lifecycle configuration and diagnostics. */
+#include "guardian_firmware_lifecycle.h"
+
 /* Include fixed-width integer types for baud and tick APIs. */
 #include <stdint.h>
 
@@ -68,12 +71,26 @@ uint8_t guardian_firmware_app_run_permit(void);
 /* Return the current M9 supervisory-control snapshot. */
 guardian_control_status_t guardian_firmware_app_control_status(void);
 
-#endif
-
-
 /* Install a provisioned M10 PSK and cryptographic nonce source. */
 guardian_security_result_t guardian_firmware_app_configure_security(
     const guardian_security_config_t *config);
 
 /* Return public M10 authentication/session diagnostics. */
 guardian_security_status_t guardian_firmware_app_security_status(void);
+
+/* Install M12 staging, trusted signature verifier and rollback persistence callbacks. */
+guardian_firmware_result_t guardian_firmware_app_configure_firmware(
+    const guardian_firmware_config_t *config);
+
+/* Return public M12 firmware lifecycle diagnostics. */
+guardian_firmware_status_t guardian_firmware_app_firmware_status(void);
+
+/* Confirm a successfully booted pending firmware image after application self-tests pass. */
+guardian_firmware_result_t guardian_firmware_app_confirm_boot(
+    uint32_t booted_version_counter);
+
+/* Record a failed pending firmware boot without advancing rollback floor. */
+guardian_firmware_result_t guardian_firmware_app_report_boot_failure(
+    uint32_t attempted_version_counter);
+
+#endif

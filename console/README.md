@@ -1,28 +1,26 @@
 # guardianctl
 
-M10 adds optional authenticated sessions for privileged commands.
+M12 adds signed firmware package inspection and ADMIN-authenticated upload.
 
-Configure credentials with:
-
-```text
---psk-hex <64 hex characters>
---role operator
-```
-
-or:
+Public lifecycle status:
 
 ```text
-GUARDIAN_PSK_HEX
-GUARDIAN_ROLE
+python tools/guardianctl.py firmware status
 ```
 
-Commands:
+Secure upload requires an M10 PSK and the `ADMIN` role:
 
 ```text
-python tools/guardianctl.py security status
-python tools/guardianctl.py security authenticate
-python tools/guardianctl.py baseline start --samples 64
-python tools/guardianctl.py control arm
+$env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
+python tools/guardianctl.py --role admin firmware upload demo-m12.gfu
 ```
 
-When a PSK is configured, baseline/control operations use `SECURE_COMMAND` automatically.
+Explicitly mark the verified candidate pending activation:
+
+```text
+python tools/guardianctl.py --role admin firmware upload demo-m12.gfu --activate
+```
+
+The host validates `.gfu` framing, signed image size and SHA-256 before contacting the device.
+
+Boot confirmation is deliberately not a remote guardianctl command because confirmation advances the device rollback floor.

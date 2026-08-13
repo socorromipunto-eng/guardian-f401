@@ -18,6 +18,9 @@ from .control import SimulatorControlModel
 # Re-export the M10 simulator security model for focused tests.
 from .security import SimulatorSecurity
 
+# Re-export the M12 simulator firmware lifecycle for focused tests.
+from .firmware import SimulatorFirmwareLifecycle
+
 # Define the stable public simulator import surface explicitly.
 __all__ = [
     "GuardianDevice",
@@ -26,5 +29,6 @@ __all__ = [
     "SimulatorHealthModel",
     "SimulatorControlModel",
     "SimulatorSecurity",
+    "SimulatorFirmwareLifecycle",
     "run_server",
 ]

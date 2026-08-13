@@ -20,6 +20,11 @@ Guardian Protocol `0.1`.
 | `0x31` | `AUTH_FINISH` | Binary AuthFinish schema v1 | Binary AuthenticatedSession schema v1 |
 | `0x32` | `GET_SECURITY_STATUS` | Empty | Binary SecurityStatus schema v1 |
 | `0x33` | `SECURE_COMMAND` | Authenticated secure envelope | Authenticated secure envelope |
+| `0x40` | `GET_FIRMWARE_STATUS` | Empty | Binary FirmwareStatus schema v1 |
+| `0x41` | `FIRMWARE_BEGIN` | Binary signed FirmwareManifest schema v1 | Empty; ADMIN via SECURE_COMMAND |
+| `0x42` | `FIRMWARE_CHUNK` | Binary FirmwareChunk schema v1 | Empty; ADMIN via SECURE_COMMAND |
+| `0x43` | `FIRMWARE_FINALIZE` | Schema byte `0x01` | Empty; ADMIN via SECURE_COMMAND |
+| `0x44` | `FIRMWARE_ACTIVATE` | Schema byte `0x01` | Empty; ADMIN via SECURE_COMMAND |
 | `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
 | `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
@@ -83,8 +88,13 @@ The first payload byte contains the error code.
 | `0x08` | `BUSY` |
 | `0x09` | `UNAUTHORIZED` |
 | `0x0A` | `REPLAY_DETECTED` |
+| `0x0B` | `SIGNATURE_INVALID` |
+| `0x0C` | `ROLLBACK_BLOCKED` |
+| `0x0D` | `UPDATE_FAILED` |
 
-`UNAUTHORIZED` and `REPLAY_DETECTED` remain reserved for the later security milestone.
+M10 activates `UNAUTHORIZED` and `REPLAY_DETECTED`.
+
+M12 activates the firmware signature, rollback and update failure identifiers.
 
 
 ## SET_TELEMETRY Request and Response Payload
@@ -458,3 +468,95 @@ Read-only status queries remain available without authentication in M10.
 Asynchronous telemetry remains CRC-protected rather than HMAC-protected in this milestone.
 
 M10 provides authenticity, authorization and replay protection for privileged commands. It does not provide confidentiality/encryption.
+
+
+## M12 Secure Firmware Lifecycle
+
+M12 does not change the Guardian outer frame format.
+
+State-changing update commands are carried inside M10 `SECURE_COMMAND` and require `ADMIN`.
+
+`GET_FIRMWARE_STATUS` remains read-only and public.
+
+### Signed manifest
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     SIGNATURE_ALGORITHM
+2       4     KEY_ID
+6       4     VERSION_COUNTER
+10      2     FIRMWARE_MAJOR
+12      2     FIRMWARE_MINOR
+14      2     FIRMWARE_PATCH
+16      4     IMAGE_SIZE
+20      32    IMAGE_SHA256
+52      1     SIGNATURE_LENGTH
+53      N     SIGNATURE
+```
+
+Published signature identifiers:
+
+```text
+0x01  ED25519
+0xFE  DEMO_HMAC_SHA256
+```
+
+`0xFE` is reserved for simulator/test use only.
+
+Production firmware should connect `0x01` to a trusted Ed25519 verification backend through the M12 platform callback.
+
+The exact 64-byte signature transcript is:
+
+```text
+"GF-M12-IMAGE"
+schema
+signature algorithm
+key id
+version counter
+semantic version
+image size
+SHA-256 image digest
+```
+
+The image signature does not cover transport framing because the manifest already binds the complete image digest and immutable release metadata.
+
+### Firmware chunk
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       4     OFFSET
+5       2     DATA_LENGTH
+7       N     DATA
+```
+
+`N` is `1..192`.
+
+M12 accepts strictly sequential offsets.
+
+Overlap, duplicate chunks and gaps are rejected.
+
+### Rollback policy
+
+A candidate must satisfy:
+
+```text
+candidate.version_counter > max(active_version_counter, rollback_floor)
+```
+
+The rollback floor advances only after the newly booted application confirms itself.
+
+`FIRMWARE_ACTIVATE` therefore marks a verified candidate pending but does not immediately make the new version irreversible.
+
+A failed pending boot preserves the previous confirmed rollback floor.
+
+### M12 errors
+
+```text
+0x0B SIGNATURE_INVALID
+0x0C ROLLBACK_BLOCKED
+0x0D UPDATE_FAILED
+```

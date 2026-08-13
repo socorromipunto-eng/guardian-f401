@@ -35,8 +35,17 @@ DEFAULT_SECURITY_PSK_HEX = "00112233445566778899aabbccddeeff102132435465768798a9
 # Keep security disabled by default so M2-M9 compatibility demos remain unchanged.
 DEFAULT_SECURITY_ENABLED = False
 
-# Grant the demo key operator authority but not future administrative authority.
-DEFAULT_SECURITY_MAX_ROLE = SecurityRole.OPERATOR
+# Grant the demo key administrative authority so M12 firmware-update demos can authenticate.
+DEFAULT_SECURITY_MAX_ROLE = SecurityRole.ADMIN
+
+# Define one intentionally public simulator-only firmware signing key.
+DEFAULT_FIRMWARE_SIGNING_KEY_HEX = "7f6e5d4c3b2a1908172635445362718090a1b2c3d4e5f60718293a4b5c6d7e8f"
+
+# Start the simulator at the last completed milestone version counter.
+DEFAULT_FIRMWARE_VERSION_COUNTER = 11
+
+# Bound in-memory simulator firmware candidates to 256 KiB.
+DEFAULT_FIRMWARE_MAX_IMAGE_SIZE = 256 * 1024
 
 # Store immutable simulator identity and network configuration.
 @dataclass(frozen=True, slots=True)
@@ -72,6 +81,15 @@ class SimulatorConfig:
 
     # Store the maximum role accepted for this simulator PSK.
     security_max_role: SecurityRole = DEFAULT_SECURITY_MAX_ROLE
+
+    # Store the simulator-only firmware image signing key.
+    firmware_signing_key: bytes = bytes.fromhex(DEFAULT_FIRMWARE_SIGNING_KEY_HEX)
+
+    # Store the confirmed simulator firmware monotonic version.
+    firmware_version_counter: int = DEFAULT_FIRMWARE_VERSION_COUNTER
+
+    # Bound in-memory candidate image allocation.
+    firmware_max_image_size: int = DEFAULT_FIRMWARE_MAX_IMAGE_SIZE
 
     # Validate network, identity and security values immediately after construction.
     def __post_init__(self) -> None:
@@ -115,3 +133,22 @@ class SimulatorConfig:
 
             # Reject undefined authorization policy.
             raise ValueError("security_max_role must be OBSERVER, OPERATOR or ADMIN")
+
+
+        # Require exactly one 256-bit simulator firmware signing key.
+        if len(self.firmware_signing_key) != 32:
+
+            # Reject ambiguous demo signing configuration.
+            raise ValueError("firmware_signing_key must contain exactly 32 bytes")
+
+        # Require a non-zero confirmed monotonic firmware version.
+        if not 1 <= self.firmware_version_counter <= 0xFFFFFFFF:
+
+            # Reject invalid anti-rollback state.
+            raise ValueError("firmware_version_counter must be between 1 and 0xFFFFFFFF")
+
+        # Require one positive bounded staging capacity.
+        if not 1 <= self.firmware_max_image_size <= 0xFFFFFFFF:
+
+            # Reject invalid staging capacity.
+            raise ValueError("firmware_max_image_size must be between 1 and 0xFFFFFFFF")

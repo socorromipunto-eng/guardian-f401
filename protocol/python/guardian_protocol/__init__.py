@@ -31,6 +31,40 @@ from .parser import IncrementalParser, ParserStats
 
 
 
+
+# Re-export M12 secure firmware lifecycle models and codecs.
+from .firmware import (
+    FIRMWARE_CHUNK_MAX_DATA,
+    FIRMWARE_MAX_SIGNATURE_SIZE,
+    FIRMWARE_PACKAGE_MAGIC,
+    FIRMWARE_SCHEMA_VERSION,
+    FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256,
+    FIRMWARE_SIGNATURE_ED25519,
+    FIRMWARE_SIGNED_DOMAIN,
+    FIRMWARE_SIGNED_MANIFEST_SIZE,
+    FirmwareChunk,
+    FirmwareFailureCode,
+    FirmwareLifecycleState,
+    FirmwareManifest,
+    FirmwarePackage,
+    FirmwareSignatureAlgorithm,
+    FirmwareStatus,
+    canonical_firmware_manifest,
+    decode_firmware_action,
+    decode_firmware_chunk,
+    decode_firmware_manifest,
+    decode_firmware_package,
+    decode_firmware_status,
+    demo_sign_firmware_manifest,
+    demo_verify_firmware_manifest,
+    encode_firmware_action,
+    encode_firmware_chunk,
+    encode_firmware_manifest,
+    encode_firmware_package,
+    encode_firmware_status,
+    validate_firmware_manifest,
+)
+
 # Re-export M10 authenticated-session models and codecs.
 from .security import (
     DEFAULT_SECURITY_SESSION_TIMEOUT_SECONDS,
@@ -123,6 +157,35 @@ from .telemetry import (
 
 # Define the supported public import surface explicitly.
 __all__ = [
+    "FIRMWARE_CHUNK_MAX_DATA",
+    "FIRMWARE_MAX_SIGNATURE_SIZE",
+    "FIRMWARE_PACKAGE_MAGIC",
+    "FIRMWARE_SCHEMA_VERSION",
+    "FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256",
+    "FIRMWARE_SIGNATURE_ED25519",
+    "FIRMWARE_SIGNED_DOMAIN",
+    "FIRMWARE_SIGNED_MANIFEST_SIZE",
+    "FirmwareChunk",
+    "FirmwareFailureCode",
+    "FirmwareLifecycleState",
+    "FirmwareManifest",
+    "FirmwarePackage",
+    "FirmwareSignatureAlgorithm",
+    "FirmwareStatus",
+    "canonical_firmware_manifest",
+    "decode_firmware_action",
+    "decode_firmware_chunk",
+    "decode_firmware_manifest",
+    "decode_firmware_package",
+    "decode_firmware_status",
+    "demo_sign_firmware_manifest",
+    "demo_verify_firmware_manifest",
+    "encode_firmware_action",
+    "encode_firmware_chunk",
+    "encode_firmware_manifest",
+    "encode_firmware_package",
+    "encode_firmware_status",
+    "validate_firmware_manifest",
     "AuthBegin",
     "AuthChallenge",
     "AuthFinish",

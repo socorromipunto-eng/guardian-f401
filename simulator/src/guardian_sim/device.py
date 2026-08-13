@@ -32,6 +32,7 @@ from guardian_protocol import (
     encode_control_command_result,
     encode_control_status,
     encode_dsp_features,
+    encode_firmware_status,
     encode_health_status,
     encode_machine_telemetry,
     encode_security_status,
@@ -46,6 +47,14 @@ from .health import SimulatorHealthModel
 
 # Import the M9 supervisory-control model.
 from .control import SimulatorControlModel
+
+# Import the M12 secure firmware lifecycle simulator.
+from .firmware import (
+    SimulatorFirmwareLifecycle,
+    SimulatorFirmwareRollbackError,
+    SimulatorFirmwareSignatureError,
+    SimulatorFirmwareUpdateError,
+)
 
 # Import the M10 authenticated-session simulator engine.
 from .security import (
@@ -118,6 +127,13 @@ class GuardianDevice:
             psk=self._config.security_psk,
             max_role=self._config.security_max_role,
             enabled=self._config.security_enabled,
+        )
+
+        # Configure the M12 in-memory firmware lifecycle.
+        self._firmware = SimulatorFirmwareLifecycle(
+            signing_key=self._config.firmware_signing_key,
+            active_version_counter=self._config.firmware_version_counter,
+            max_image_size=self._config.firmware_max_image_size,
         )
 
         # Start without an active transport session owning telemetry delivery.
@@ -288,6 +304,29 @@ class GuardianDevice:
                 )
 
                 # Return the correlated public security status.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch public M12 GET_FIRMWARE_STATUS.
+            if frame.command == int(Command.GET_FIRMWARE_STATUS):
+
+                # Require the frozen empty status-query payload.
+                if frame.payload:
+
+                    # Reject undefined status-query bytes.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Encode public lifecycle diagnostics without key material.
+                payload = encode_firmware_status(
+                    self._firmware.status()
+                )
+
+                # Return the correlated firmware status.
                 return self._make_response(
                     frame,
                     payload,
@@ -505,6 +544,10 @@ class GuardianDevice:
                 in (
                     int(Command.BASELINE_CONTROL),
                     int(Command.CONTROL_COMMAND),
+                    int(Command.FIRMWARE_BEGIN),
+                    int(Command.FIRMWARE_CHUNK),
+                    int(Command.FIRMWARE_FINALIZE),
+                    int(Command.FIRMWARE_ACTIVATE),
                 )
             ):
 
@@ -916,12 +959,192 @@ class GuardianDevice:
                 payload,
             )
 
-        # Reject any command not explicitly included in the M10 protected surface.
+        # Dispatch protected M12 FIRMWARE_BEGIN.
+        if secure_request.inner_command == int(Command.FIRMWARE_BEGIN):
+
+            # Decode metadata, enforce rollback policy and erase staging storage.
+            try:
+
+                # Start one candidate transfer.
+                self._firmware.begin(
+                    secure_request.inner_payload
+                )
+            except SimulatorFirmwareRollbackError:
+
+                # Return an authenticated anti-rollback failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.ROLLBACK_BLOCKED,
+                )
+            except SimulatorFirmwareSignatureError:
+
+                # Return an authenticated signature-policy failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.SIGNATURE_INVALID,
+                )
+            except (SimulatorFirmwareUpdateError, ValueError):
+
+                # Return an authenticated malformed/update failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.UPDATE_FAILED,
+                )
+
+            # Return empty successful inner response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                b"",
+            )
+
+        # Dispatch protected M12 FIRMWARE_CHUNK.
+        if secure_request.inner_command == int(Command.FIRMWARE_CHUNK):
+
+            # Write one exact sequential image chunk.
+            try:
+
+                # Stage the authenticated image bytes.
+                self._firmware.write_chunk(
+                    secure_request.inner_payload
+                )
+            except ValueError:
+
+                # Return malformed/out-of-order chunk failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+            except SimulatorFirmwareUpdateError:
+
+                # Return authenticated staging failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.UPDATE_FAILED,
+                )
+
+            # Return empty successful inner response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                b"",
+            )
+
+        # Dispatch protected M12 FIRMWARE_FINALIZE.
+        if secure_request.inner_command == int(Command.FIRMWARE_FINALIZE):
+
+            # Verify complete staged image digest, signature and rollback policy.
+            try:
+
+                # Finalize the candidate.
+                self._firmware.finalize(
+                    secure_request.inner_payload
+                )
+            except SimulatorFirmwareRollbackError:
+
+                # Return authenticated anti-rollback rejection.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.ROLLBACK_BLOCKED,
+                )
+            except SimulatorFirmwareSignatureError:
+
+                # Return authenticated image-signature rejection.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.SIGNATURE_INVALID,
+                )
+            except ValueError:
+
+                # Return malformed/incomplete candidate failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+            except SimulatorFirmwareUpdateError:
+
+                # Return authenticated image hashing/update failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.UPDATE_FAILED,
+                )
+
+            # Return empty successful inner response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                b"",
+            )
+
+        # Dispatch protected M12 FIRMWARE_ACTIVATE.
+        if secure_request.inner_command == int(Command.FIRMWARE_ACTIVATE):
+
+            # Mark only a verified candidate pending boot.
+            try:
+
+                # Persist simulated pending activation state.
+                self._firmware.activate(
+                    secure_request.inner_payload
+                )
+            except ValueError:
+
+                # Return malformed action payload failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.INVALID_PAYLOAD,
+                )
+            except SimulatorFirmwareUpdateError:
+
+                # Return authenticated invalid-state/activation failure.
+                return self._make_inner_error(
+                    secure_request.inner_command,
+                    sequence,
+                    ErrorCode.UPDATE_FAILED,
+                )
+
+            # Return empty successful inner response.
+            return self._make_inner_response(
+                secure_request.inner_command,
+                sequence,
+                b"",
+            )
+
+        # Reject any command not explicitly included in the protected surface.
         return self._make_inner_error(
             secure_request.inner_command,
             sequence,
             ErrorCode.UNKNOWN_COMMAND,
         )
+
+    # Simulate one successful pending firmware boot confirmation.
+    def confirm_firmware_boot(self) -> None:
+        """Confirm the current pending M12 candidate in software-only tests."""
+
+        # Serialize lifecycle changes with request processing.
+        with self._lock:
+
+            # Advance active version and rollback floor.
+            self._firmware.confirm_boot()
+
+    # Simulate one failed pending firmware boot and safe rollback.
+    def fail_firmware_boot(self) -> None:
+        """Record one M12 pending-image boot failure."""
+
+        # Serialize lifecycle changes with request processing.
+        with self._lock:
+
+            # Preserve the previous active version and rollback floor.
+            self._firmware.report_boot_failure()
 
     # Map M9 state into the legacy device-state field used by GET_STATUS and telemetry.
     def _sync_control_state(self) -> None:

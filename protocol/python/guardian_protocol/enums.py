@@ -70,6 +70,21 @@ class Command(IntEnum):
     # Carry one authenticated, authorized and anti-replay-protected command.
     SECURE_COMMAND = 0x33
 
+    # Request public M12 firmware-lifecycle diagnostics.
+    GET_FIRMWARE_STATUS = 0x40
+
+    # Begin one authenticated firmware-image transfer.
+    FIRMWARE_BEGIN = 0x41
+
+    # Write one authenticated sequential firmware-image chunk.
+    FIRMWARE_CHUNK = 0x42
+
+    # Verify image digest, signature and rollback policy.
+    FIRMWARE_FINALIZE = 0x43
+
+    # Mark one verified firmware image pending activation.
+    FIRMWARE_ACTIVATE = 0x44
+
 
 # Define error identifiers carried by ERROR frame payloads.
 class ErrorCode(IntEnum):
@@ -102,8 +117,17 @@ class ErrorCode(IntEnum):
     # Reserve an authorization failure for the later security milestone.
     UNAUTHORIZED = 0x09
 
-    # Reserve replay detection for the later security milestone.
+    # Report replay or strict counter-order rejection.
     REPLAY_DETECTED = 0x0A
+
+    # Report firmware-image signature verification failure.
+    SIGNATURE_INVALID = 0x0B
+
+    # Report firmware-image rollback policy rejection.
+    ROLLBACK_BLOCKED = 0x0C
+
+    # Report firmware staging, hashing or activation failure.
+    UPDATE_FAILED = 0x0D
 
 
 # Define structured decoder outcomes for diagnostics and parser statistics.

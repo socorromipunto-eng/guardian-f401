@@ -24,7 +24,7 @@ jobs:
     steps:
       # Download repository source.
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Keep generated binaries outside source directories.
       - name: Prepare build directory
@@ -48,6 +48,7 @@ jobs:
           -Ifirmware/Health/Inc
           -Ifirmware/Control/Inc
           -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
@@ -57,6 +58,7 @@ jobs:
           firmware/Control/Src/guardian_control.c
           firmware/Security/Src/guardian_crypto.c
           firmware/Security/Src/guardian_security.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/embedded_link_host_test.c
           -lm
@@ -84,6 +86,7 @@ jobs:
           -Ifirmware/Health/Inc
           -Ifirmware/Control/Inc
           -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
@@ -93,6 +96,7 @@ jobs:
           firmware/Control/Src/guardian_control.c
           firmware/Security/Src/guardian_crypto.c
           firmware/Security/Src/guardian_security.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/telemetry_host_test.c
           -lm
@@ -214,6 +218,7 @@ jobs:
           -Ifirmware/Health/Inc
           -Ifirmware/Control/Inc
           -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
@@ -223,6 +228,7 @@ jobs:
           firmware/Control/Src/guardian_control.c
           firmware/Security/Src/guardian_crypto.c
           firmware/Security/Src/guardian_security.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/control_link_host_test.c
           -lm
@@ -244,6 +250,7 @@ jobs:
           -Werror
           -Ifirmware/Protocol/Inc
           -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
           firmware/Security/Src/guardian_crypto.c
           firmware/Security/Src/guardian_security.c
           firmware/Tests/security_host_test.c
@@ -271,6 +278,7 @@ jobs:
           -Ifirmware/Health/Inc
           -Ifirmware/Control/Inc
           -Ifirmware/Security/Inc
+          -Ifirmware/Firmware/Inc
           firmware/Protocol/Src/guardian_protocol.c
           firmware/Protocol/Src/guardian_parser.c
           firmware/App/Src/guardian_device_service.c
@@ -280,6 +288,7 @@ jobs:
           firmware/Control/Src/guardian_control.c
           firmware/Security/Src/guardian_crypto.c
           firmware/Security/Src/guardian_security.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
           firmware/Platform/Src/guardian_embedded_link.c
           firmware/Tests/security_link_host_test.c
           -lm

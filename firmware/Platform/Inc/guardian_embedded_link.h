@@ -22,6 +22,9 @@
 /* Include the M10 authenticated-session and anti-replay policy. */
 #include "guardian_security.h"
 
+/* Include the M12 secure firmware lifecycle policy. */
+#include "guardian_firmware_lifecycle.h"
+
 /* Include size_t for bounded byte budgets and writer lengths. */
 #include <stddef.h>
 
@@ -108,6 +111,9 @@ typedef struct
     /* Store the complete M10 authenticated-session runtime. */
     guardian_security_t security;
 
+    /* Store the complete M12 secure firmware lifecycle runtime. */
+    guardian_firmware_lifecycle_t firmware;
+
     /* Require protected wrapping for privileged commands when non-zero. */
     uint8_t security_required;
 
@@ -186,6 +192,25 @@ void guardian_embedded_link_require_security(
 /* Return public M10 security diagnostics by value. */
 guardian_security_status_t guardian_embedded_link_security_status(
     guardian_embedded_link_t *link);
+
+/* Install M12 staging, signature-verification and rollback-persistence callbacks. */
+guardian_firmware_result_t guardian_embedded_link_configure_firmware(
+    guardian_embedded_link_t *link,
+    const guardian_firmware_config_t *config);
+
+/* Return public M12 firmware lifecycle diagnostics by value. */
+guardian_firmware_status_t guardian_embedded_link_firmware_status(
+    const guardian_embedded_link_t *link);
+
+/* Confirm one successfully booted pending image and advance rollback floor. */
+guardian_firmware_result_t guardian_embedded_link_confirm_firmware_boot(
+    guardian_embedded_link_t *link,
+    uint32_t booted_version_counter);
+
+/* Record one failed pending image boot without advancing rollback floor. */
+guardian_firmware_result_t guardian_embedded_link_report_firmware_boot_failure(
+    guardian_embedded_link_t *link,
+    uint32_t attempted_version_counter);
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(

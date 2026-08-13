@@ -122,7 +122,22 @@ typedef enum
     GUARDIAN_COMMAND_GET_SECURITY_STATUS = 0x32,
 
     /* Carry one authenticated, authorized and anti-replay-protected command. */
-    GUARDIAN_COMMAND_SECURE_COMMAND = 0x33
+    GUARDIAN_COMMAND_SECURE_COMMAND = 0x33,
+
+    /* Request public M12 firmware-lifecycle diagnostics. */
+    GUARDIAN_COMMAND_GET_FIRMWARE_STATUS = 0x40,
+
+    /* Begin one authenticated firmware-image transfer. */
+    GUARDIAN_COMMAND_FIRMWARE_BEGIN = 0x41,
+
+    /* Write one authenticated sequential firmware-image chunk. */
+    GUARDIAN_COMMAND_FIRMWARE_CHUNK = 0x42,
+
+    /* Verify image digest, signature and rollback policy. */
+    GUARDIAN_COMMAND_FIRMWARE_FINALIZE = 0x43,
+
+    /* Mark one verified firmware image pending activation. */
+    GUARDIAN_COMMAND_FIRMWARE_ACTIVATE = 0x44
 } guardian_command_t;
 
 /* Define application and protocol error identifiers carried in ERROR payloads. */
@@ -155,8 +170,17 @@ typedef enum
     /* Reserve authorization failure for the security milestone. */
     GUARDIAN_ERROR_UNAUTHORIZED = 0x09,
 
-    /* Reserve replay detection for the security milestone. */
-    GUARDIAN_ERROR_REPLAY_DETECTED = 0x0A
+    /* Report replay or strict counter-order rejection. */
+    GUARDIAN_ERROR_REPLAY_DETECTED = 0x0A,
+
+    /* Report firmware-image signature verification failure. */
+    GUARDIAN_ERROR_SIGNATURE_INVALID = 0x0B,
+
+    /* Report firmware-image rollback policy rejection. */
+    GUARDIAN_ERROR_ROLLBACK_BLOCKED = 0x0C,
+
+    /* Report a firmware staging, hashing or activation failure. */
+    GUARDIAN_ERROR_UPDATE_FAILED = 0x0D
 } guardian_error_code_t;
 
 /* Define deterministic codec outcomes for callers and diagnostics. */

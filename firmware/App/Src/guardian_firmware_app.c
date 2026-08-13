@@ -109,7 +109,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 10U;
+    identity.firmware_minor = 12U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -132,7 +132,7 @@ int guardian_firmware_app_init(
         return 0;
     }
 
-    /* Require M10 authenticated wrapping for privileged baseline/control commands. */
+    /* Require M10 authenticated wrapping for privileged baseline/control/firmware commands. */
     guardian_embedded_link_require_security(
         &guardian_link,
         1U);
@@ -364,4 +364,43 @@ guardian_security_status_t guardian_firmware_app_security_status(void)
     /* Return public diagnostics without exposing key or session-key material. */
     return guardian_embedded_link_security_status(
         &guardian_link);
+}
+
+
+/* Install M12 staging, trusted signature verifier and rollback persistence callbacks. */
+guardian_firmware_result_t guardian_firmware_app_configure_firmware(
+    const guardian_firmware_config_t *config)
+{
+    /* Delegate complete lifecycle configuration to the transport-independent middleware. */
+    return guardian_embedded_link_configure_firmware(
+        &guardian_link,
+        config);
+}
+
+/* Return public M12 firmware lifecycle diagnostics. */
+guardian_firmware_status_t guardian_firmware_app_firmware_status(void)
+{
+    /* Return public lifecycle metadata without exposing signing keys. */
+    return guardian_embedded_link_firmware_status(
+        &guardian_link);
+}
+
+/* Confirm a successfully booted pending firmware image after application self-tests pass. */
+guardian_firmware_result_t guardian_firmware_app_confirm_boot(
+    uint32_t booted_version_counter)
+{
+    /* Advance rollback floor only after the running image has passed application confirmation. */
+    return guardian_embedded_link_confirm_firmware_boot(
+        &guardian_link,
+        booted_version_counter);
+}
+
+/* Record a failed pending firmware boot without advancing rollback floor. */
+guardian_firmware_result_t guardian_firmware_app_report_boot_failure(
+    uint32_t attempted_version_counter)
+{
+    /* Preserve the previous confirmed image as authoritative. */
+    return guardian_embedded_link_report_firmware_boot_failure(
+        &guardian_link,
+        attempted_version_counter);
 }

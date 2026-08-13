@@ -6,8 +6,15 @@ import argparse
 # Import os for environment-based M10 credential configuration.
 import os
 
-# Import shared M9 action and M10 authorization identifiers.
-from guardian_protocol import ControlAction, SecurityRole
+# Import Path for local signed firmware package loading.
+from pathlib import Path
+
+# Import shared control/security identifiers and the M12 package decoder.
+from guardian_protocol import (
+    ControlAction,
+    SecurityRole,
+    decode_firmware_package,
+)
 
 # Import sys for explicit stdout and stderr routing.
 import sys
@@ -41,6 +48,8 @@ from .presentation import (
     render_dsp_text,
     render_health_json,
     render_health_text,
+    render_firmware_status_json,
+    render_firmware_status_text,
     render_info_json,
     render_info_text,
     render_ping_json,
@@ -270,6 +279,43 @@ def build_parser() -> argparse.ArgumentParser:
     security_actions.add_parser(
         "authenticate",
         help="perform AUTH_BEGIN/AUTH_FINISH using the configured PSK",
+    )
+
+    # Register M12 secure firmware lifecycle operations.
+    firmware_parser = subcommands.add_parser(
+        "firmware",
+        help="inspect or upload signed M12 firmware images",
+    )
+
+    # Create required firmware lifecycle actions.
+    firmware_actions = firmware_parser.add_subparsers(
+        dest="firmware_action",
+        required=True,
+    )
+
+    # Register public firmware lifecycle status.
+    firmware_actions.add_parser(
+        "status",
+        help="read active/candidate version and rollback diagnostics",
+    )
+
+    # Register one signed package upload operation.
+    firmware_upload = firmware_actions.add_parser(
+        "upload",
+        help="stage and verify one signed .gfu package using ADMIN authorization",
+    )
+
+    # Require the local package path.
+    firmware_upload.add_argument(
+        "package",
+        help="path to one signed Guardian .gfu firmware package",
+    )
+
+    # Require explicit activation rather than activating automatically.
+    firmware_upload.add_argument(
+        "--activate",
+        action="store_true",
+        help="mark the verified image pending activation after upload",
     )
 
     # Register live M5 telemetry streaming.
@@ -642,6 +688,123 @@ def main(argv: list[str] | None = None) -> int:
                 print(render_authenticated_session_text(session))
 
             # Report success.
+            return 0
+
+        # Dispatch M12 secure firmware lifecycle operations.
+        if args.command == "firmware":
+
+            # Read public lifecycle status without authentication.
+            if args.firmware_action == "status":
+
+                # Execute GET_FIRMWARE_STATUS.
+                status = client.firmware_status()
+
+                # Select JSON output.
+                if args.json:
+
+                    # Print machine-readable lifecycle diagnostics.
+                    print(
+                        render_firmware_status_json(
+                            status
+                        )
+                    )
+                else:
+
+                    # Print human-readable lifecycle diagnostics.
+                    print(
+                        render_firmware_status_text(
+                            status
+                        )
+                    )
+
+                # Report successful status query.
+                return 0
+
+            # Require M10 credentials before any update transfer.
+            if security_config is None:
+
+                # Print a concise local configuration error.
+                print(
+                    (
+                        "guardianctl: firmware upload requires "
+                        "--psk-hex or GUARDIAN_PSK_HEX"
+                    ),
+                    file=sys.stderr,
+                )
+
+                # Return configuration failure status.
+                return 2
+
+            # Require ADMIN role explicitly for M12 update commands.
+            if security_config.role != SecurityRole.ADMIN:
+
+                # Print the required authorization level.
+                print(
+                    "guardianctl: firmware upload requires --role admin",
+                    file=sys.stderr,
+                )
+
+                # Return configuration failure status.
+                return 2
+
+            # Resolve the signed package path.
+            package_path = Path(
+                args.package
+            )
+
+            # Read and validate the complete local package before device side effects.
+            try:
+
+                # Decode exact package bytes including image SHA-256 validation.
+                package = decode_firmware_package(
+                    package_path.read_bytes()
+                )
+            except OSError as exc:
+
+                # Print local file failure without traceback.
+                print(
+                    f"guardianctl: cannot read firmware package: {exc}",
+                    file=sys.stderr,
+                )
+
+                # Return local operational failure.
+                return 1
+            except ValueError as exc:
+
+                # Print local package-format failure without contacting the device.
+                print(
+                    f"guardianctl: invalid firmware package: {exc}",
+                    file=sys.stderr,
+                )
+
+                # Return local validation failure.
+                return 2
+
+            # Stage, verify and optionally mark the candidate pending activation.
+            status = client.upload_firmware_package(
+                package,
+                activate=args.activate,
+            )
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable resulting lifecycle status.
+                print(
+                    render_firmware_status_json(
+                        status
+                    )
+                )
+            else:
+
+                # Print human-readable resulting lifecycle status.
+                print(
+                    render_firmware_status_text(
+                        status
+                    )
+                )
+
+            # Report successful signed package processing.
             return 0
 
         # Dispatch M8 baseline lifecycle control.

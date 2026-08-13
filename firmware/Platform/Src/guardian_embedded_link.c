@@ -319,7 +319,65 @@ static guardian_error_code_t guardian_embedded_security_error(
     return GUARDIAN_ERROR_INTERNAL;
 }
 
-/* Execute one authenticated privileged M8/M9 command without re-entering outer dispatch. */
+/* Map internal M12 lifecycle outcomes into Guardian wire errors. */
+static guardian_error_code_t guardian_embedded_firmware_error(
+    guardian_firmware_result_t result)
+{
+    /* Report anti-rollback policy rejection explicitly. */
+    if (result ==
+        GUARDIAN_FIRMWARE_ERROR_ROLLBACK_BLOCKED)
+    {
+        /* Use the M12 rollback-specific error identifier. */
+        return GUARDIAN_ERROR_ROLLBACK_BLOCKED;
+    }
+
+    /* Report image-authenticity rejection explicitly. */
+    if (result ==
+        GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID)
+    {
+        /* Use the M12 signature-specific error identifier. */
+        return GUARDIAN_ERROR_SIGNATURE_INVALID;
+    }
+
+    /* Report malformed chunks/actions and ordering violations as invalid payloads. */
+    if ((result ==
+         GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD) ||
+        (result ==
+         GUARDIAN_FIRMWARE_ERROR_OUT_OF_ORDER))
+    {
+        /* Preserve ordinary command payload diagnostics. */
+        return GUARDIAN_ERROR_INVALID_PAYLOAD;
+    }
+
+    /* Report valid operations attempted in the wrong lifecycle state as BUSY. */
+    if (result ==
+        GUARDIAN_FIRMWARE_ERROR_INVALID_STATE)
+    {
+        /* Tell the host to inspect lifecycle status before retrying. */
+        return GUARDIAN_ERROR_BUSY;
+    }
+
+    /* Collapse staging/hash/activation/backend failures into the M12 update failure code. */
+    if ((result ==
+         GUARDIAN_FIRMWARE_ERROR_UNCONFIGURED) ||
+        (result ==
+         GUARDIAN_FIRMWARE_ERROR_STORAGE) ||
+        (result ==
+         GUARDIAN_FIRMWARE_ERROR_HASH_MISMATCH) ||
+        (result ==
+         GUARDIAN_FIRMWARE_ERROR_ACTIVATION) ||
+        (result ==
+         GUARDIAN_FIRMWARE_ERROR_CONFIRMATION))
+    {
+        /* Report one stable firmware-update failure class. */
+        return GUARDIAN_ERROR_UPDATE_FAILED;
+    }
+
+    /* Treat unexpected lifecycle outcomes as internal errors. */
+    return GUARDIAN_ERROR_INTERNAL;
+}
+
+/* Execute one authenticated privileged M8/M9/M12 command without re-entering outer dispatch. */
 static guardian_protocol_result_t guardian_embedded_dispatch_privileged(
     guardian_embedded_link_t *link,
     const guardian_frame_t *request,
@@ -368,6 +426,192 @@ static guardian_protocol_result_t guardian_embedded_dispatch_privileged(
 
         /* Return the existing handler result. */
         return result;
+    }
+
+    /* Route M12 signed candidate transfer initialization. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_FIRMWARE_BEGIN)
+    {
+        /* Decode the complete signed manifest. */
+        guardian_firmware_manifest_t manifest = {0};
+
+        /* Validate signed metadata before touching staging storage. */
+        guardian_firmware_result_t result =
+            guardian_firmware_decode_manifest(
+                request->payload,
+                request->payload_length,
+                &manifest);
+
+        /* Begin the candidate transfer only after successful decoding. */
+        if (result ==
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Enforce rollback policy and erase staging storage. */
+            result =
+                guardian_firmware_begin(
+                    &link->firmware,
+                    &manifest);
+        }
+
+        /* Return one authenticated application error when lifecycle setup fails. */
+        if (result !=
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Build the inner firmware failure result. */
+            guardian_embedded_make_error(
+                request,
+                response,
+                guardian_embedded_firmware_error(
+                    result));
+
+            /* Report successful ERROR frame construction. */
+            return GUARDIAN_PROTOCOL_OK;
+        }
+
+        /* Build an empty successful inner response. */
+        guardian_embedded_make_response(
+            request,
+            response);
+
+        /* Report successful response construction. */
+        return GUARDIAN_PROTOCOL_OK;
+    }
+
+    /* Route M12 sequential candidate image chunks. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_FIRMWARE_CHUNK)
+    {
+        /* Decode one bounded sequential image chunk. */
+        guardian_firmware_chunk_t chunk = {0};
+
+        /* Validate chunk wire semantics. */
+        guardian_firmware_result_t result =
+            guardian_firmware_decode_chunk(
+                request->payload,
+                request->payload_length,
+                &chunk);
+
+        /* Write candidate bytes only after successful decoding. */
+        if (result ==
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Persist exact sequential chunk bytes. */
+            result =
+                guardian_firmware_write_chunk(
+                    &link->firmware,
+                    &chunk);
+        }
+
+        /* Return an authenticated application error when staging fails. */
+        if (result !=
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Build the inner firmware failure result. */
+            guardian_embedded_make_error(
+                request,
+                response,
+                guardian_embedded_firmware_error(
+                    result));
+
+            /* Report successful ERROR frame construction. */
+            return GUARDIAN_PROTOCOL_OK;
+        }
+
+        /* Build an empty successful inner response. */
+        guardian_embedded_make_response(
+            request,
+            response);
+
+        /* Report successful response construction. */
+        return GUARDIAN_PROTOCOL_OK;
+    }
+
+    /* Route M12 candidate digest/signature verification. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_FIRMWARE_FINALIZE)
+    {
+        /* Validate the schema-only action payload. */
+        guardian_firmware_result_t result =
+            guardian_firmware_decode_action(
+                request->payload,
+                request->payload_length);
+
+        /* Finalize only after action decoding succeeds. */
+        if (result ==
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Verify staged image hash, signature and rollback policy. */
+            result =
+                guardian_firmware_finalize(
+                    &link->firmware);
+        }
+
+        /* Return an authenticated application error on verification failure. */
+        if (result !=
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Build the inner firmware failure result. */
+            guardian_embedded_make_error(
+                request,
+                response,
+                guardian_embedded_firmware_error(
+                    result));
+
+            /* Report successful ERROR frame construction. */
+            return GUARDIAN_PROTOCOL_OK;
+        }
+
+        /* Build an empty successful inner response. */
+        guardian_embedded_make_response(
+            request,
+            response);
+
+        /* Report successful response construction. */
+        return GUARDIAN_PROTOCOL_OK;
+    }
+
+    /* Route M12 verified candidate activation. */
+    if (request->command ==
+        (uint8_t)GUARDIAN_COMMAND_FIRMWARE_ACTIVATE)
+    {
+        /* Validate the schema-only activation payload. */
+        guardian_firmware_result_t result =
+            guardian_firmware_decode_action(
+                request->payload,
+                request->payload_length);
+
+        /* Mark the candidate pending only after action decoding succeeds. */
+        if (result ==
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Persist pending activation metadata. */
+            result =
+                guardian_firmware_activate(
+                    &link->firmware);
+        }
+
+        /* Return an authenticated application error on activation failure. */
+        if (result !=
+            GUARDIAN_FIRMWARE_OK)
+        {
+            /* Build the inner firmware failure result. */
+            guardian_embedded_make_error(
+                request,
+                response,
+                guardian_embedded_firmware_error(
+                    result));
+
+            /* Report successful ERROR frame construction. */
+            return GUARDIAN_PROTOCOL_OK;
+        }
+
+        /* Build an empty successful inner response. */
+        guardian_embedded_make_response(
+            request,
+            response);
+
+        /* Report successful response construction. */
+        return GUARDIAN_PROTOCOL_OK;
     }
 
     /* Reject unclassified secure inner commands. */
@@ -436,6 +680,10 @@ guardian_protocol_result_t guardian_embedded_link_init(
     /* Initialize M10 security unprovisioned with compatibility gate disabled at this layer. */
     guardian_security_init(
         &link->security);
+
+    /* Initialize M12 firmware lifecycle without platform storage callbacks. */
+    guardian_firmware_lifecycle_init(
+        &link->firmware);
 
     /* Preserve low-level M9 compatibility until the application explicitly requires M10. */
     link->security_required = 0U;
@@ -707,6 +955,77 @@ guardian_security_status_t guardian_embedded_link_security_status(
         now_seconds);
 }
 
+/* Install M12 staging, signature-verification and rollback-persistence callbacks. */
+guardian_firmware_result_t guardian_embedded_link_configure_firmware(
+    guardian_embedded_link_t *link,
+    const guardian_firmware_config_t *config)
+{
+    /* Reject missing middleware storage. */
+    if (link == NULL)
+    {
+        /* Report invalid caller state. */
+        return GUARDIAN_FIRMWARE_ERROR_NULL_ARGUMENT;
+    }
+
+    /* Delegate complete validation to the M12 lifecycle module. */
+    return guardian_firmware_lifecycle_configure(
+        &link->firmware,
+        config);
+}
+
+/* Return public M12 firmware lifecycle diagnostics by value. */
+guardian_firmware_status_t guardian_embedded_link_firmware_status(
+    const guardian_embedded_link_t *link)
+{
+    /* Delegate deterministic null handling to the lifecycle module. */
+    if (link == NULL)
+    {
+        /* Return an empty public status. */
+        return guardian_firmware_status(
+            NULL);
+    }
+
+    /* Return the current public lifecycle snapshot. */
+    return guardian_firmware_status(
+        &link->firmware);
+}
+
+/* Confirm one successfully booted pending image and advance rollback floor. */
+guardian_firmware_result_t guardian_embedded_link_confirm_firmware_boot(
+    guardian_embedded_link_t *link,
+    uint32_t booted_version_counter)
+{
+    /* Reject missing middleware storage. */
+    if (link == NULL)
+    {
+        /* Report invalid caller state. */
+        return GUARDIAN_FIRMWARE_ERROR_NULL_ARGUMENT;
+    }
+
+    /* Delegate boot confirmation and rollback-floor persistence. */
+    return guardian_firmware_confirm_boot(
+        &link->firmware,
+        booted_version_counter);
+}
+
+/* Record one failed pending image boot without advancing rollback floor. */
+guardian_firmware_result_t guardian_embedded_link_report_firmware_boot_failure(
+    guardian_embedded_link_t *link,
+    uint32_t attempted_version_counter)
+{
+    /* Reject missing middleware storage. */
+    if (link == NULL)
+    {
+        /* Report invalid caller state. */
+        return GUARDIAN_FIRMWARE_ERROR_NULL_ARGUMENT;
+    }
+
+    /* Delegate safe rollback-state recording. */
+    return guardian_firmware_report_boot_failure(
+        &link->firmware,
+        attempted_version_counter);
+}
+
 /* Advance asynchronous telemetry scheduling by one millisecond. */
 void guardian_embedded_link_tick_1ms(
     guardian_embedded_link_t *link)
@@ -928,6 +1247,51 @@ void guardian_embedded_link_poll(
                 }
             }
         }
+        /* Route public M12 firmware lifecycle diagnostics. */
+        else if (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_GET_FIRMWARE_STATUS)
+        {
+            /* Reject undefined status-query payload bytes. */
+            if (request.payload_length != 0U)
+            {
+                /* Build one normal invalid-payload error. */
+                guardian_embedded_make_error(
+                    &request,
+                    &output,
+                    GUARDIAN_ERROR_INVALID_PAYLOAD);
+            }
+            else
+            {
+                /* Read one public lifecycle snapshot. */
+                guardian_firmware_status_t firmware_status =
+                    guardian_firmware_status(
+                        &link->firmware);
+
+                /* Build successful outer response semantics. */
+                guardian_embedded_make_response(
+                    &request,
+                    &output);
+
+                /* Encode public lifecycle diagnostics. */
+                guardian_firmware_result_t firmware_result =
+                    guardian_firmware_encode_status_payload(
+                        &firmware_status,
+                        output.payload,
+                        GUARDIAN_MAX_PAYLOAD_SIZE,
+                        &output.payload_length);
+
+                /* Treat impossible encoding failure as internal error. */
+                if (firmware_result !=
+                    GUARDIAN_FIRMWARE_OK)
+                {
+                    /* Replace the response with one internal error. */
+                    guardian_embedded_make_error(
+                        &request,
+                        &output,
+                        GUARDIAN_ERROR_INTERNAL);
+                }
+            }
+        }
         /* Route one authenticated and anti-replay-protected privileged command. */
         else if (request.command ==
                  (uint8_t)GUARDIAN_COMMAND_SECURE_COMMAND)
@@ -976,7 +1340,7 @@ void guardian_embedded_link_poll(
                 }
                 else
                 {
-                    /* Execute only the explicitly classified M8/M9 privileged surface. */
+                    /* Execute only the explicitly classified M8/M9/M12 privileged surface. */
                     protocol_result =
                         guardian_embedded_dispatch_privileged(
                             link,
@@ -1016,7 +1380,15 @@ void guardian_embedded_link_poll(
                  ((request.command ==
                    (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL) ||
                   (request.command ==
-                   (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND)))
+                   (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND) ||
+                  (request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_FIRMWARE_BEGIN) ||
+                  (request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_FIRMWARE_CHUNK) ||
+                  (request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_FIRMWARE_FINALIZE) ||
+                  (request.command ==
+                   (uint8_t)GUARDIAN_COMMAND_FIRMWARE_ACTIVATE)))
         {
             /* Require authenticated SECURE_COMMAND wrapping instead. */
             guardian_embedded_make_error(

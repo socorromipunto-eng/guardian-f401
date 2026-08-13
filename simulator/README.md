@@ -1,25 +1,49 @@
 # Guardian F401 Device Simulator
 
-M10 secure mode is opt-in so earlier compatibility demos remain unchanged.
+M12 extends secure simulator mode with signed firmware staging, verification, activation and rollback-policy state.
 
-Start secure mode:
+Start the secure simulator:
 
 ```text
 python tools/run_simulator.py --secure
 ```
 
-The intentionally public test/demo PSK is:
+The intentionally public M10 simulator PSK is:
 
 ```text
 00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f
 ```
 
-Set the same key in guardianctl:
+The intentionally public M12 simulator-only firmware signing key is:
+
+```text
+7f6e5d4c3b2a1908172635445362718090a1b2c3d4e5f60718293a4b5c6d7e8f
+```
+
+Build a simulator package:
+
+```text
+python tools/build_firmware_package.py demo --output demo-m12.gfu
+```
+
+Configure guardianctl:
 
 ```text
 $env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
-python tools/guardianctl.py security authenticate
-python tools/guardianctl.py baseline start --samples 64
 ```
 
-Never use the simulator demo key on physical hardware.
+Upload and mark the candidate pending activation:
+
+```text
+python tools/guardianctl.py --role admin firmware upload demo-m12.gfu --activate
+```
+
+Inspect lifecycle state:
+
+```text
+python tools/guardianctl.py firmware status
+```
+
+The simulator signing key is for tests only.
+
+Never use either demonstration key on physical hardware.

@@ -18,6 +18,11 @@ from guardian_protocol import (
     DeviceInfo,
     DeviceStatus,
     DspFeatures,
+    FIRMWARE_CHUNK_MAX_DATA,
+    FirmwareChunk,
+    FirmwareManifest,
+    FirmwarePackage,
+    FirmwareStatus,
     Frame,
     HealthStatus,
     MessageType,
@@ -28,10 +33,14 @@ from guardian_protocol import (
     decode_control_status,
     decode_device_status,
     decode_dsp_features,
+    decode_firmware_status,
     decode_health_status,
     decode_security_status,
     encode_baseline_control,
     encode_control_command,
+    encode_firmware_action,
+    encode_firmware_chunk,
+    encode_firmware_manifest,
 )
 
 # Import immutable M10 host security configuration.
@@ -267,6 +276,139 @@ class GuardianClient:
         # Decode the fixed M7 feature payload.
         return decode_dsp_features(response.payload)
 
+
+    # Read public M12 firmware lifecycle diagnostics.
+    def firmware_status(self) -> FirmwareStatus:
+        """Execute GET_FIRMWARE_STATUS and decode its fixed public payload."""
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the empty public lifecycle status request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.GET_FIRMWARE_STATUS,
+            sequence=sequence,
+        )
+
+        # Execute one synchronous read-only exchange.
+        response = self._transport.exchange(
+            request
+        )
+
+        # Decode and return fixed public lifecycle diagnostics.
+        return decode_firmware_status(
+            response.payload
+        )
+
+    # Begin one ADMIN-protected M12 candidate transfer.
+    def firmware_begin(
+        self,
+        manifest: FirmwareManifest,
+    ) -> None:
+        """Send one signed firmware manifest through M10 SECURE_COMMAND."""
+
+        # Encode and validate signed metadata before transport side effects.
+        payload = encode_firmware_manifest(
+            manifest
+        )
+
+        # Execute the ADMIN-classified privileged command.
+        self._privileged_exchange(
+            Command.FIRMWARE_BEGIN,
+            payload,
+        )
+
+    # Write one ADMIN-protected M12 candidate chunk.
+    def firmware_chunk(
+        self,
+        offset: int,
+        data: bytes,
+    ) -> None:
+        """Write one sequential candidate image chunk."""
+
+        # Build the immutable shared chunk model.
+        chunk = FirmwareChunk(
+            offset=offset,
+            data=bytes(data),
+        )
+
+        # Encode and validate the bounded chunk before transport.
+        payload = encode_firmware_chunk(
+            chunk
+        )
+
+        # Execute the ADMIN-classified privileged command.
+        self._privileged_exchange(
+            Command.FIRMWARE_CHUNK,
+            payload,
+        )
+
+    # Verify one completely staged M12 image.
+    def firmware_finalize(self) -> None:
+        """Request digest, signature and rollback-policy verification."""
+
+        # Execute the schema-only protected finalize action.
+        self._privileged_exchange(
+            Command.FIRMWARE_FINALIZE,
+            encode_firmware_action(),
+        )
+
+    # Mark one verified M12 image pending activation.
+    def firmware_activate(self) -> None:
+        """Mark one verified image pending activation on the next boot."""
+
+        # Execute the schema-only protected activation action.
+        self._privileged_exchange(
+            Command.FIRMWARE_ACTIVATE,
+            encode_firmware_action(),
+        )
+
+    # Upload one complete decoded .gfu package using bounded sequential chunks.
+    def upload_firmware_package(
+        self,
+        package: FirmwarePackage,
+        activate: bool = False,
+    ) -> FirmwareStatus:
+        """Stage, verify and optionally activate one signed firmware package."""
+
+        # Begin the candidate using its signed manifest.
+        self.firmware_begin(
+            package.manifest
+        )
+
+        # Start at the first image byte.
+        offset = 0
+
+        # Stream the complete image in the shared M12 chunk bound.
+        while offset < len(package.image):
+
+            # Select the next bounded candidate slice.
+            chunk = package.image[
+                offset:
+                offset + FIRMWARE_CHUNK_MAX_DATA
+            ]
+
+            # Send the exact sequential chunk.
+            self.firmware_chunk(
+                offset,
+                chunk,
+            )
+
+            # Advance ownership by the transmitted byte count.
+            offset += len(chunk)
+
+        # Verify digest, signature and rollback policy.
+        self.firmware_finalize()
+
+        # Mark the verified candidate pending only when explicitly requested.
+        if activate:
+
+            # Execute the explicit activation operation.
+            self.firmware_activate()
+
+        # Return the resulting public lifecycle status.
+        return self.firmware_status()
 
     # Read the current M8 machine-health snapshot.
     def health_status(self) -> HealthStatus:

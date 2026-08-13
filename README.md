@@ -16,36 +16,45 @@ M9 supervisory control
 M10 authenticated privileged commands
   |
 M11 robustness / fuzzing / fault injection
+  |
+M12 signed firmware lifecycle / anti-rollback
 ```
 
-## M11 Robustness Demo
+## M12 Simulator Demo
 
-Run one deterministic defensive campaign:
+Start secure mode:
 
 ```text
-python tools/run_robustness.py --seed 0xC0FFEE11 --iterations 1000
+python tools/run_simulator.py --secure
 ```
 
-Expected summary:
+Configure the public simulator M10 PSK:
 
 ```text
-Guardian M11 robustness campaign: PASS
-Parser recovery: 1000/1000
-Secure tamper rejection: 1000/1000
-Exact replay rejections: 1
-Counter-gap rejections: 1
+$env:GUARDIAN_PSK_HEX="00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f"
 ```
 
-M11 also includes:
+Build a simulator-only signed package:
 
 ```text
-GCC ASan/UBSan parser mutation driver
-GCC ASan/UBSan security mutation driver
-Clang libFuzzer parser harness
-Clang libFuzzer secure-envelope harness
-committed parser/security seed corpora
-GitHub Actions robustness gate
+python tools/build_firmware_package.py demo --output demo-m12.gfu
 ```
+
+Upload it with ADMIN authorization and mark it pending activation:
+
+```text
+python tools/guardianctl.py --role admin firmware upload demo-m12.gfu --activate
+```
+
+Inspect lifecycle state:
+
+```text
+python tools/guardianctl.py firmware status
+```
+
+The demo signing backend is intentionally test-only.
+
+Production uses the M12 signature-verification callback with trusted public-key storage.
 
 ## Milestones
 
@@ -71,8 +80,10 @@ M9 supervisory control + fault policy — completed.
 
 M10 authenticated sessions + authorization + anti-replay — completed.
 
-M11 robustness + fuzzing + fault injection — implemented.
+M11 robustness + fuzzing + fault injection — completed.
 
-M12 secure firmware lifecycle — next.
+M12 secure firmware lifecycle + rollback protection — implemented.
 
-See `docs/m11-robustness.md`.
+The next engineering gate is physical STM32F401 integration: Keil target build, bootloader/flash layout, trusted Ed25519 verification, persistent metadata and power-loss testing.
+
+See `docs/m12-firmware-lifecycle.md`.

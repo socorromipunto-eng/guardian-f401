@@ -1,25 +1,29 @@
 # Firmware
 
-M10 adds portable PSK authenticated sessions around privileged M8/M9 commands.
+M12 adds a transport-independent secure firmware lifecycle on top of M10 authenticated ADMIN commands.
+
+Portable lifecycle source:
 
 ```text
-AUTH_BEGIN
-AUTH_FINISH
-SECURE_COMMAND
-GET_SECURITY_STATUS
+firmware/Firmware/Inc/guardian_firmware_lifecycle.h
+firmware/Firmware/Src/guardian_firmware_lifecycle.c
 ```
 
-Portable modules:
+The module implements:
 
 ```text
-firmware/Security/Src/guardian_crypto.c
-firmware/Security/Src/guardian_security.c
+signed release manifest parsing
+sequential candidate staging policy
+SHA-256 image verification
+trusted signature-verifier callback
+monotonic anti-rollback policy
+pending activation state
+local boot confirmation
+safe rollback state
 ```
 
-The STM32 application requires secure wrapping for baseline/control commands by default.
+Production firmware embeds no private signing key.
 
-No production PSK is stored in the repository.
+Board integration must supply staging storage, trusted public-key verification, atomic pending-image metadata and atomic rollback-floor persistence.
 
-Board/product integration must supply a high-entropy 32-byte PSK and cryptographically strong nonce callback.
-
-See `docs/m10-security.md`.
+See `docs/m12-firmware-lifecycle.md`.
