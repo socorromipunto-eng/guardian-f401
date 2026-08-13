@@ -6,6 +6,8 @@ import json
 # Import typed protocol models displayed by the CLI.
 from guardian_protocol import (
     BaselineControl,
+    ControlCommandResult,
+    ControlStatus,
     DeviceInfo,
     DeviceStatus,
     DspFeatures,
@@ -394,6 +396,146 @@ def render_baseline_json(control: BaselineControl) -> str:
         {
             "action": control.action.name,
             "target_samples": control.target_samples,
+        },
+        sort_keys=True,
+    )
+
+
+# Map M9 fault bits to stable human-readable names.
+_CONTROL_FAULT_NAMES = (
+    (0x0001, "HEALTH_NOT_READY"),
+    (0x0002, "HEALTH_ALARM"),
+    (0x0004, "INTERLOCK_OPEN"),
+    (0x0008, "OUTPUT_FAILURE"),
+    (0x0010, "OUTPUT_UNAVAILABLE"),
+)
+
+
+# Format one M9 control fault mask for human output.
+def _format_control_faults(mask: int) -> str:
+    """Return a compact symbolic M9 fault list."""
+
+    # Collect every published fault bit currently set.
+    names = [
+        name
+        for bit, name in _CONTROL_FAULT_NAMES
+        if mask & bit
+    ]
+
+    # Return NONE when no published fault bit is active.
+    if not names:
+
+        # Publish an explicit clean state.
+        return "NONE"
+
+    # Join stable symbolic fault names.
+    return ",".join(names)
+
+
+# Render one M9 control snapshot for a human operator.
+def render_control_status_text(status: ControlStatus) -> str:
+    """Return human-readable M9 supervisory-control output."""
+
+    # Return stable operator-facing control lines.
+    return "\n".join(
+        (
+            f"Control state: {status.state.name}",
+            (
+                "Supervision enabled: "
+                f"{'yes' if status.supervision_enabled else 'no'}"
+            ),
+            (
+                "Local run request: "
+                f"{'yes' if status.local_run_request else 'no'}"
+            ),
+            (
+                "Run permit: "
+                f"{'ON' if status.run_permit else 'SAFE-OFF'}"
+            ),
+            (
+                "Interlock: "
+                f"{'closed' if status.interlock_closed else 'OPEN'}"
+            ),
+            f"Health state: {status.health_state.name}",
+            f"Health score: {status.health_score}/1000",
+            f"Anomaly score: {status.anomaly_score}/1000",
+            (
+                "Latched faults: "
+                f"0x{status.latched_faults:04X} "
+                f"({_format_control_faults(status.latched_faults)})"
+            ),
+            (
+                "Active faults: "
+                f"0x{status.active_faults:04X} "
+                f"({_format_control_faults(status.active_faults)})"
+            ),
+            f"Transitions: {status.transition_count}",
+            f"Fault latch episodes: {status.fault_latch_count}",
+            (
+                "Last transition reason: "
+                f"0x{status.last_transition_reason:02X}"
+            ),
+        )
+    )
+
+
+# Render one M9 control snapshot as JSON.
+def render_control_status_json(status: ControlStatus) -> str:
+    """Return machine-readable M9 supervisory-control output."""
+
+    # Serialize stable fields for dashboards and automation.
+    return json.dumps(
+        {
+            "active_faults": status.active_faults,
+            "anomaly_score": status.anomaly_score,
+            "fault_latch_count": status.fault_latch_count,
+            "health_score": status.health_score,
+            "health_state": status.health_state.name,
+            "interlock_closed": status.interlock_closed,
+            "last_transition_reason": status.last_transition_reason,
+            "latched_faults": status.latched_faults,
+            "local_run_request": status.local_run_request,
+            "output_available": status.output_available,
+            "run_permit": status.run_permit,
+            "state": status.state.name,
+            "supervision_enabled": status.supervision_enabled,
+            "transition_count": status.transition_count,
+        },
+        sort_keys=True,
+    )
+
+
+# Render one successful M9 host control action for a human operator.
+def render_control_result_text(
+    result: ControlCommandResult,
+) -> str:
+    """Return human-readable M9 control action acknowledgement."""
+
+    # Return the normalized device result.
+    return "\n".join(
+        (
+            f"Action: {result.action.name}",
+            f"Control state: {result.state.name}",
+            (
+                "Run permit: "
+                f"{'ON' if result.run_permit else 'SAFE-OFF'}"
+            ),
+        )
+    )
+
+
+# Render one successful M9 host control action as JSON.
+def render_control_result_json(
+    result: ControlCommandResult,
+) -> str:
+    """Return machine-readable M9 control action acknowledgement."""
+
+    # Serialize the normalized result.
+    return json.dumps(
+        {
+            "action": result.action.name,
+            "run_permit": result.run_permit,
+            "state": result.state.name,
         },
         sort_keys=True,
     )

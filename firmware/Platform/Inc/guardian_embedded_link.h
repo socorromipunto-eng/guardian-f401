@@ -16,6 +16,9 @@
 /* Include the M8 runtime baseline and anomaly model. */
 #include "guardian_health.h"
 
+/* Include the M9 supervisory-control policy and safe-output abstraction. */
+#include "guardian_control.h"
+
 /* Include size_t for bounded byte budgets and writer lengths. */
 #include <stddef.h>
 
@@ -96,6 +99,9 @@ typedef struct
     /* Store the complete M8 runtime baseline and anomaly model. */
     guardian_health_t health;
 
+    /* Store the complete M9 supervisory-control runtime. */
+    guardian_control_t control;
+
     /* Store platform transport callbacks. */
     guardian_embedded_io_t io;
 
@@ -112,7 +118,7 @@ guardian_protocol_result_t guardian_embedded_link_init(
     const guardian_embedded_io_t *io,
     const guardian_device_identity_t *identity);
 
-/* Change the application state published by status and telemetry. */
+/* Change legacy application state only while M9 supervision remains disabled. */
 void guardian_embedded_link_set_state(
     guardian_embedded_link_t *link,
     guardian_device_state_t state);
@@ -131,6 +137,30 @@ void guardian_embedded_link_update_dsp(
 
 /* Return the current immutable M8 machine-health snapshot by value. */
 guardian_health_status_t guardian_embedded_link_health_status(
+    const guardian_embedded_link_t *link);
+
+
+/* Install the application/board-specific logical run-permit output boundary. */
+guardian_control_result_t guardian_embedded_link_configure_control_output(
+    guardian_embedded_link_t *link,
+    const guardian_control_output_t *output);
+
+/* Update the local-only machine run request consumed by M9 policy. */
+void guardian_embedded_link_set_local_run_request(
+    guardian_embedded_link_t *link,
+    uint8_t requested);
+
+/* Update the local safety-interlock input consumed by M9 policy. */
+void guardian_embedded_link_set_interlock(
+    guardian_embedded_link_t *link,
+    uint8_t closed);
+
+/* Return the current immutable M9 supervisory-control snapshot by value. */
+guardian_control_status_t guardian_embedded_link_control_status(
+    const guardian_embedded_link_t *link);
+
+/* Return the currently applied logical M9 run permit. */
+uint8_t guardian_embedded_link_run_permit(
     const guardian_embedded_link_t *link);
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */

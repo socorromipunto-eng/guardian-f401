@@ -11,6 +11,10 @@ from guardian_protocol import (
     BaselineAction,
     BaselineControl,
     Command,
+    ControlAction,
+    ControlCommand,
+    ControlCommandResult,
+    ControlStatus,
     DeviceInfo,
     DeviceStatus,
     DspFeatures,
@@ -19,10 +23,13 @@ from guardian_protocol import (
     MessageType,
     decode_device_info,
     decode_baseline_control,
+    decode_control_command_result,
+    decode_control_status,
     decode_device_status,
     decode_dsp_features,
     decode_health_status,
     encode_baseline_control,
+    encode_control_command,
 )
 
 # Import host-side protocol contract errors.
@@ -279,3 +286,70 @@ class GuardianClient:
 
         # Return the normalized reset response.
         return normalized
+
+    # Read the current M9 supervisory-control snapshot.
+    def control_status(self) -> ControlStatus:
+        """Execute GET_CONTROL_STATUS and decode its fixed M9 payload."""
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the empty control-status request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.GET_CONTROL_STATUS,
+            sequence=sequence,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode the fixed M9 control payload.
+        return decode_control_status(response.payload)
+
+    # Execute one M9 host supervisory action.
+    def control_action(
+        self,
+        action: ControlAction,
+    ) -> ControlCommandResult:
+        """Execute one safety-gated CONTROL_COMMAND."""
+
+        # Build the immutable shared command model.
+        command = ControlCommand(
+            action=action
+        )
+
+        # Validate and encode before transport side effects.
+        payload = encode_control_command(
+            command
+        )
+
+        # Allocate one request correlation sequence.
+        sequence = self._sequence_manager.next()
+
+        # Build the fixed control request.
+        request = Frame(
+            message_type=MessageType.REQUEST,
+            command=Command.CONTROL_COMMAND,
+            sequence=sequence,
+            payload=payload,
+        )
+
+        # Execute one synchronous transport exchange.
+        response = self._transport.exchange(request)
+
+        # Decode the normalized successful command result.
+        result = decode_control_command_result(
+            response.payload
+        )
+
+        # Require the device to acknowledge the exact requested action.
+        if result.action != ControlAction(action):
+
+            # Reject contradictory remote control semantics.
+            raise ProtocolClientError(
+                "device returned an unexpected control action"
+            )
+
+        # Return the typed normalized result.
+        return result

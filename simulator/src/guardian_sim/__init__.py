@@ -12,11 +12,15 @@ from .server import GuardianTcpServer, run_server
 # Re-export the M8 simulator health model for focused tests.
 from .health import SimulatorHealthModel
 
+# Re-export the M9 simulator control model for focused tests.
+from .control import SimulatorControlModel
+
 # Define the stable public simulator import surface explicitly.
 __all__ = [
     "GuardianDevice",
     "GuardianTcpServer",
     "SimulatorConfig",
     "SimulatorHealthModel",
+    "SimulatorControlModel",
     "run_server",
 ]

@@ -23,6 +23,81 @@ static void guardian_embedded_increment_u32(
     }
 }
 
+/* Map M9 supervisory state into the pre-existing device state published by M4/M5. */
+static guardian_device_state_t guardian_embedded_control_device_state(
+    const guardian_control_status_t *status)
+{
+    /* Map active normal supervision into RUNNING. */
+    if (status->state ==
+        GUARDIAN_CONTROL_STATE_ACTIVE)
+    {
+        /* Publish active machine monitoring/control state. */
+        return GUARDIAN_DEVICE_STATE_RUNNING;
+    }
+
+    /* Map warning-level active supervision into DEGRADED. */
+    if (status->state ==
+        GUARDIAN_CONTROL_STATE_DEGRADED)
+    {
+        /* Publish non-fatal degraded operation. */
+        return GUARDIAN_DEVICE_STATE_DEGRADED;
+    }
+
+    /* Map every latched M9 control fault into FAULT. */
+    if (status->state ==
+        GUARDIAN_CONTROL_STATE_FAULT_LATCHED)
+    {
+        /* Publish the existing application fault state. */
+        return GUARDIAN_DEVICE_STATE_FAULT;
+    }
+
+    /* Keep DISABLED and ARMED supervision represented as IDLE. */
+    return GUARDIAN_DEVICE_STATE_IDLE;
+}
+
+/* Synchronize legacy device-state output only after M9 supervision becomes authoritative. */
+static void guardian_embedded_sync_control_state(
+    guardian_embedded_link_t *link)
+{
+    /* Read one immutable M9 control snapshot. */
+    guardian_control_status_t status =
+        guardian_control_status(
+            &link->control);
+
+    /* Preserve legacy caller-selected state while supervision remains completely disabled. */
+    if ((status.supervision_enabled == 0U) &&
+        (status.state !=
+         GUARDIAN_CONTROL_STATE_FAULT_LATCHED))
+    {
+        /* Return without overwriting the M4 compatibility state. */
+        return;
+    }
+
+    /* Map M9 control state into GET_STATUS and M5 telemetry state. */
+    link->state =
+        guardian_embedded_control_device_state(
+            &status);
+}
+
+/* Feed the latest M8 snapshot into M9 and synchronize legacy device state when engaged. */
+static void guardian_embedded_update_control_health(
+    guardian_embedded_link_t *link)
+{
+    /* Read the current M8 machine-health snapshot. */
+    guardian_health_status_t health =
+        guardian_health_status(
+            &link->health);
+
+    /* Enforce automatic M9 health-driven safety policy. */
+    guardian_control_update_health(
+        &link->control,
+        &health);
+
+    /* Reflect active M9 policy through the existing status/telemetry state field. */
+    guardian_embedded_sync_control_state(
+        link);
+}
+
 /* Build a coherent runtime snapshot before creating a response. */
 static guardian_device_runtime_t guardian_embedded_runtime(
     const guardian_embedded_link_t *link)
@@ -197,6 +272,10 @@ guardian_protocol_result_t guardian_embedded_link_init(
     guardian_health_init(
         &link->health);
 
+    /* Initialize M9 supervision disabled, output-safe and interlock-open. */
+    guardian_control_init(
+        &link->control);
+
     /* Initialize immutable command-service identity. */
     result =
         guardian_device_service_init(
@@ -207,7 +286,7 @@ guardian_protocol_result_t guardian_embedded_link_init(
     return result;
 }
 
-/* Change the application state exposed by status and telemetry. */
+/* Change the legacy application state only while M9 supervision is not authoritative. */
 void guardian_embedded_link_set_state(
     guardian_embedded_link_t *link,
     guardian_device_state_t state)
@@ -219,7 +298,21 @@ void guardian_embedded_link_set_state(
         return;
     }
 
-    /* Store the caller-selected application state. */
+    /* Read the current M9 supervisory snapshot. */
+    guardian_control_status_t control_status =
+        guardian_control_status(
+            &link->control);
+
+    /* Refuse manual state overrides while M9 is armed, active, degraded or fault-latched. */
+    if ((control_status.supervision_enabled != 0U) ||
+        (control_status.state ==
+         GUARDIAN_CONTROL_STATE_FAULT_LATCHED))
+    {
+        /* Preserve the safety-owned state mapping. */
+        return;
+    }
+
+    /* Preserve M4 compatibility while supervision remains disabled. */
     link->state = state;
 }
 
@@ -263,6 +356,10 @@ void guardian_embedded_link_update_dsp(
     guardian_health_ingest(
         &link->health,
         features);
+
+    /* Enforce M9 policy using the newly updated M8 health snapshot. */
+    guardian_embedded_update_control_health(
+        link);
 }
 
 /* Return the current immutable M8 machine-health snapshot by value. */
@@ -280,6 +377,109 @@ guardian_health_status_t guardian_embedded_link_health_status(
     /* Return the current bounded model snapshot by value. */
     return guardian_health_status(
         &link->health);
+}
+
+/* Install the application/board-specific logical run-permit output boundary. */
+guardian_control_result_t guardian_embedded_link_configure_control_output(
+    guardian_embedded_link_t *link,
+    const guardian_control_output_t *output)
+{
+    /* Reject a missing middleware pointer. */
+    if (link == NULL)
+    {
+        /* Report invalid caller storage. */
+        return GUARDIAN_CONTROL_ERROR_NULL_ARGUMENT;
+    }
+
+    /* Configure and immediately safe-off the M9 output boundary. */
+    guardian_control_result_t result =
+        guardian_control_configure_output(
+            &link->control,
+            output);
+
+    /* Reflect any output-configuration fault into legacy device state. */
+    guardian_embedded_sync_control_state(
+        link);
+
+    /* Return the canonical M9 configuration result. */
+    return result;
+}
+
+/* Update the local-only machine run request consumed by M9 policy. */
+void guardian_embedded_link_set_local_run_request(
+    guardian_embedded_link_t *link,
+    uint8_t requested)
+{
+    /* Ignore a missing middleware pointer defensively. */
+    if (link == NULL)
+    {
+        /* Return without changing control state. */
+        return;
+    }
+
+    /* Forward the local-only run request into the M9 state machine. */
+    guardian_control_set_local_run_request(
+        &link->control,
+        requested);
+
+    /* Reflect active M9 supervision through existing state output. */
+    guardian_embedded_sync_control_state(
+        link);
+}
+
+/* Update the local safety-interlock input consumed by M9 policy. */
+void guardian_embedded_link_set_interlock(
+    guardian_embedded_link_t *link,
+    uint8_t closed)
+{
+    /* Ignore a missing middleware pointer defensively. */
+    if (link == NULL)
+    {
+        /* Return without changing control state. */
+        return;
+    }
+
+    /* Forward the local interlock state into M9 policy. */
+    guardian_control_set_interlock(
+        &link->control,
+        closed);
+
+    /* Reflect any resulting active/fault state through existing device state. */
+    guardian_embedded_sync_control_state(
+        link);
+}
+
+/* Return the current immutable M9 supervisory-control snapshot by value. */
+guardian_control_status_t guardian_embedded_link_control_status(
+    const guardian_embedded_link_t *link)
+{
+    /* Delegate deterministic null handling to the control module. */
+    if (link == NULL)
+    {
+        /* Return the safe default M9 snapshot. */
+        return guardian_control_status(
+            NULL);
+    }
+
+    /* Return the current bounded control snapshot by value. */
+    return guardian_control_status(
+        &link->control);
+}
+
+/* Return the currently applied logical M9 run permit. */
+uint8_t guardian_embedded_link_run_permit(
+    const guardian_embedded_link_t *link)
+{
+    /* Return safe-off for a missing middleware pointer. */
+    if (link == NULL)
+    {
+        /* Publish safe logical output. */
+        return 0U;
+    }
+
+    /* Return the successfully applied M9 logical run permit. */
+    return guardian_control_run_permit(
+        &link->control);
 }
 
 /* Advance asynchronous telemetry scheduling by one millisecond. */
@@ -421,6 +621,35 @@ void guardian_embedded_link_poll(
                     &link->health,
                     &request,
                     &output);
+
+            /* Re-evaluate M9 when a baseline command may have changed M8 readiness. */
+            if ((protocol_result ==
+                 GUARDIAN_PROTOCOL_OK) &&
+                (request.command ==
+                 (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL) &&
+                (output.message_type ==
+                 GUARDIAN_MESSAGE_RESPONSE))
+            {
+                /* Enforce safe-off if baseline reset/start made health unready. */
+                guardian_embedded_update_control_health(
+                    link);
+            }
+        }
+        else if ((request.command ==
+                  (uint8_t)GUARDIAN_COMMAND_GET_CONTROL_STATUS) ||
+                 (request.command ==
+                  (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND))
+        {
+            /* Route M9 status and safety-gated host actions to supervisory control. */
+            protocol_result =
+                guardian_control_handle_request(
+                    &link->control,
+                    &request,
+                    &output);
+
+            /* Reflect successful or faulting M9 command effects through legacy device state. */
+            guardian_embedded_sync_control_state(
+                link);
         }
         else
         {

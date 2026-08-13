@@ -14,6 +14,8 @@ Guardian Protocol `0.1`.
 | `0x11` | `GET_DSP_FEATURES` | Empty | Binary DspFeatures schema v1 |
 | `0x12` | `GET_HEALTH_STATUS` | Empty | Binary HealthStatus schema v1 |
 | `0x13` | `BASELINE_CONTROL` | Binary BaselineControl schema v1 | Normalized BaselineControl schema v1 |
+| `0x14` | `GET_CONTROL_STATUS` | Empty | Binary ControlStatus schema v1 |
+| `0x15` | `CONTROL_COMMAND` | Binary ControlCommand schema v1 | Binary ControlCommandResult schema v1 |
 | `0x20` | `SET_TELEMETRY` | Binary TelemetryConfig schema v1 | Normalized TelemetryConfig schema v1 |
 | `0x21` | `MACHINE_TELEMETRY` | Not a request command | Asynchronous TELEMETRY payload schema v1 |
 
@@ -206,3 +208,96 @@ Health states:
 ```
 
 The M8 anomaly score is a deterministic statistical distance from an explicitly learned baseline. It is not a safety-certified diagnostic or a probability of failure.
+
+
+## M9 CONTROL_COMMAND
+
+The request is fixed at 2 bytes:
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ACTION
+```
+
+Actions:
+
+```text
+1 ARM
+2 DISARM
+3 CLEAR_FAULT
+```
+
+The host protocol deliberately has **no RUN/START action in M9**.
+
+`ARM` only enables supervisory evaluation. It requires:
+
+```text
+M8 health state == READY
+local run request == false
+local interlock == closed
+safe-output adapter == available
+no latched control fault
+```
+
+A successful `ARM` response therefore returns `run_permit = 0`.
+
+Machine run permit can become active only after local firmware/application input later asserts the local run request.
+
+The successful response is fixed at 4 bytes:
+
+```text
+Offset  Size  Field
+------  ----  ----------------
+0       1     SCHEMA_VERSION = 1
+1       1     ACTION
+2       1     RESULTING_CONTROL_STATE
+3       1     RUN_PERMIT
+```
+
+## M9 GET_CONTROL_STATUS
+
+The successful response is fixed at 28 bytes:
+
+```text
+Offset  Size  Field
+------  ----  ---------------------------
+0       1     SCHEMA_VERSION = 1
+1       1     CONTROL_STATE
+2       1     SUPERVISION_ENABLED
+3       1     LOCAL_RUN_REQUEST
+4       1     RUN_PERMIT
+5       1     INTERLOCK_CLOSED
+6       1     HEALTH_STATE
+7       1     OUTPUT_AVAILABLE
+8       2     LATCHED_FAULTS
+10      2     ACTIVE_FAULTS
+12      2     HEALTH_SCORE
+14      2     ANOMALY_SCORE
+16      4     TRANSITION_COUNT
+20      4     FAULT_LATCH_COUNT
+24      1     LAST_TRANSITION_REASON
+25      1     RESERVED = 0
+26      2     RESERVED = 0
+```
+
+Control states:
+
+```text
+0 DISABLED
+1 ARMED
+2 ACTIVE
+3 DEGRADED
+4 FAULT_LATCHED
+```
+
+Fault bits:
+
+```text
+0x0001 HEALTH_NOT_READY
+0x0002 HEALTH_ALARM
+0x0004 INTERLOCK_OPEN
+0x0008 OUTPUT_FAILURE
+0x0010 OUTPUT_UNAVAILABLE
+```

@@ -8,60 +8,46 @@ Guardian F401 is an STM32F401CDU6 embedded machine-health and supervisory-contro
 Sensors
   |
   v
-M6 ADC + timers + DMA
+M6 acquisition
   |
   v
-M7 DSP / FFT / spectral features
+M7 DSP / FFT
   |
   v
-M8 runtime healthy baseline
+M8 healthy baseline + anomaly model
   |
   v
-weighted anomaly scoring + hysteresis
+M9 supervisory-control policy
   |
-  v
-health state
-  |
-  v
-Guardian Protocol / guardianctl
+  +--> local interlock
+  +--> local-only run request
+  +--> degraded operation
+  +--> fault latching
+  `--> logical safe run permit
 ```
 
-## M8 Host Commands
+## M9 Safety Property
 
-Start an explicit healthy baseline:
+The host has no RUN or START command.
+
+`control arm` only arms supervision and leaves the logical permit safe-off.
+
+The actual run request remains local to firmware/application integration.
+
+## Host Demo
 
 ```text
+python tools/run_simulator.py
 python tools/guardianctl.py baseline start --samples 64
+python tools/guardianctl.py control arm
+python tools/guardianctl.py control status
 ```
 
-Read health:
+Safe disable:
 
 ```text
-python tools/guardianctl.py health
-python tools/guardianctl.py --json health
+python tools/guardianctl.py control disarm
 ```
-
-Reset:
-
-```text
-python tools/guardianctl.py baseline reset
-```
-
-## M8 States
-
-```text
-UNTRAINED
-LEARNING
-READY
-WARNING
-ALARM
-```
-
-The baseline is runtime-only and frozen after learning.
-
-Bad ADC/DMA feature blocks are rejected rather than learned.
-
-The health score is an engineering condition indicator, not a probability of failure.
 
 ## Milestones
 
@@ -81,8 +67,10 @@ M6 ADC + timers + DMA acquisition — implemented.
 
 M7 DSP / FFT / spectral features — completed.
 
-M8 machine-health baseline + anomaly detection — implemented.
+M8 machine-health baseline + anomaly detection — completed.
 
-M9 supervisory control — next.
+M9 supervisory control + fault policy — implemented.
 
-See `docs/m8-health.md`.
+M10 authenticated sessions + authorization + anti-replay — next.
+
+See `docs/m9-control.md`.

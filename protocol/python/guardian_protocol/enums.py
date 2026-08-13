@@ -46,6 +46,12 @@ class Command(IntEnum):
     # Start or reset explicit M8 baseline learning.
     BASELINE_CONTROL = 0x13
 
+    # Request the current M9 supervisory-control snapshot.
+    GET_CONTROL_STATUS = 0x14
+
+    # Execute one safety-gated M9 supervisory-control action.
+    CONTROL_COMMAND = 0x15
+
     # Configure asynchronous machine telemetry streaming.
     SET_TELEMETRY = 0x20
 

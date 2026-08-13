@@ -11,6 +11,8 @@ from guardian_protocol import (
     BaselineAction,
     BaselineControl,
     Command,
+    ControlAction,
+    ControlState,
     DeviceInfo,
     DeviceState,
     DeviceStatus,
@@ -21,10 +23,13 @@ from guardian_protocol import (
     MessageType,
     TelemetryConfig,
     decode_baseline_control,
+    decode_control_command,
     decode_telemetry_config,
     encode_device_info,
     encode_device_status,
     encode_baseline_control,
+    encode_control_command_result,
+    encode_control_status,
     encode_dsp_features,
     encode_health_status,
     encode_machine_telemetry,
@@ -36,6 +41,9 @@ from .config import SimulatorConfig
 
 # Import the M8 baseline and anomaly model.
 from .health import SimulatorHealthModel
+
+# Import the M9 supervisory-control model.
+from .control import SimulatorControlModel
 
 
 # Implement command behavior independently from TCP packet boundaries.
@@ -86,6 +94,14 @@ class GuardianDevice:
 
         # Start the M8 simulator health model untrained.
         self._health = SimulatorHealthModel()
+
+        # Start M9 supervision disabled with simulator interlock/output ready.
+        self._control = SimulatorControlModel()
+
+        # Synchronize initial M8 health into M9 input state.
+        self._control.update_health(
+            self._health.status()
+        )
 
         # Start without an active transport session owning telemetry delivery.
         self._telemetry_owner: object | None = None
@@ -261,6 +277,14 @@ class GuardianDevice:
                 # Feed the same snapshot into the M8 health model.
                 self._health.ingest(features)
 
+                # Enforce M9 policy using the updated M8 health snapshot.
+                self._control.update_health(
+                    self._health.status()
+                )
+
+                # Synchronize M9 state into the legacy M4/M5 device-state field.
+                self._sync_control_state()
+
                 # Serialize the fixed M7 feature payload.
                 payload = encode_dsp_features(features)
 
@@ -332,6 +356,14 @@ class GuardianDevice:
                     # Erase the runtime baseline.
                     self._health.reset()
 
+                # Re-evaluate M9 after baseline lifecycle changed M8 readiness.
+                self._control.update_health(
+                    self._health.status()
+                )
+
+                # Synchronize any resulting M9 state through legacy device state.
+                self._sync_control_state()
+
                 # Echo the normalized shared control payload.
                 payload = encode_baseline_control(
                     BaselineControl(
@@ -346,6 +378,83 @@ class GuardianDevice:
                 )
 
                 # Return the correlated normalized response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M9 GET_CONTROL_STATUS.
+            if frame.command == int(Command.GET_CONTROL_STATUS):
+
+                # Require the frozen empty request payload.
+                if frame.payload:
+
+                    # Reject undefined control-status request bytes.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Serialize the current immutable M9 control snapshot.
+                payload = encode_control_status(
+                    self._control.status()
+                )
+
+                # Return the correlated control response.
+                return self._make_response(
+                    frame,
+                    payload,
+                )
+
+            # Dispatch M9 CONTROL_COMMAND.
+            if frame.command == int(Command.CONTROL_COMMAND):
+
+                # Decode and validate the fixed control request.
+                try:
+
+                    # Decode the shared M9 host action.
+                    command = decode_control_command(
+                        frame.payload
+                    )
+                except ValueError:
+
+                    # Reject malformed or undefined control actions.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Execute the safety-gated host action.
+                try:
+
+                    # Apply the simulator mirror of M9 policy.
+                    result = self._control.action(
+                        command.action
+                    )
+                except RuntimeError:
+
+                    # Report valid actions denied by current safety state.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.BUSY,
+                    )
+                except ValueError:
+
+                    # Reject undefined action semantics defensively.
+                    return self._make_error(
+                        frame,
+                        ErrorCode.INVALID_PAYLOAD,
+                    )
+
+                # Reflect M9 state through legacy GET_STATUS and telemetry state.
+                self._sync_control_state()
+
+                # Serialize the normalized successful action result.
+                payload = encode_control_command_result(
+                    result
+                )
+
+                # Return the correlated successful response.
                 return self._make_response(
                     frame,
                     payload,
@@ -433,6 +542,67 @@ class GuardianDevice:
                 frame,
                 ErrorCode.UNKNOWN_COMMAND,
             )
+
+    # Map M9 state into the legacy device-state field used by GET_STATUS and telemetry.
+    def _sync_control_state(self) -> None:
+        """Reflect M9 supervisory state through earlier device-state schemas."""
+
+        # Read the current immutable M9 control state.
+        state = self._control.status().state
+
+        # Map normal active control to RUNNING.
+        if state == ControlState.ACTIVE:
+
+            # Publish existing RUNNING semantics.
+            self._state = DeviceState.RUNNING
+        elif state == ControlState.DEGRADED:
+
+            # Publish existing DEGRADED semantics.
+            self._state = DeviceState.DEGRADED
+        elif state == ControlState.FAULT_LATCHED:
+
+            # Publish existing FAULT semantics.
+            self._state = DeviceState.FAULT
+        else:
+
+            # Represent DISABLED and ARMED as IDLE.
+            self._state = DeviceState.IDLE
+
+    # Update the simulator local-only machine run request.
+    def set_local_run_request(
+        self,
+        requested: bool,
+    ) -> None:
+        """Update local run request without exposing it as a host protocol command."""
+
+        # Serialize control state changes with request processing.
+        with self._lock:
+
+            # Forward the local request into M9 policy.
+            self._control.set_local_run_request(
+                requested
+            )
+
+            # Synchronize legacy device state.
+            self._sync_control_state()
+
+    # Update the simulator local safety interlock.
+    def set_interlock(
+        self,
+        closed: bool,
+    ) -> None:
+        """Update the local M9 interlock input."""
+
+        # Serialize control state changes with request processing.
+        with self._lock:
+
+            # Forward the local interlock into M9 policy.
+            self._control.set_interlock(
+                closed
+            )
+
+            # Synchronize legacy device state.
+            self._sync_control_state()
 
     # Create the next deterministic healthy synthetic DSP feature snapshot.
     def _next_dsp_features(self) -> DspFeatures:

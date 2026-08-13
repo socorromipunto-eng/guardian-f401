@@ -16,6 +16,9 @@
 /* Include the M8 machine-health snapshot exposed by this application API. */
 #include "guardian_health.h"
 
+/* Include the M9 supervisory-control snapshot exposed by this application API. */
+#include "guardian_control.h"
+
 /* Include fixed-width integer types for baud and tick APIs. */
 #include <stdint.h>
 
@@ -47,5 +50,19 @@ int guardian_firmware_app_dsp_features(
 
 /* Return the current M8 runtime health snapshot. */
 guardian_health_status_t guardian_firmware_app_health_status(void);
+
+/* Update the local-only machine run request consumed by M9 supervision. */
+void guardian_firmware_app_set_local_run_request(
+    uint8_t requested);
+
+/* Update the local safety-interlock state consumed by M9 supervision. */
+void guardian_firmware_app_set_interlock_closed(
+    uint8_t closed);
+
+/* Return the currently applied logical M9 run permit. */
+uint8_t guardian_firmware_app_run_permit(void);
+
+/* Return the current M9 supervisory-control snapshot. */
+guardian_control_status_t guardian_firmware_app_control_status(void);
 
 #endif

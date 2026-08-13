@@ -19,6 +19,9 @@ static guardian_dsp_features_t guardian_latest_dsp_features;
 /* Store whether at least one M7 DSP feature snapshot is valid. */
 static uint8_t guardian_latest_dsp_valid = 0U;
 
+/* Store the M9 logical run-permit output at the application integration boundary. */
+static volatile uint8_t guardian_control_output_shadow = 0U;
+
 /* Store monotonic milliseconds advanced by the existing application tick. */
 static volatile uint32_t guardian_uptime_ms = 0U;
 
@@ -31,6 +34,24 @@ static uint32_t guardian_firmware_uptime_seconds(
 
     /* Convert monotonic milliseconds into whole seconds. */
     return guardian_uptime_ms / 1000U;
+}
+
+/* Apply the M9 logical run permit at the application integration boundary. */
+static int guardian_firmware_control_output(
+    void *context,
+    uint8_t run_permit)
+{
+    /* Mark the generic callback context as unused. */
+    (void)context;
+
+    /* Normalize and publish the application-visible logical run permit. */
+    guardian_control_output_shadow =
+        (run_permit != 0U)
+        ? 1U
+        : 0U;
+
+    /* Report successful application-layer output application. */
+    return 1;
 }
 
 /* Initialize UART, Guardian middleware and deterministic M6 acquisition. */
@@ -46,6 +67,9 @@ int guardian_firmware_app_init(
 
     /* Store the M6 reference acquisition configuration. */
     guardian_stm32f401_acquisition_config_t acquisition_config = {0};
+
+    /* Store the M9 application-layer safe-output adapter. */
+    guardian_control_output_t control_output = {0};
 
     /* Store middleware initialization status. */
     guardian_protocol_result_t result =
@@ -85,7 +109,7 @@ int guardian_firmware_app_init(
     identity.firmware_major = 0U;
 
     /* Publish firmware milestone minor version. */
-    identity.firmware_minor = 8U;
+    identity.firmware_minor = 9U;
 
     /* Publish firmware milestone patch version. */
     identity.firmware_patch = 0U;
@@ -107,6 +131,35 @@ int guardian_firmware_app_init(
         /* Report failed startup. */
         return 0;
     }
+
+    /* Start the application-visible logical output in the de-energized state. */
+    guardian_control_output_shadow = 0U;
+
+    /* Connect M9 safe-output policy to the application integration boundary. */
+    control_output.apply =
+        guardian_firmware_control_output;
+
+    /* No callback context is required by the current application-level shadow. */
+    control_output.context = NULL;
+
+    /* Require M9 to prove and apply safe-off before startup continues. */
+    if (guardian_embedded_link_configure_control_output(
+            &guardian_link,
+            &control_output) != GUARDIAN_CONTROL_OK)
+    {
+        /* Report failed safe-output initialization. */
+        return 0;
+    }
+
+    /* Keep the local interlock open until board/application code proves it closed. */
+    guardian_embedded_link_set_interlock(
+        &guardian_link,
+        0U);
+
+    /* Keep the local run request removed at startup. */
+    guardian_embedded_link_set_local_run_request(
+        &guardian_link,
+        0U);
 
     /* Start without a valid M7 DSP snapshot until the first acquisition block is analyzed. */
     guardian_latest_dsp_valid = 0U;
@@ -250,5 +303,41 @@ guardian_health_status_t guardian_firmware_app_health_status(void)
 {
     /* Return the transport-independent model snapshot by value. */
     return guardian_embedded_link_health_status(
+        &guardian_link);
+}
+
+
+/* Update the local-only machine run request consumed by M9 supervision. */
+void guardian_firmware_app_set_local_run_request(
+    uint8_t requested)
+{
+    /* Forward the local request into transport-independent M9 policy. */
+    guardian_embedded_link_set_local_run_request(
+        &guardian_link,
+        requested);
+}
+
+/* Update the local safety-interlock state consumed by M9 supervision. */
+void guardian_firmware_app_set_interlock_closed(
+    uint8_t closed)
+{
+    /* Forward the local interlock state into transport-independent M9 policy. */
+    guardian_embedded_link_set_interlock(
+        &guardian_link,
+        closed);
+}
+
+/* Return the currently applied logical M9 run permit. */
+uint8_t guardian_firmware_app_run_permit(void)
+{
+    /* Return the application-visible safe-output shadow. */
+    return guardian_control_output_shadow;
+}
+
+/* Return the current M9 supervisory-control snapshot. */
+guardian_control_status_t guardian_firmware_app_control_status(void)
+{
+    /* Return the transport-independent M9 snapshot by value. */
+    return guardian_embedded_link_control_status(
         &guardian_link);
 }

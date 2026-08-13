@@ -1,12 +1,14 @@
 # guardianctl
 
-M8 adds explicit machine-health baseline lifecycle and status commands.
+M9 adds supervisory-control status and safety-gated actions.
 
 ```text
-python tools/guardianctl.py baseline start --samples 64
-python tools/guardianctl.py health
-python tools/guardianctl.py --json health
-python tools/guardianctl.py baseline reset
+python tools/guardianctl.py control status
+python tools/guardianctl.py control arm
+python tools/guardianctl.py control disarm
+python tools/guardianctl.py control clear-fault
 ```
 
-The same commands use TCP simulator transport or physical serial transport.
+The protocol deliberately has no host RUN/START action in M9.
+
+Use `baseline start` before ARM.

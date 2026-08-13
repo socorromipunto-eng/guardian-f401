@@ -100,6 +100,12 @@ typedef enum
     /* Start or reset explicit M8 baseline learning. */
     GUARDIAN_COMMAND_BASELINE_CONTROL = 0x13,
 
+    /* Request the current M9 supervisory-control snapshot. */
+    GUARDIAN_COMMAND_GET_CONTROL_STATUS = 0x14,
+
+    /* Execute one safety-gated M9 supervisory-control action. */
+    GUARDIAN_COMMAND_CONTROL_COMMAND = 0x15,
+
     /* Configure asynchronous machine telemetry streaming. */
     GUARDIAN_COMMAND_SET_TELEMETRY = 0x20,
 

@@ -1,22 +1,16 @@
 # Guardian F401 Device Simulator
 
-The simulator implements M8 baseline and machine-health commands.
-
-Start the simulator:
+The simulator implements M9 supervisory-control commands.
 
 ```text
 python tools/run_simulator.py
-```
-
-Then:
-
-```text
 python tools/guardianctl.py baseline start --samples 64
-python tools/guardianctl.py health
+python tools/guardianctl.py control arm
+python tools/guardianctl.py control status
 ```
 
-The simulator fast-forwards deterministic healthy baseline samples immediately.
+The simulator interlock is closed and its logical output boundary is available by default.
 
-This behavior is for software-only protocol and UI demonstration.
+ARM remains safe-off because local run request is false.
 
-Real STM32 firmware learns baseline samples from successive M7 acquisition blocks.
+Focused tests can change local run request and interlock through the simulator model without exposing those operations as host protocol commands.

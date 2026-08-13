@@ -3,6 +3,9 @@
 # Import argparse for the dependency-free CLI.
 import argparse
 
+# Import shared M9 supervisory action identifiers.
+from guardian_protocol import ControlAction
+
 # Import sys for explicit stdout and stderr routing.
 import sys
 
@@ -26,6 +29,10 @@ from .errors import GuardianCtlError
 from .presentation import (
     render_baseline_json,
     render_baseline_text,
+    render_control_result_json,
+    render_control_result_text,
+    render_control_status_json,
+    render_control_status_text,
     render_dsp_json,
     render_dsp_text,
     render_health_json,
@@ -173,6 +180,42 @@ def build_parser() -> argparse.ArgumentParser:
     baseline_actions.add_parser(
         "reset",
         help="erase the runtime baseline and anomaly state",
+    )
+
+    # Register M9 supervisory-control status and safety-gated actions.
+    control_parser = subcommands.add_parser(
+        "control",
+        help="inspect or manage M9 supervisory-control state",
+    )
+
+    # Create required M9 control action subcommands.
+    control_actions = control_parser.add_subparsers(
+        dest="control_action",
+        required=True,
+    )
+
+    # Register GET_CONTROL_STATUS.
+    control_actions.add_parser(
+        "status",
+        help="read M9 run-permit, interlock and fault-latch state",
+    )
+
+    # Register ARM without exposing a host machine-run command.
+    control_actions.add_parser(
+        "arm",
+        help="arm supervision after baseline, interlock and safe-output checks",
+    )
+
+    # Register unconditional safe DISARM.
+    control_actions.add_parser(
+        "disarm",
+        help="disable supervision and force logical run permit safe-off",
+    )
+
+    # Register explicit safe fault reset.
+    control_actions.add_parser(
+        "clear-fault",
+        help="clear latched faults only after safe recovery conditions pass",
     )
 
     # Register live M5 telemetry streaming.
@@ -466,6 +509,53 @@ def main(argv: list[str] | None = None) -> int:
                 print(render_baseline_text(control))
 
             # Report success.
+            return 0
+
+        # Dispatch M9 supervisory-control operations.
+        if args.command == "control":
+
+            # Read current control status without changing policy state.
+            if args.control_action == "status":
+
+                # Execute GET_CONTROL_STATUS.
+                status = client.control_status()
+
+                # Select JSON output.
+                if args.json:
+
+                    # Print machine-readable control status.
+                    print(render_control_status_json(status))
+                else:
+
+                    # Print human-readable control status.
+                    print(render_control_status_text(status))
+
+                # Report successful status query.
+                return 0
+
+            # Map the CLI action to the shared M9 wire enum.
+            action = {
+                "arm": ControlAction.ARM,
+                "disarm": ControlAction.DISARM,
+                "clear-fault": ControlAction.CLEAR_FAULT,
+            }[args.control_action]
+
+            # Execute the safety-gated device action.
+            result = client.control_action(
+                action
+            )
+
+            # Select JSON output.
+            if args.json:
+
+                # Print machine-readable normalized result.
+                print(render_control_result_json(result))
+            else:
+
+                # Print human-readable normalized result.
+                print(render_control_result_text(result))
+
+            # Report successful action.
             return 0
 
         # Protect future edits from an unhandled parsed command.

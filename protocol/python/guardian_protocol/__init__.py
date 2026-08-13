@@ -29,6 +29,23 @@ from .parser import IncrementalParser, ParserStats
 
 
 
+
+# Re-export M9 supervisory-control models and codecs.
+from .control import (
+    CONTROL_SCHEMA_VERSION,
+    ControlAction,
+    ControlCommand,
+    ControlCommandResult,
+    ControlState,
+    ControlStatus,
+    decode_control_command,
+    decode_control_command_result,
+    decode_control_status,
+    encode_control_command,
+    encode_control_command_result,
+    encode_control_status,
+)
+
 # Re-export M8 machine-health models and codecs.
 from .health import (
     HEALTH_SCHEMA_VERSION,
@@ -69,7 +86,13 @@ from .telemetry import (
 __all__ = [
     "BaselineAction",
     "BaselineControl",
+    "CONTROL_SCHEMA_VERSION",
     "Command",
+    "ControlAction",
+    "ControlCommand",
+    "ControlCommandResult",
+    "ControlState",
+    "ControlStatus",
     "DEFAULT_TELEMETRY_PERIOD_MS",
     "DSP_SCHEMA_VERSION",
     "DeviceInfo",
@@ -99,6 +122,9 @@ __all__ = [
     "VERSION",
     "crc32_ieee",
     "decode_baseline_control",
+    "decode_control_command",
+    "decode_control_command_result",
+    "decode_control_status",
     "decode_device_info",
     "decode_device_status",
     "decode_dsp_features",
@@ -107,6 +133,9 @@ __all__ = [
     "decode_machine_telemetry",
     "decode_telemetry_config",
     "encode_baseline_control",
+    "encode_control_command",
+    "encode_control_command_result",
+    "encode_control_status",
     "encode_device_info",
     "encode_device_status",
     "encode_dsp_features",

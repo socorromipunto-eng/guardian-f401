@@ -1,24 +1,32 @@
 # Firmware
 
-M8 adds a transport-independent runtime machine-health model.
+M9 adds transport-independent supervisory control.
 
 ```text
-guardian_dsp_features_t
-        |
-        v
-guardian_health_ingest()
-        |
-        v
-baseline / anomaly state
-        |
-        v
-GET_HEALTH_STATUS
+M8 health
+local interlock
+local run request
+      |
+      v
+guardian_control
+      |
+      v
+logical run permit
 ```
 
-Baseline learning is explicit, bounded and frozen after completion.
+Host ARM cannot assert the permit directly.
 
-No health-model work runs inside ADC, DMA, timer or UART interrupt context.
+Application integration APIs:
 
-The runtime model is not persisted across reset in M8.
+```text
+guardian_firmware_app_set_local_run_request()
+guardian_firmware_app_set_interlock_closed()
+guardian_firmware_app_run_permit()
+guardian_firmware_app_control_status()
+```
 
-See `docs/m8-health.md`.
+Startup is safe-off with interlock open.
+
+The logical output must be connected to final board-specific hardware by the product integration layer.
+
+See `docs/m9-control.md`.
