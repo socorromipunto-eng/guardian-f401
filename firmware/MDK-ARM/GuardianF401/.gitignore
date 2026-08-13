@@ -1,0 +1,11 @@
+# Ignore the generated local Keil and CubeMX workspace.
+*
+
+# Keep the workspace Git rules.
+!.gitignore
+
+# Keep the portable workspace documentation.
+!README.md
+
+# Keep the portable CubeMX project configuration.
+!GuardianF401.ioc

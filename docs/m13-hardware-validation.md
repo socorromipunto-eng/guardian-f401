@@ -466,3 +466,29 @@ Sensor calibration and real machine control remain separate hardware gates.
 - STMicroelectronics DS10086 — STM32F401xD/xE datasheet.
 - STMicroelectronics RM0368 — STM32F401xB/C and STM32F401xD/E reference manual.
 - STMicroelectronics `cmsis-device-f4` — official STM32F4 CMSIS device headers.
+
+<!-- M13-KEIL-BUILD-PASS-START -->
+
+## Keil build qualification - 2026-08-13
+
+Status: **PASS**
+
+- Device: `STM32F401CDUx`
+- CMSIS device define: `STM32F401xE`
+- Toolchain: Arm Compiler `6.24`
+- Guardian sources compiled: `19/19`
+- Guardian application entry point: `main_guardian.c`
+- CubeMX `main.c`: excluded from the Guardian target
+- CubeMX `stm32f4xx_it.c`: excluded from the Guardian target
+- CI-only `CMSISStub`: absent from the physical target
+- Program size: Code=`34528`, RO-data=`1292`, RW-data=`8`, ZI-data=`5800`
+- HEX generation: PASS
+- Compiler/linker result: `0 Error(s), 0 Warning(s)`
+
+This completes the Keil build portion of M13.
+
+Physical M13 completion remains pending until a real STM32F401 target is
+flashed, `guardian_firmware_app_preflight().failure_flags == 0`, and the
+physical `hardware_validation.json` report returns PASS.
+
+<!-- M13-KEIL-BUILD-PASS-END -->
