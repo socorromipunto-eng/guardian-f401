@@ -1,0 +1,24 @@
+﻿Guardian F401 - Project Notice
+
+Guardian F401 is an experimental embedded-systems, cybersecurity, DSP, and
+machine-monitoring engineering project.
+
+The project is not a certified functional-safety system, industrial safety
+controller, cybersecurity-certified product, medical device, automotive safety
+controller, or other certified safety-critical system.
+
+Guardian F401 must not be used as the sole mechanism for protecting people,
+machinery, equipment, or property.
+
+Any physical deployment requires independent review of the electrical design,
+sensor interfaces, isolation, power electronics, actuator interfaces, firmware,
+security architecture, failure modes, and applicable regulatory requirements.
+
+The logical supervisory-control functions included in the project do not imply
+certification or authorization to directly control industrial machinery.
+
+Third-party components remain subject to their respective licenses, copyright
+notices, and distribution requirements.
+
+Copyright (c) 2026 socorromipunto-eng
+All rights reserved.
