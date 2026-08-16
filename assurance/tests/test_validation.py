@@ -14,7 +14,13 @@ def valid_record() -> dict:
         "producer_epoch": "0123456789abcdef0123456789abcdef",
         "object_id": "fedcba9876543210fedcba9876543210",
         "logical_time": 1,
-        "payload": {"state": "INSUFFICIENT_EVIDENCE"},
+        "payload": {
+            "schema_version": "m14.observation.v1",
+            "subject_id": "machine-01",
+            "claim": "operational_state",
+            "result": "UNKNOWN",
+            "evidence_digest": "a" * 64,
+        },
     }
 
 
@@ -66,4 +72,3 @@ class ValidationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

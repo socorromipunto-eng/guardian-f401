@@ -9,21 +9,13 @@ from typing import Any
 from .domain import expected_domain
 from .errors import AssuranceError, ErrorCode
 from .limits import AssuranceLimits
+from .schemas import validate_payload
 
 _HEX_128 = re.compile(r"^[0-9a-f]{32}$")
 _PRODUCER = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 _OBJECT_TYPES = frozenset({"observation", "decision", "witness"})
-_ENVELOPE_KEYS = frozenset(
-    {
-        "domain",
-        "object_type",
-        "producer_id",
-        "producer_epoch",
-        "object_id",
-        "logical_time",
-        "payload",
-    }
-)
+_SAFE_INTEGER = 9_007_199_254_740_991
+_ENVELOPE_KEYS = frozenset({"domain", "object_type", "producer_id", "producer_epoch", "object_id", "logical_time", "payload"})
 
 
 def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -38,6 +30,10 @@ def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 def _validate_structure(value: Any, limits: AssuranceLimits) -> None:
     nodes = 0
 
+    def bounded_string(item: str) -> None:
+        if len(item.encode("utf-8")) > limits.max_string_utf8_bytes:
+            raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "string limit exceeded")
+
     def visit(item: Any, depth: int) -> None:
         nonlocal nodes
         nodes += 1
@@ -45,15 +41,25 @@ def _validate_structure(value: Any, limits: AssuranceLimits) -> None:
             raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "node limit exceeded")
         if depth > limits.max_depth:
             raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "depth limit exceeded")
-        if isinstance(item, str) and len(item.encode("utf-8")) > limits.max_string_utf8_bytes:
-            raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "string limit exceeded")
+        if isinstance(item, bool) or item is None:
+            return
+        if isinstance(item, int):
+            if not -_SAFE_INTEGER <= item <= _SAFE_INTEGER:
+                raise AssuranceError(ErrorCode.SCHEMA, "integer outside safe range")
+            return
+        if isinstance(item, float):
+            raise AssuranceError(ErrorCode.SCHEMA, "floating-point values are prohibited")
+        if isinstance(item, str):
+            bounded_string(item)
+            return
         if isinstance(item, dict):
             if len(item) > limits.max_object_members:
                 raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "member limit exceeded")
             for key, child in item.items():
-                visit(key, depth + 1)
+                bounded_string(key)
                 visit(child, depth + 1)
-        elif isinstance(item, list):
+            return
+        if isinstance(item, list):
             if len(item) > limits.max_array_items:
                 raise AssuranceError(ErrorCode.STRUCTURAL_LIMIT, "array limit exceeded")
             for child in item:
@@ -78,12 +84,11 @@ def validate_envelope(value: Any) -> dict[str, Any]:
     _require_text(value["producer_epoch"], "producer_epoch", _HEX_128)
     _require_text(value["object_id"], "object_id", _HEX_128)
     logical_time = value["logical_time"]
-    if isinstance(logical_time, bool) or not isinstance(logical_time, int) or not 0 <= logical_time <= 9_007_199_254_740_991:
+    if isinstance(logical_time, bool) or not isinstance(logical_time, int) or not 0 <= logical_time <= _SAFE_INTEGER:
         raise AssuranceError(ErrorCode.SCHEMA, "invalid logical_time")
     if value["domain"] != expected_domain(object_type):
         raise AssuranceError(ErrorCode.DOMAIN, "domain does not match object_type")
-    if not isinstance(value["payload"], dict):
-        raise AssuranceError(ErrorCode.SCHEMA, "payload must be an object")
+    validate_payload(object_type, value["payload"])
     return value
 
 

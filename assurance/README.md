@@ -1,16 +1,17 @@
-# Guardian F401 M14 assurance slice 1
+# Guardian F401 M14-S2 isolated implementation candidate
 
-This isolated software-only slice implements bounded parsing, duplicate-key
-rejection, closed-envelope validation, domain separation and RFC 8785
-canonicalization for assurance records.
+This candidate extends the locally closed M14-S1 slice with closed observation,
+decision and witness payload schemas, normative JSON-value depth/node semantics
+and a safe-integer-only numeric contract.
 
-It is experimental research software. It does not authorize physical actions,
-provide hardware validation, or establish production or certification claims.
+It is an external review candidate. It is not authorized for repository copy,
+commit, push, merge or publication. It provides software-only research evidence
+and no hardware, real-time, production, safety or certification claim.
 
-Run from the repository root with an isolated environment containing the
-approved `rfc8785==0.1.4` wheel:
+The corrected suite contains 87 discovered test methods, including the retained
+S1 intentions and the S2 coverage corrections. Run with the previously verified
+`rfc8785==0.1.4` wheel:
 
 ```text
-PYTHONPATH=assurance/src python -m unittest discover -s assurance/tests -v
+PYTHONPATH=payload/assurance/src python -m unittest discover -s payload/assurance/tests -v
 ```
-
