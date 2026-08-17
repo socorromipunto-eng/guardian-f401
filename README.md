@@ -125,9 +125,9 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.13.0
+Project release: v0.14.0
 Guardian Protocol: v0.1
-Firmware semantic version: 0.13.0
+Firmware semantic version: 0.14.0
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
