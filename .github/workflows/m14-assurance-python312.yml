@@ -1,0 +1,121 @@
+name: M14 Assurance Python 3.12
+
+on:
+  pull_request:
+    paths:
+      - "assurance/**"
+      - ".github/workflows/m14-assurance-python312.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/m14-assurance.md"
+      - "docs/architecture/m14-assurance-software-slice.md"
+      - "docs/threat-models/m14-assurance-threat-model.md"
+      - "docs/adr/ADR-M14-001-canonical-envelope-and-closed-payloads.md"
+      - "docs/validation/m14-assurance-validation.md"
+      - "docs/evidence/m14-evidence-index.md"
+      - "docs/research/m14-open-gates.md"
+  push:
+    paths:
+      - "assurance/**"
+      - ".github/workflows/m14-assurance-python312.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/m14-assurance.md"
+      - "docs/architecture/m14-assurance-software-slice.md"
+      - "docs/threat-models/m14-assurance-threat-model.md"
+      - "docs/adr/ADR-M14-001-canonical-envelope-and-closed-payloads.md"
+      - "docs/validation/m14-assurance-validation.md"
+      - "docs/evidence/m14-evidence-index.md"
+      - "docs/research/m14-open-gates.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m14-assurance-python312-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assurance-python312:
+    name: Python 3.12 / exact M14 suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up CPython 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: ""
+
+      - name: Record and verify execution identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          python --version
+          python -m pip --version
+          python - <<'PY'
+          import platform
+          import sys
+
+          print(f"python_implementation={platform.python_implementation()}")
+          print(f"python_version={platform.python_version()}")
+          if platform.python_implementation() != "CPython":
+              raise SystemExit("Expected CPython")
+          if sys.version_info[:2] != (3, 12):
+              raise SystemExit(
+                  f"Expected Python 3.12.x, observed {platform.python_version()}"
+              )
+          PY
+
+      - name: Install locked dependency with required hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install \
+            --disable-pip-version-check \
+            --no-deps \
+            --require-hashes \
+            -r assurance/requirements.lock
+          python - <<'PY'
+          from importlib.metadata import version
+
+          observed = version("rfc8785")
+          print(f"rfc8785_version={observed}")
+          if observed != "0.1.4":
+              raise SystemExit(f"Expected rfc8785 0.1.4, observed {observed}")
+          PY
+
+      - name: Execute exactly 87 M14 tests
+        shell: bash
+        env:
+          PYTHONPATH: assurance/src
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import unittest
+
+          expected = 87
+          suite = unittest.defaultTestLoader.discover("assurance/tests")
+          discovered = suite.countTestCases()
+          print(f"discovered_tests={discovered}")
+          if discovered != expected:
+              raise SystemExit(
+                  f"Expected exactly {expected} tests, discovered {discovered}"
+              )
+
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          print(f"executed_tests={result.testsRun}")
+          if result.testsRun != expected:
+              raise SystemExit(
+                  f"Expected exactly {expected} executed tests, ran {result.testsRun}"
+              )
+          if not result.wasSuccessful():
+              raise SystemExit("M14 assurance suite failed")
+          PY
