@@ -2,7 +2,7 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
-## [Unreleased]
+## [0.14.0] - 2026-08-16
 
 ### Added — M14 bounded assurance software slice
 
@@ -19,10 +19,11 @@ All notable changes to Guardian F401 are documented in this file.
 
 ### Validated
 
-- Final local suite: 87 of 87 tests passed on commit `072446f`.
-- GitHub Actions run `31983989907`: success on the same commit.
-- Final evidence-manifest SHA-256:
-  `0E3715DF6F80FECD9C804F0FA87FCF9AC22EFE917EFAC18F3E8C902B7C3B626A`.
+- M14 merge commit on `main`:
+  `e0cd5d11424de2acdec595e81438a935d38dc0c9`.
+- Exact post-merge validation: 9 of 9 GitHub checks completed successfully.
+- Corrective post-merge evidence-manifest SHA-256:
+  `321092306757B170D6E722F704AD1B23885E0437C03EA6D52D27ED111FC821BE`.
 
 ### Limitations
 
