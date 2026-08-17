@@ -11,4 +11,3 @@ class AssuranceLimits:
     max_object_members: int = 128
     max_array_items: int = 256
     max_string_utf8_bytes: int = 4_096
-

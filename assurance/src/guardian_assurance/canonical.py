@@ -15,4 +15,3 @@ def canonicalize_envelope(raw: bytes, limits: AssuranceLimits | None = None) -> 
         raise
     except Exception as exc:
         raise AssuranceError(ErrorCode.CANONICALIZATION, "RFC 8785 encoding failed") from exc
-

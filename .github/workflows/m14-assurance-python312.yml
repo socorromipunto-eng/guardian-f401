@@ -101,4 +101,3 @@ jobs:
           if not result.wasSuccessful():
               raise SystemExit("M14 assurance suite failed")
           PY
-

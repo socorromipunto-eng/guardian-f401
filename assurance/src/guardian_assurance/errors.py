@@ -21,4 +21,3 @@ class AssuranceError(ValueError):
         super().__init__(f"{code.value}: {detail}")
         self.code = code
         self.detail = detail
-

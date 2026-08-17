@@ -89,4 +89,3 @@ def validate_payload(object_type: str, payload: Any) -> None:
     if validator is None:
         raise AssuranceError(ErrorCode.SCHEMA, "unsupported object_type")
     validator(payload)
-

@@ -12,4 +12,3 @@ __all__ = [
     "canonicalize_envelope",
     "parse_and_validate_envelope",
 ]
-

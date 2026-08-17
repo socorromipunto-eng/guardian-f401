@@ -110,4 +110,3 @@ def parse_and_validate_envelope(raw: bytes, limits: AssuranceLimits | None = Non
         raise AssuranceError(ErrorCode.INVALID_JSON, "input is not valid JSON") from exc
     _validate_structure(value, selected)
     return validate_envelope(value)
-
