@@ -1,15 +1,45 @@
 # Changelog
 
 All notable changes to Guardian F401 are documented in this file.
+
 ## [Unreleased]
+
+### Added — M14 bounded assurance software slice
+
+- Added a bounded Python assurance component with strict UTF-8 JSON parsing,
+  duplicate-member rejection, domain separation and closed envelopes.
+- Added versioned observation, decision and witness payload contracts.
+- Added explicit depth, node, member, array, string and raw-input bounds.
+- Added safe-integer validation and rejection of booleans, floating-point
+  values, exponent forms and negative zero in the accepted contract.
+- Added RFC 8785 canonicalization using locked `rfc8785==0.1.4`.
+- Added 87 software tests and a least-privilege CPython 3.12 workflow.
+- Added M14 architecture, threat-model, decision, validation, evidence and
+  open-gate documentation.
+
+### Validated
+
+- Final local suite: 87 of 87 tests passed on commit `072446f`.
+- GitHub Actions run `31983989907`: success on the same commit.
+- Final evidence-manifest SHA-256:
+  `0E3715DF6F80FECD9C804F0FA87FCF9AC22EFE917EFAC18F3E8C902B7C3B626A`.
+
+### Limitations
+
+- M14 remains a partial software-only research milestone.
+- Physical STM32F401 qualification, distributed-controller simulation,
+  attestation, freshness, failover/recovery and production certification are
+  not established.
 
 ### Post-publication metadata
 
-- Recorded the Zenodo DOI for Guardian F401 v0.13.0: https://doi.org/10.5281/zenodo.21923859
-- Recorded the concept DOI representing all Guardian F401 versions: https://doi.org/10.5281/zenodo.21923858
+- Recorded the Zenodo DOI for Guardian F401 v0.13.0:
+  https://doi.org/10.5281/zenodo.21923859
+- Recorded the concept DOI representing all Guardian F401 versions:
+  https://doi.org/10.5281/zenodo.21923858
 - Recorded the public GitHub release and ORCID authorship linkage.
 - Added a consolidated publication record without modifying the immutable
-  0.13.0 tag or its published ZIP artifact.
+  v0.13.0 tag or its published ZIP artifact.
 
 ## [0.13.0] - 2026-08-13
 
@@ -42,7 +72,7 @@ All notable changes to Guardian F401 are documented in this file.
 
 The local Keil result is not independently reproducible from this repository
 without the matching proprietary toolchain/device pack and retained build
-evidence. See docs/release-evidence-v0.13.0.md.
+evidence. See `docs/release-evidence-v0.13.0.md`.
 
 ### Pending validation
 

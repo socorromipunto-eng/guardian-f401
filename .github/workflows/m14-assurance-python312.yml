@@ -5,10 +5,28 @@ on:
     paths:
       - "assurance/**"
       - ".github/workflows/m14-assurance-python312.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/m14-assurance.md"
+      - "docs/architecture/m14-assurance-software-slice.md"
+      - "docs/threat-models/m14-assurance-threat-model.md"
+      - "docs/adr/ADR-M14-001-canonical-envelope-and-closed-payloads.md"
+      - "docs/validation/m14-assurance-validation.md"
+      - "docs/evidence/m14-evidence-index.md"
+      - "docs/research/m14-open-gates.md"
   push:
     paths:
       - "assurance/**"
       - ".github/workflows/m14-assurance-python312.yml"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/m14-assurance.md"
+      - "docs/architecture/m14-assurance-software-slice.md"
+      - "docs/threat-models/m14-assurance-threat-model.md"
+      - "docs/adr/ADR-M14-001-canonical-envelope-and-closed-payloads.md"
+      - "docs/validation/m14-assurance-validation.md"
+      - "docs/evidence/m14-evidence-index.md"
+      - "docs/research/m14-open-gates.md"
 
 permissions:
   contents: read
