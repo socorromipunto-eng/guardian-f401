@@ -125,16 +125,16 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.14.0
+Project release: v0.14.1
 Guardian Protocol: v0.1
-Firmware semantic version: 0.14.0
+Firmware semantic version: 0.14.1
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
 
 Archived release: https://doi.org/10.5281/zenodo.21923859
 All versions: https://doi.org/10.5281/zenodo.21923858
-GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.13.0
+GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.1
 
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
