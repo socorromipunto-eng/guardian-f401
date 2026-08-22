@@ -29,7 +29,8 @@ attestation, independent control, failover or cross-plant assurance.
 
 ## Release gate
 
-`VERSION` remains `0.13.0`. Selecting a later version, merging to `main`,
-creating a release and updating Zenodo or ORCID are separate decisions that
-require complete documentation review, exact merged-commit CI and a release
-evidence package.
+`VERSION` is `0.14.1`. The published versions cover the software slice only.
+Selecting a later version, merging to `main`, creating a release and updating
+Zenodo or ORCID are separate decisions that require complete documentation
+review, exact merged-commit CI and a release evidence package. The gates in the
+table above remain open regardless of the published version number.
