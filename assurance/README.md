@@ -1,17 +1,27 @@
-# Guardian F401 M14-S2 isolated implementation candidate
+# Guardian F401 M14 bounded assurance slice
 
-This candidate extends the locally closed M14-S1 slice with closed observation,
-decision and witness payload schemas, normative JSON-value depth/node semantics
-and a safe-integer-only numeric contract.
+This component implements the M14 bounded assurance boundary: strict UTF-8 JSON
+parsing, duplicate-member rejection, closed observation/decision/witness payload
+schemas, explicit resource bounds and RFC 8785 canonicalization.
 
-It is an external review candidate. It is not authorized for repository copy,
-commit, push, merge or publication. It provides software-only research evidence
-and no hardware, real-time, production, safety or certification claim.
+It provides software-only evidence. It establishes no hardware, real-time,
+production, safety or certification claim. Canonical or schema-valid data cannot
+authorize a physical action.
 
-The corrected suite contains 87 discovered test methods, including the retained
-S1 intentions and the S2 coverage corrections. Run with the previously verified
-`rfc8785==0.1.4` wheel:
+## Dependency
+
+Canonicalization requires the pinned `rfc8785==0.1.4` wheel recorded in
+`requirements.lock`. The suite fails with an explicit environment error if it is
+absent.
 
 ```text
-PYTHONPATH=payload/assurance/src python -m unittest discover -s payload/assurance/tests -v
+python -m pip install -r assurance/requirements.lock
+```
+
+## Validation
+
+The suite contains 87 discovered test methods and is gated on CPython 3.12.
+
+```text
+PYTHONPATH=assurance/src python -m unittest discover -s assurance/tests -v
 ```

@@ -2,6 +2,25 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
+## [0.14.1] - 2026-08-22
+
+### Fixed
+
+- A missing `rfc8785` dependency now raises an explicit environment error
+  instead of being reclassified as `CANONICALIZATION`. The `AssuranceError`
+  taxonomy remains reserved for input rejection.
+- Documented the `assurance/requirements.lock` installation step and the
+  assurance suite in the reproducible-validation instructions.
+- Corrected stale M14 review-candidate wording and paths in
+  `assurance/README.md`, which described the published component as an
+  unauthorized external candidate.
+
+### Unchanged
+
+- No experimental result, contract, bound, limit or conclusion is modified.
+- The immutable v0.14.0 tag, its published artifact and its Zenodo deposit
+  are not rewritten.
+
 ## [0.14.0] - 2026-08-16
 
 ### Added — M14 bounded assurance software slice

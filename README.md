@@ -144,10 +144,12 @@ not claimed. See `docs/release-evidence-v0.13.0.md`.
 ## Reproducible software validation
 
 ```text
+python -m pip install -r assurance/requirements.lock
 python tools/validate_keil_manifest.py
 PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
 PYTHONPATH=protocol/python:simulator/src python -m unittest discover -s simulator/tests -v
 PYTHONPATH=protocol/python:simulator/src:console/src python -m unittest discover -s console/tests -v
+PYTHONPATH=assurance/src python -m unittest discover -s assurance/tests -v
 ```
 
 The GitHub Actions workflows also compile and execute the portable C suites,
