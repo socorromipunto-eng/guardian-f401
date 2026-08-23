@@ -37,3 +37,6 @@
 # Keep compiled and archive artifacts byte-exact.
 *.npz -text
 *.zip -text
+
+# Keep ignore files deterministic across platforms.
+.gitignore text eol=lf
