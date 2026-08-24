@@ -1,4 +1,4 @@
-﻿# Guardian F401 — M15-02.1 Signed Transcript Specification
+# Guardian F401 — M15-02.1 Signed Transcript Specification
 
 Status: APPROVED
 Milestone: M15

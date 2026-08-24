@@ -1,4 +1,4 @@
-ADR-M15-001 � Node Identity and Signed Assurance Messages
+ADR-M15-001 — Node Identity and Signed Assurance Messages
 
 
 
@@ -1394,7 +1394,7 @@ The following require separate ADRs or adjudication:
 
 
 
-M15-03 � Persistent Freshness and Anti-Replay
+M15-03 — Persistent Freshness and Anti-Replay
 
 
 
@@ -1412,7 +1412,7 @@ persistent storage
 
 
 
-M15-04 � Attestation and Witness Exchange
+M15-04 — Attestation and Witness Exchange
 
 
 
@@ -1496,5 +1496,5 @@ A valid Guardian signature proves which trusted credential authenticated the acc
 
 
 
-Status: DRAFT � architecture review required before implementation.
+Status: DRAFT — architecture review required before implementation.
 
