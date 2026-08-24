@@ -1,6 +1,6 @@
 # Guardian F401 v0.14.2 Release Evidence
 
-Status: PRE-PUBLICATION REVIEW
+Status: POST-PUBLICATION CORRECTION REVIEW
 Date: 2026-08-24
 PhysicalHardwareValidation: PENDING
 
@@ -17,20 +17,41 @@ tags or Zenodo deposits.
   `cb16dcd0e769d9c2bb5e01070161de6bc002eea2`
 - Release branch: `release/v0.14.2`
 - Previous GitHub release: `v0.14.1`
-- Previous Zenodo release: `v0.14.0`
-- Zenodo concept DOI: `10.5281/zenodo.21923858`
+- Previous GitHub-integrated Zenodo release: `v0.14.1`
+- GitHub-integration concept DOI: `10.5281/zenodo.21981233`
+- Historical/manual concept DOI: `10.5281/zenodo.21923858`
 
-The v0.14.2 commit, tag and version DOI are not recorded until they exist and
-are independently verified.
+During preparation, the v0.14.2 commit, tag and version DOI were intentionally
+left pending until they existed and could be independently verified. Their
+verified published identities are recorded below.
 
-## Historical publication adjudication
+## Publication-family adjudication
 
+Two Zenodo concept families exist.
+
+Historical/manual family:
+
+- Concept DOI: `10.5281/zenodo.21923858`
 - v0.13.0 DOI: `10.5281/zenodo.21923859`
 - v0.14.0 DOI: `10.5281/zenodo.21980859`
-- v0.14.1 Zenodo version DOI: NOT ISSUED
-- The immutable v0.14.1 Git tag contains `CITATION.cff` metadata identifying
-  v0.14.0.
-- Historical tags and deposits were not modified.
+
+GitHub-integration family:
+
+- Concept DOI: `10.5281/zenodo.21981233`
+- v0.14.0 DOI: `10.5281/zenodo.21981234`
+- v0.14.1 DOI: `10.5281/zenodo.22062543`
+- v0.14.2 DOI: `10.5281/zenodo.22075322`
+
+Version v0.14.0 exists in both families as separate published deposits. No
+record was deleted, rewritten or represented as the other.
+
+The immutable v0.14.1 Git tag contains `CITATION.cff` metadata identifying
+v0.14.0. The GitHub-integrated Zenodo record identifies the archived GitHub
+release as v0.14.1.
+
+The earlier pre-publication conclusion that v0.14.1 had no Zenodo DOI resulted
+from inspecting only the historical/manual family. This record corrects that
+conclusion using the complete two-family inventory.
 
 ## Structural-review validation
 
@@ -91,17 +112,36 @@ hardware-qualified or authorized for flashing.
 - No safety or cybersecurity certification is claimed.
 - No CI-only `firmware/Tests/CMSISStub` content is included in the physical
   Keil target.
-- Formal publication requires independent review of the final manifest,
-  commit, tag, GitHub release and Zenodo metadata.
+- Post-publication corrections require independent review of the manifest,
+  commit, GitHub release notes and Zenodo evidence.
 
-## Pending publication evidence
+## Published release identity
 
-The following remain intentionally pending:
+- Release merge commit:
+  `8cce72a6fbf176d9a57ff31c7900ebd8a7dccb2a`
+- Annotated tag: `v0.14.2`
+- GitHub release:
+  `https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.2`
+- Zenodo version DOI: `10.5281/zenodo.22075322`
+- Zenodo concept DOI: `10.5281/zenodo.21981233`
+- Archived file:
+  `socorromipunto-eng/guardian-f401-v0.14.2.zip`
+- Archived file size: 547,465 bytes
+- Zenodo-reported MD5:
+  `108FBF40B7D564F4AD9D527C4B447AE8`
+- Independently calculated SHA-256:
+  `B37DE78BD4F628B88A8913EFDB5BBD8B752E88FB43E29916D40A6F94258B0F0B`
+- ZIP entries: 304
+- Required release entries missing: 0
+- Pull-request checks: 10 of 10 successful
+- Post-merge workflows: 8 of 8 successful
+- Release manifest rows: 221
+- Release-manifest SHA-256:
+  `22EE67CCD07E03E8AA79E4CF55E69AE919E4E98ABABB4F50C29B8AAB42257347`
 
-- Final v0.14.2 release commit
-- Final tracked-file manifest
-- Git tag
-- GitHub release
-- GitHub Actions results
-- Zenodo version DOI
-- Archived source-file checksum
+## Immutable publication boundary
+
+The v0.14.2 tag and Zenodo archive contain the pre-publication documentation
+that was available when they were created. This post-publication correction
+does not rewrite those immutable artifacts. It establishes the corrected
+publication map on the default branch and in editable GitHub release notes.

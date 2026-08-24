@@ -25,8 +25,20 @@ All notable changes to Guardian F401 are documented in this file.
   `10.5281/zenodo.21923859` belongs to v0.13.0.
 - Recorded the v0.14.0 version DOI:
   `10.5281/zenodo.21980859`.
-- Documented that GitHub release v0.14.1 has no Zenodo version DOI and that
-  its immutable tag contains stale v0.14.0 citation metadata.
+- Initially documented v0.14.1 as having no Zenodo DOI based on the historical
+  manual concept family alone. Post-publication inspection established that
+  the GitHub integration maintains a second concept family.
+- Verified GitHub-integrated Zenodo records:
+  - v0.14.0: `10.5281/zenodo.21981234`
+  - v0.14.1: `10.5281/zenodo.22062543`
+  - v0.14.2: `10.5281/zenodo.22075322`
+  - Concept DOI: `10.5281/zenodo.21981233`
+- Preserved the historical/manual concept family:
+  `10.5281/zenodo.21923858`.
+- Recorded that v0.14.0 exists in both concept families as two distinct,
+  already-published deposits.
+- Preserved the immutable v0.14.1 tag despite its stale v0.14.0
+  `CITATION.cff` metadata.
 
 ### Validation
 
