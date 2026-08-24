@@ -33,3 +33,9 @@ Thumbs.db
 
 artifacts/
 reports/
+# Keil structural-review local artifacts
+/firmware/MDK-ARM/*.uvoptx
+/firmware/MDK-ARM/DebugConfig/
+/firmware/MDK-ARM/Objects/
+/firmware/MDK-ARM/RTE/Device/*/*.dbgconf
+/firmware/MDK-ARM/RTE/Device/*/*.dbgconf.base@*
