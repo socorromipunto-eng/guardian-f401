@@ -1527,3 +1527,87 @@ Overall M15 Architecture Gate status therefore remains:
 PASS WITH CONDITIONS
 
 The remaining conditions are the explicitly deferred M15-03 and M15-04 properties and any implementation evidence requirements associated with those later slices.
+
+---
+
+## M15-03 Closure Reconciliation — Persistent Freshness and Anti-Replay
+
+Status: CONDITION CLOSED — ARCHITECTURE
+
+The M15 Architecture Gate previously deferred persistent freshness and anti-replay to M15-03.
+
+Those architecture decisions have now been adjudicated and closed by:
+
+TD-M15-005 — Persistent Freshness State Model
+
+TD-M15-005 SHA-256:
+BE52461F33E92EE15532D290AC2DE3EFC470042407E3847F93271B693618E860
+
+TD-M15-005 final status:
+
+RESOLVED
+
+Finding:
+
+CLOSED
+
+Software implementation disposition:
+
+APPROVED FOR BOUNDED IMPLEMENTATION
+
+The closed M15-03 architecture now freezes:
+
+- strict same-epoch monotonic logical_time semantics;
+- explicit epoch transition authorization;
+- reset behavior;
+- old-epoch rollback behavior;
+- FIRST_SEEN boundaries;
+- persistent state atomicity and commit ordering;
+- corruption and unavailable-state failure semantics;
+- persistent rollback classification;
+- replay acceptance window = 0;
+- nonce requirement = NOT REQUIRED for M15-03 v1;
+- portable freshness-state capacity = 4,096 producers;
+- backend-specific capacity declaration;
+- bounded current_epoch + previous_epoch retention;
+- unsigned 64-bit transition_sequence;
+- unsigned 64-bit persistent generation;
+- fail-closed exhaustion semantics.
+
+The authoritative freshness ordering is:
+
+AUTHENTICATED
+→ persistent freshness evaluation
+→ FRESH_CANDIDATE
+→ durable commit
+→ verified commit
+→ FRESH
+
+No authentication success bypasses freshness.
+
+No freshness success establishes policy authority.
+
+Therefore:
+
+AUTHENTICATED ≠ FRESH
+FRESH ≠ AUTHORIZED
+FRESH ≠ PHYSICALLY TRUE
+FRESH ≠ ACTUATION AUTHORITY
+
+Historical M15-03 PENDING statements in earlier sections remain preserved as temporal evidence of the gate state before TD-M15-005 adjudication.
+
+They are superseded for current implementation authorization by this reconciliation and TD-M15-005.
+
+Production STM32 persistence remains subject to separate backend evidence including flash allocation, endurance, erase/write behavior, power-loss recovery, integrity, rollback-detection capability, and demonstrated capacity.
+
+M15-03 architecture condition: CLOSED
+
+M15-03 software implementation evidence: PENDING
+
+M15-04 — Attestation and Witness Exchange: PENDING
+
+Overall M15 Architecture Gate remains:
+
+PASS WITH CONDITIONS
+
+The remaining conditions now include M15-03 implementation/validation evidence and the separately deferred M15-04 architecture and implementation work.

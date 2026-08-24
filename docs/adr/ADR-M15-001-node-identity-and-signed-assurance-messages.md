@@ -1498,3 +1498,79 @@ A valid Guardian signature proves which trusted credential authenticated the acc
 
 Status: DRAFT — architecture review required before implementation.
 
+---
+
+## M15-03 Post-Adjudication Reconciliation
+
+Status: APPROVED FOR BOUNDED SOFTWARE IMPLEMENTATION
+
+The persistent freshness and anti-replay properties previously deferred to M15-03 have completed architecture adjudication under:
+
+TD-M15-005 — Persistent Freshness State Model
+
+TD-M15-005 SHA-256:
+BE52461F33E92EE15532D290AC2DE3EFC470042407E3847F93271B693618E860
+
+Historical statements in this ADR that persistent freshness, replay resistance across reset, nonce lifecycle, replay windows, reset semantics, rollback resistance, or persistent storage were deferred are retained for traceability.
+
+The authoritative post-adjudication M15-03 contract is now:
+
+AUTHENTICATED
+→ freshness evaluation
+→ FRESH_CANDIDATE
+→ durable state commit
+→ verified commit
+→ FRESH
+
+Same-epoch semantics:
+
+logical_time greater than durable high-water mark → FRESH_CANDIDATE
+logical_time equal to durable high-water mark → REPLAY
+logical_time below durable high-water mark → LOGICAL_TIME_ROLLBACK
+
+Epoch semantics:
+
+- reset alone does not establish a new epoch;
+- arbitrary unseen epochs are not automatically accepted;
+- exact epoch transition authorization is required;
+- immediate superseded-epoch reversal produces EPOCH_ROLLBACK;
+- missing or corrupted previously established state is not FIRST_SEEN.
+
+Persistence semantics:
+
+- FRESH is returned only after successful durable state commit and verification;
+- state invalidity, unavailability, rollback, or commit failure fails freshness closed;
+- production hardware-backed rollback resistance is not claimed unless separately demonstrated.
+
+Replay semantics:
+
+M15-03 v1 replay acceptance window = 0
+
+Out-of-order freshness acceptance = NOT SUPPORTED
+
+Nonce semantics:
+
+M15-03 v1 nonce requirement = NOT REQUIRED
+
+Nonce/challenge semantics in other Guardian protocols are not redefined by M15-03.
+
+Portable resource semantics:
+
+- maximum 4,096 producer freshness states;
+- each backend declares an explicit capacity less than or equal to 4,096;
+- current_epoch plus previous_epoch are retained per producer;
+- transition_sequence and persistent generation are unsigned 64-bit monotonic values;
+- automatic eviction is prohibited.
+
+Security boundaries remain:
+
+AUTHENTICATED ≠ FRESH
+FRESH ≠ AUTHORIZED
+FRESH ≠ PHYSICALLY TRUE
+FRESH ≠ ACTUATION AUTHORITY
+
+This reconciliation authorizes bounded M15-03 software implementation.
+
+It does not allocate an STM32F401 flash partition and does not claim production STM32 persistence capacity.
+
+M15-04 — Attestation and Witness Exchange remains separately deferred.
