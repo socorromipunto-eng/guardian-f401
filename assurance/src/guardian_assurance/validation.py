@@ -80,6 +80,25 @@ def validate_producer_id(producer_id: Any) -> str:
     return _require_text(producer_id, "producer_id", _PRODUCER)
 
 
+def validate_producer_epoch(producer_epoch: Any) -> str:
+    """Validate producer_epoch using the authoritative M14 epoch grammar."""
+
+    return _require_text(producer_epoch, "producer_epoch", _HEX_128)
+
+
+def validate_logical_time(logical_time: Any) -> int:
+    """Validate logical_time using the authoritative M14 safe-integer range."""
+
+    if (
+        isinstance(logical_time, bool)
+        or not isinstance(logical_time, int)
+        or not 0 <= logical_time <= _SAFE_INTEGER
+    ):
+        raise AssuranceError(ErrorCode.SCHEMA, "invalid logical_time")
+
+    return logical_time
+
+
 def validate_envelope(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or frozenset(value) != _ENVELOPE_KEYS:
         raise AssuranceError(ErrorCode.SCHEMA, "envelope must contain exactly the defined members")
@@ -87,11 +106,9 @@ def validate_envelope(value: Any) -> dict[str, Any]:
     if object_type not in _OBJECT_TYPES:
         raise AssuranceError(ErrorCode.SCHEMA, "unsupported object_type")
     validate_producer_id(value["producer_id"])
-    _require_text(value["producer_epoch"], "producer_epoch", _HEX_128)
+    validate_producer_epoch(value["producer_epoch"])
     _require_text(value["object_id"], "object_id", _HEX_128)
-    logical_time = value["logical_time"]
-    if isinstance(logical_time, bool) or not isinstance(logical_time, int) or not 0 <= logical_time <= _SAFE_INTEGER:
-        raise AssuranceError(ErrorCode.SCHEMA, "invalid logical_time")
+    logical_time = validate_logical_time(value["logical_time"])
     if value["domain"] != expected_domain(object_type):
         raise AssuranceError(ErrorCode.DOMAIN, "domain does not match object_type")
     validate_payload(object_type, value["payload"])
