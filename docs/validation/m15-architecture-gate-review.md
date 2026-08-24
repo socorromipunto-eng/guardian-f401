@@ -1310,3 +1310,78 @@ Implementation remains subject to software validation and all remaining M15
 acceptance criteria.
 
 Status: CLOSED — wrapper raw maximum frozen at 66,048 bytes before implementation.
+
+---
+
+## TD-M15-003 Closure — Trust Store Document Schema
+
+Status: CONDITION CLOSED
+
+Technical Destruction identified that Decision #5 defined the trusted credential record but did not freeze the exact top-level trust-store JSON document.
+
+The architecture now freezes a closed top-level object containing exactly:
+
+- schema_version
+- environment
+- records
+
+Initial schema version:
+
+guardian-f401:m15:trust-store:v1
+
+Allowed environments:
+
+- TEST
+- PRODUCTION
+
+The configured verifier environment must exactly match the loaded trust-store environment.
+
+TEST trust store ≠ PRODUCTION trust store.
+
+The signed assurance message cannot select or override the trust-store environment.
+
+Each records entry remains a closed TrustRecord containing exactly:
+
+- producer_id
+- key_id
+- algorithm
+- public_key
+- lifecycle_state
+
+Lookup remains exact:
+
+producer_id + key_id + algorithm → exactly one TrustRecord or explicit failure.
+
+No wildcard matching, fallback key, default producer, first-match-wins, or last-match-wins behavior is permitted.
+
+Ed25519 trusted public keys use canonical base64url without padding and decode to exactly 32 bytes.
+
+Lifecycle semantics remain ACTIVE, RETIRED, and REVOKED.
+
+Trust resolution remains separate from cryptographic verification.
+
+VERIFIED ≠ AUTHENTICATED until trusted credential resolution succeeds.
+
+ACTIVE credential ≠ physical authority.
+
+File representation remains strict UTF-8 JSON without BOM with duplicate-member rejection, closed schema, deterministic validation, and RFC 8785 canonical representation.
+
+Traceability:
+
+Decision #5
+→
+TD-M15-003
+→
+Trust Store Document Schema Amendment
+→
+Trust Store Runtime implementation
+→
+validation evidence
+
+Gate disposition:
+
+The condition requiring an exact top-level trust-store representation and TEST/PRODUCTION separation is CLOSED.
+
+Trust-store runtime implementation remains PENDING.
+
+Status: CLOSED — trust-store document schema frozen before runtime implementation.

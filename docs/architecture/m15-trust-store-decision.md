@@ -420,3 +420,81 @@ The trust store authenticates producer provenance only.
 It does not establish freshness, physical truth, or authority.
 
 Status: APPROVED — architecture accepted; implementation remains pending.
+
+---
+
+## TD-M15-003 — Trust Store Document Schema Amendment
+
+Status: APPROVED
+
+Decision #5 is amended to freeze the exact top-level trust-store document structure before runtime implementation.
+
+The trust store is one closed JSON object containing exactly:
+
+- schema_version
+- environment
+- records
+
+Initial schema version:
+
+guardian-f401:m15:trust-store:v1
+
+Allowed environment values:
+
+- TEST
+- PRODUCTION
+
+The records member is a JSON array containing zero or more TrustRecord objects.
+
+Unknown top-level members fail validation.
+Duplicate JSON members fail validation.
+Silent schema extension is prohibited.
+
+The configured verifier environment must exactly match the loaded trust-store environment.
+
+TEST trust store ≠ PRODUCTION trust store.
+
+A TEST trust store must not be accepted by a PRODUCTION verifier.
+A PRODUCTION trust store must not be silently accepted by a TEST verifier.
+
+The signed assurance message must never select or override the trust-store environment.
+
+Each TrustRecord remains closed and contains exactly:
+
+- producer_id
+- key_id
+- algorithm
+- public_key
+- lifecycle_state
+
+Lookup remains exact and deterministic:
+
+producer_id + key_id + algorithm → exactly one TrustRecord or explicit failure.
+
+No wildcard matching is permitted.
+No fallback key is permitted.
+No default producer is permitted.
+
+Array ordering has no trust semantics.
+First-match-wins is prohibited.
+Last-match-wins is prohibited.
+
+Ed25519 trusted public keys remain encoded as canonical base64url without padding and must decode to exactly 32 bytes.
+
+Lifecycle semantics remain:
+
+ACTIVE: may authenticate new signed assurance objects.
+RETIRED: not valid for new signing, but may remain available for historical evidence evaluation.
+REVOKED: must fail current authentication.
+
+Trust resolution and cryptographic verification remain separate operations.
+
+VERIFIED ≠ AUTHENTICATED until trusted credential resolution has also succeeded.
+
+ACTIVE credential ≠ physical authority.
+
+Initial file representation remains UTF-8 JSON without BOM with strict parsing, duplicate-member rejection, closed schema, deterministic validation, and RFC 8785 canonical representation.
+
+Integrity evidence shall include raw SHA-256, canonical SHA-256, schema version, environment, record count, validation result, and repository commit SHA when applicable.
+
+Status: APPROVED — top-level trust-store schema and environment separation frozen before runtime implementation.
