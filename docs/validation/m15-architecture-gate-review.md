@@ -1445,3 +1445,85 @@ The resource-bound condition is CLOSED.
 Trust-store runtime implementation remains PENDING.
 
 Status: CLOSED — resource bounds frozen before trust-store runtime implementation.
+
+---
+
+## Post-Implementation Reconciliation — Signed Identity and Authentication
+
+Status: IMPLEMENTATION EVIDENCE SATISFIED
+
+This section records post-gate implementation evidence for the bounded M15 signed-identity and authentication software slice.
+
+Historical statements elsewhere in this gate that trust-store runtime implementation remained pending are retained for traceability and reflect the repository state at the time those sections were written.
+
+Subsequent implementation evidence now demonstrates completion of that bounded slice.
+
+Implemented and validated components:
+
+- purpose-separated assurance transcript
+- closed signed assurance wrapper
+- host/test Ed25519 cryptographic provider
+- shared producer identity validation contract
+- trust-store document schema
+- trust-store resource bounds
+- trust-store credential resolution
+- signed assurance authentication orchestrator
+
+Implementation commits:
+
+963337f — feat(m15): add purpose-separated assurance transcript builder
+be7d39b — feat(m15): add closed signed assurance wrapper
+6c59e2a — build(m15): lock host Ed25519 dependencies
+1967413 — feat(m15): add host Ed25519 crypto provider
+1a68be3 — docs(m15): freeze trust store document schema
+6c29512 — docs(m15): freeze trust store resource bounds
+99bdd6e — refactor(m15): expose producer identity validator
+e2dd227 — feat(m15): add trust store credential resolution
+1b18886 — feat(m15): add signed assurance authentication orchestrator
+b864e11 — docs(m15): validate signed identity implementation
+
+Validation evidence:
+
+docs/validation/m15-signed-identity-implementation-validation.md
+
+Final software regression recorded for the slice:
+
+203 tests executed
+203 tests passed
+0 failures
+0 errors
+
+Authentication composition demonstrated:
+
+validated signed wrapper
+→ trusted credential resolution
+→ purpose-separated transcript
+→ Ed25519 verification
+→ AUTHENTICATED
+
+The following boundaries remain authoritative:
+
+RESOLVED ≠ VERIFIED
+VERIFIED ≠ AUTHENTICATED
+AUTHENTICATED ≠ FRESH
+AUTHENTICATED ≠ PHYSICALLY TRUE
+AUTHENTICATED ≠ AUTHORIZED
+AUTHENTICATED ≠ ACTUATION PERMISSION
+
+The implementation evidence satisfies the previously pending trust-store runtime and signed-authentication software conditions for this bounded slice.
+
+The following M15 properties remain explicitly deferred and are not closed by this reconciliation:
+
+M15-03 — Persistent Freshness and Anti-Replay
+M15-04 — Attestation and Witness Exchange
+
+No persistent replay resistance across reset is claimed.
+No attestation mechanism is claimed.
+No distributed witness assurance is claimed.
+No physical authority or production hardware identity is claimed.
+
+Overall M15 Architecture Gate status therefore remains:
+
+PASS WITH CONDITIONS
+
+The remaining conditions are the explicitly deferred M15-03 and M15-04 properties and any implementation evidence requirements associated with those later slices.
