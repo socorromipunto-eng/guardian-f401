@@ -1574,3 +1574,57 @@ This reconciliation authorizes bounded M15-03 software implementation.
 It does not allocate an STM32F401 flash partition and does not claim production STM32 persistence capacity.
 
 M15-04 — Attestation and Witness Exchange remains separately deferred.
+
+---
+
+## M15-03 Post-Implementation Evidence Reconciliation
+
+Evidence baseline: `d37714d`
+
+The bounded M15-03 host software path authorized by TD-M15-005 is now implemented and validated.
+
+Validated implementation sequence:
+
+```text
+signed assurance
+-> trust resolution
+-> cryptographic signature verification
+-> AUTHENTICATED
+-> authenticated producer_id / producer_epoch / logical_time
+-> persistent-state load
+-> freshness evaluation
+-> FRESH_CANDIDATE
+-> persistence prepare
+-> commit
+-> verify
+-> FRESH
+```
+
+Complete assurance regression:
+
+```text
+307 tests passed
+```
+
+The following separations remain normative:
+
+```text
+AUTHENTICATED != FRESH
+FRESH_CANDIDATE != FRESH
+COMMITTED != VERIFIED
+FRESH != AUTHORIZED
+```
+
+Current implementation boundaries:
+
+- FIRST_SEEN does not bootstrap persistent state;
+- explicit bootstrap authorization remains outside normal freshness orchestration;
+- explicit epoch-transition authorization remains outside normal freshness orchestration;
+- arbitrary-storage rollback resistance is not demonstrated;
+- no hardware-backed monotonic anchor is claimed;
+- production STM32F401 persistence is not implemented by this host slice;
+- STM32F401 flash allocation, endurance, and physical power-loss behavior are not validated;
+- freshness does not establish policy authority or actuation permission;
+- M15-04 remains separately deferred.
+
+Historical statements in this ADR that described persistent freshness as future or deferred remain preserved as chronological architecture evidence. For the bounded host software path, they are superseded by this reconciliation and TD-M15-005.

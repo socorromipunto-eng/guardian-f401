@@ -1476,3 +1476,72 @@ TD-M15-005
 → validation evidence
 
 Status: RESOLVED — M15-03 architecture frozen and bounded software implementation authorized.
+
+---
+
+## Post-Implementation Evidence Reconciliation — M15-03 Bounded Host Software
+
+Status: IMPLEMENTED AND VALIDATED — BOUNDED HOST SOFTWARE PATH
+
+Evidence baseline: `d37714d`
+
+The bounded M15-03 host software path authorized by this Technical Destruction has now been implemented and validated.
+
+Implementation sequence:
+
+- `c5e1bab` — expose freshness field validators;
+- `803967f` — add bounded freshness state model;
+- `818fa38` — add pure freshness evaluator;
+- `6c25097` — add freshness persistence contract;
+- `8cff65c` — add host freshness persistence backend;
+- `7c59741` — add freshness orchestration;
+- `4680a4a` — expose authenticated freshness claims;
+- `d37714d` — integrate authentication and freshness.
+
+Validation evidence:
+
+- complete assurance regression: 307 tests passed;
+- unauthenticated statements cannot enter freshness evaluation;
+- authenticated producer_id, producer_epoch, and logical_time are handed directly to freshness without wrapper reparsing;
+- same-epoch strict monotonic freshness is implemented;
+- replay acceptance window remains 0;
+- FRESH_CANDIDATE becomes FRESH only after persistence commit and verification;
+- interrupted host writes preserve the previous committed state;
+- stale candidate files are non-authoritative;
+- corruption and truncation fail closed;
+- AUTHENTICATED != FRESH;
+- FRESH_CANDIDATE != FRESH;
+- COMMITTED != VERIFIED;
+- FRESH != AUTHORIZED.
+
+Implementation boundaries preserved:
+
+- FIRST_SEEN does not bootstrap persistent freshness state;
+- explicit bootstrap/provisioning authorization remains outside normal freshness orchestration;
+- EPOCH_TRANSITION_REQUIRED does not authorize an epoch transition;
+- explicit epoch-transition authorization remains outside normal freshness orchestration;
+- SHA-256 integrity evidence is not authenticated storage;
+- arbitrary-storage rollback resistance is not demonstrated;
+- no hardware-backed monotonic anchor is claimed;
+- no production STM32F401 persistence backend is claimed;
+- no STM32F401 flash allocation, endurance, or physical power-loss qualification is claimed;
+- freshness does not establish authorization or actuation permission;
+- M15-04 remains separately deferred.
+
+Disposition:
+
+M15-03 architecture: CLOSED
+
+M15-03 bounded host software implementation: IMPLEMENTED AND VALIDATED
+
+Production STM32F401 persistence evidence: PENDING
+
+Explicit bootstrap authorization implementation: PENDING
+
+Explicit epoch-transition authorization implementation: PENDING
+
+Hardware-backed rollback resistance: NOT DEMONSTRATED
+
+M15-04: PENDING
+
+Historical NOT IMPLEMENTED, NOT AUTHORIZED, and implementation-PENDING statements earlier in this document remain preserved as temporal architecture evidence. They do not represent the current status of the bounded host software path after commit d37714d.

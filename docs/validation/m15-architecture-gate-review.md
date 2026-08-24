@@ -1611,3 +1611,77 @@ Overall M15 Architecture Gate remains:
 PASS WITH CONDITIONS
 
 The remaining conditions now include M15-03 implementation/validation evidence and the separately deferred M15-04 architecture and implementation work.
+
+---
+
+## M15-03 Software Evidence Reconciliation — Post #2F
+
+Evidence baseline: `d37714d`
+
+Complete assurance regression: 307 tests passed
+
+### Evidence disposition
+
+M15-03 architecture condition: CLOSED
+
+M15-03 bounded host software implementation evidence: CLOSED
+
+M15-03 bounded host software validation evidence: CLOSED
+
+Production STM32F401 persistence evidence: OPEN
+
+Explicit bootstrap authorization implementation: OPEN
+
+Explicit epoch-transition authorization implementation: OPEN
+
+Hardware-backed rollback-resistance evidence: OPEN
+
+M15-04 — Attestation and Witness Exchange: PENDING
+
+### Implemented and validated software evidence
+
+- authoritative producer_epoch and logical_time field contracts;
+- bounded producer freshness-state model;
+- pure same-epoch freshness evaluator;
+- strict replay-window-zero semantics;
+- backend-neutral persistence contract;
+- host transactional persistence backend;
+- candidate validation before atomic replacement;
+- commit and verify separation;
+- corruption and truncation fail-closed behavior;
+- interrupted-write preservation of the previous committed host state;
+- freshness orchestration;
+- FRESH only after verified persistence;
+- authenticated freshness-claim handoff;
+- authentication-to-freshness integration without wrapper reparsing;
+- authentication failure terminates before freshness evaluation;
+- 307-test complete assurance regression.
+
+### Claims explicitly not established
+
+- automatic FIRST_SEEN bootstrap;
+- automatic epoch-transition authorization;
+- arbitrary-storage rollback resistance;
+- hardware-backed monotonic state;
+- production STM32F401 persistence capacity;
+- STM32F401 flash layout or endurance;
+- physical target power-loss behavior;
+- freshness as authorization;
+- freshness as physical truth;
+- M15-04 distributed attestation or witness assurance.
+
+### Historical-status reconciliation
+
+Earlier statements such as Implementation status: NOT IMPLEMENTED, Freshness is not yet implemented, and M15-03 software implementation evidence: PENDING remain preserved as temporal gate evidence.
+
+For the bounded host software path those historical statements are superseded by the implementation evidence ending at commit d37714d and the 307-test assurance regression.
+
+They are not superseded for production STM32F401 persistence, bootstrap authorization, epoch-transition authorization, hardware-backed rollback resistance, or M15-04.
+
+### Gate status
+
+PASS WITH CONDITIONS
+
+The M15-03 bounded host software implementation and validation condition is satisfied.
+
+The remaining conditions concern explicitly unimplemented or separately deferred security properties and production-target evidence. They do not authorize claims beyond the validated host software scope.
