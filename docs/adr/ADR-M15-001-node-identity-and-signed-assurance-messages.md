@@ -1628,3 +1628,78 @@ Current implementation boundaries:
 - M15-04 remains separately deferred.
 
 Historical statements in this ADR that described persistent freshness as future or deferred remain preserved as chronological architecture evidence. For the bounded host software path, they are superseded by this reconciliation and TD-M15-005.
+
+---
+
+## M15-03 Authorization Architecture Reconciliation - TD-M15-006
+
+Evidence authority: TD-M15-006 - Bootstrap and Epoch-Transition Authorization Model
+
+TD-M15-006 status: RESOLVED
+
+Architecture disposition: APPROVED FOR BOUNDED SOFTWARE IMPLEMENTATION
+
+The authorization architecture required by the earlier M15-03 freshness decisions has now completed architecture adjudication.
+
+The following authorization properties are frozen:
+
+- bootstrap authorization and epoch-transition authorization are separate privileges;
+- ordinary assurance authentication does not grant bootstrap authority;
+- ordinary assurance authentication does not grant epoch-transition authority;
+- authorization uses dedicated signed authorization objects;
+- authorization uses a dedicated authorization trust domain;
+- BOOTSTRAP_AUTHORITY and EPOCH_TRANSITION_AUTHORITY are explicit capabilities;
+- authorization replay protection is independent of producer logical_time;
+- authorization replay acceptance window is zero;
+- authorization consumption and protected freshness-state mutation form one verified logical transaction;
+- BootstrapAuthorizationV1 and EpochTransitionAuthorizationV1 use distinct schemas and purpose domains;
+- authorization signatures bind exact canonical authorization bytes;
+- authorization trust does not fall back to ordinary producer assurance trust.
+
+The following semantic separations remain normative:
+
+ASSURANCE_AUTHENTICATED != BOOTSTRAP_AUTHORIZED
+
+ASSURANCE_AUTHENTICATED != EPOCH_TRANSITION_AUTHORIZED
+
+FIRST_SEEN != BOOTSTRAP_AUTHORIZED
+
+EPOCH_TRANSITION_REQUIRED != EPOCH_TRANSITION_AUTHORIZED
+
+AUTHORIZATION_AUTHENTICATED != AUTHORIZATION_CANDIDATE
+
+AUTHORIZATION_CANDIDATE != AUTHORIZATION_CONSUMED
+
+EPOCH_TRANSITION_AUTHORIZED != FRESH
+
+FRESH != AUTHORIZED
+
+PREPARED != COMMITTED
+
+COMMITTED != VERIFIED
+
+Current implementation disposition:
+
+TD-M15-006 architecture condition: CLOSED
+
+Bounded host authorization software implementation: AUTHORIZED
+
+Bounded host authorization validation evidence: PENDING
+
+Production STM32 authorization persistence: NOT AUTHORIZED
+
+Hardware-backed rollback resistance: NOT DEMONSTRATED
+
+M15-04: PENDING
+
+The authorization architecture permits bounded host implementation only.
+
+It does not establish that the authorization software is already implemented or validated.
+
+It does not allocate STM32F401 flash, establish production persistence capacity, demonstrate hardware-backed rollback resistance, or authorize M15-04.
+
+Historical ADR statements that bootstrap or epoch-transition authorization remained deferred are retained as chronological evidence.
+
+For architecture status they are superseded by TD-M15-006.
+
+For implementation and validation status, the bounded authorization software remains pending evidence.

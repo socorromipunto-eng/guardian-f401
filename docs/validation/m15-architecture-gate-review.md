@@ -1685,3 +1685,106 @@ PASS WITH CONDITIONS
 The M15-03 bounded host software implementation and validation condition is satisfied.
 
 The remaining conditions concern explicitly unimplemented or separately deferred security properties and production-target evidence. They do not authorize claims beyond the validated host software scope.
+
+---
+
+## M15-03 Authorization Architecture Gate Reconciliation - TD-M15-006
+
+Evidence authority: TD-M15-006
+
+TD-M15-006 status: RESOLVED
+
+Finding: CLOSED
+
+Architecture disposition: APPROVED FOR BOUNDED SOFTWARE IMPLEMENTATION
+
+### Current gate disposition
+
+Bootstrap authorization architecture: CLOSED
+
+Epoch-transition authorization architecture: CLOSED
+
+Bounded host authorization software implementation: AUTHORIZED
+
+Bounded host authorization implementation evidence: PENDING
+
+Bounded host authorization validation evidence: PENDING
+
+Production STM32 authorization persistence: NOT AUTHORIZED
+
+Hardware-backed rollback resistance: NOT DEMONSTRATED
+
+M15-04 - Attestation and Witness Exchange: PENDING
+
+### Frozen authorization architecture
+
+- ordinary assurance trust remains separate from authorization trust;
+- bootstrap and epoch-transition authorization remain separate capabilities;
+- dedicated signed authorization objects are required;
+- dedicated purpose domains are required;
+- AuthorizationTrustStoreV1 is separate from the ordinary assurance trust store;
+- authorization replay state is independent of producer logical_time;
+- authorization replay acceptance window is zero;
+- authorization_sequence is monotonic and must not wrap;
+- authorization consumption and protected freshness-state mutation form one verified logical transaction;
+- BootstrapAuthorizationV1 and EpochTransitionAuthorizationV1 use closed distinct schemas;
+- authorization signatures bind exact canonical authorization bytes;
+- bootstrap and epoch-transition lifecycle semantics are frozen;
+- portable authorization resource bounds are explicit and fail closed.
+
+### Required semantic separations
+
+ASSURANCE_AUTHENTICATED != BOOTSTRAP_AUTHORIZED
+
+ASSURANCE_AUTHENTICATED != EPOCH_TRANSITION_AUTHORIZED
+
+FIRST_SEEN != BOOTSTRAP_AUTHORIZED
+
+EPOCH_TRANSITION_REQUIRED != EPOCH_TRANSITION_AUTHORIZED
+
+AUTHORIZATION_AUTHENTICATED != AUTHORIZATION_CANDIDATE
+
+AUTHORIZATION_CANDIDATE != AUTHORIZATION_CONSUMED
+
+EPOCH_TRANSITION_AUTHORIZED != FRESH
+
+FRESH != AUTHORIZED
+
+PREPARED != COMMITTED
+
+COMMITTED != VERIFIED
+
+### Historical-status reconciliation
+
+Earlier Gate statements that explicit bootstrap authorization implementation and explicit epoch-transition authorization implementation were OPEN remain preserved as temporal evidence.
+
+Those earlier OPEN statements are superseded for architecture status by TD-M15-006.
+
+They are not superseded as implementation or validation evidence.
+
+No bounded host authorization implementation evidence has yet been produced.
+
+### Explicitly unclaimed
+
+- production STM32F401 authorization persistence;
+- STM32F401 flash layout or capacity;
+- target flash endurance;
+- physical target power-loss behavior;
+- hardware-backed monotonic state;
+- hardware-backed rollback resistance;
+- arbitrary-storage rollback resistance;
+- M15-04 attestation or witness implementation;
+- authorization as physical truth;
+- authorization as general actuation permission.
+
+### Gate status
+
+PASS WITH CONDITIONS
+
+The bootstrap and epoch-transition authorization architecture condition is satisfied.
+
+Bounded host software implementation may begin within the exact scope authorized by TD-M15-006.
+
+Implementation and validation evidence remain required before authorization software may be represented as implemented.
+
+Production STM32 authorization persistence and hardware rollback-resistance claims remain separately gated.
