@@ -65,6 +65,8 @@ class AuthenticationResult:
 
     code: AuthenticationResultCode
     producer_id: str | None = None
+    producer_epoch: str | None = None
+    logical_time: int | None = None
     key_id: str | None = None
     algorithm: str | None = None
     trust_code: TrustStoreErrorCode | None = None
@@ -170,6 +172,8 @@ def authenticate_signed_assurance(
         raise
 
     producer_id = wrapper.assurance_object["producer_id"]
+    producer_epoch = wrapper.assurance_object["producer_epoch"]
+    logical_time = wrapper.assurance_object["logical_time"]
     key_id = wrapper.key_id
     algorithm = wrapper.signature_algorithm
 
@@ -256,6 +260,8 @@ def authenticate_signed_assurance(
     return AuthenticationResult(
         code=AuthenticationResultCode.AUTHENTICATED,
         producer_id=producer_id,
+        producer_epoch=producer_epoch,
+        logical_time=logical_time,
         key_id=key_id,
         algorithm=algorithm,
         trust_code=trust.code,

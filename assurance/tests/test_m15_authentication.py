@@ -150,6 +150,11 @@ class M15AuthenticationTests(unittest.TestCase):
             AuthenticationResultCode.AUTHENTICATED,
         )
         self.assertTrue(result.authenticated)
+        self.assertEqual(
+            result.producer_epoch,
+            "0" * 32,
+        )
+        self.assertEqual(result.logical_time, 1)
         self.assertEqual(result.producer_id, "guardian-primary")
         self.assertEqual(result.key_id, "node-a-key-001")
         self.assertEqual(result.algorithm, "ed25519")
@@ -172,6 +177,8 @@ class M15AuthenticationTests(unittest.TestCase):
             AuthenticationResultCode.IDENTITY_UNKNOWN,
         )
         self.assertFalse(result.authenticated)
+        self.assertIsNone(result.producer_epoch)
+        self.assertIsNone(result.logical_time)
 
     def test_unknown_key_fails_closed(self) -> None:
         raw = signed_wrapper(
