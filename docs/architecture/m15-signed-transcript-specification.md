@@ -929,3 +929,78 @@ The original value remains the common versioned prefix of the three
 purpose-specific domains.
 
 Status: APPROVED — exact purpose-specific byte domains frozen before implementation acceptance.
+---
+
+## TD-M15-002 — Signed Wrapper Raw Resource Bound
+
+Status: APPROVED
+
+The M15 verification sequence requires a raw resource limit to be applied to
+the signed-message wrapper before UTF-8 decoding or JSON parsing.
+
+The existing M14 assurance-object raw limit remains:
+
+65,536 bytes
+
+The M15 outer wrapper receives a bounded additional allowance of:
+
+512 bytes
+
+Therefore the frozen M15 signed-wrapper raw maximum is:
+
+66,048 bytes
+
+The processing rule is:
+
+raw wrapper length > 66,048 bytes
+→
+reject before UTF-8 decoding and JSON parsing
+
+A wrapper at or below 66,048 bytes may continue to later validation stages.
+
+This outer allowance does not increase the permitted size of the embedded M14
+assurance object.
+
+The embedded `assurance_object` remains independently subject to all existing
+M14 limits, including:
+
+max_raw_bytes = 65,536
+
+Therefore:
+
+M15 wrapper allowance
+≠
+additional M14 payload capacity
+
+Required outer-bound tests include:
+
+66,047 bytes
+→
+raw-size gate permits processing
+
+66,048 bytes
+→
+raw-size gate permits processing
+
+66,049 bytes
+→
+raw-size rejection
+
+Passing the outer raw-size gate does not imply that the wrapper is otherwise
+valid.
+
+The wrapper may still fail:
+
+- UTF-8 validation;
+- JSON parsing;
+- duplicate-member rejection;
+- closed-schema validation;
+- signature metadata validation;
+- signature encoding validation;
+- embedded M14 assurance validation;
+- later cryptographic verification.
+
+Any future change to wrapper structure or maximum metadata sizes must reassess
+this bound through architecture review.
+
+Status: APPROVED — M15 signed-wrapper raw maximum frozen at 66,048 bytes.

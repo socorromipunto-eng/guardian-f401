@@ -1211,3 +1211,102 @@ Implementation remains subject to software validation and all remaining M15
 acceptance criteria.
 
 Status: CLOSED — architecture corrected before first implementation commit.
+---
+
+## TD-M15-002 Closure — Signed Wrapper Raw Resource Bound
+
+Status: CONDITION CLOSED
+
+The pre-implementation Technical Destruction review identified that the M15
+signed-message verification sequence required a raw wrapper resource limit but
+the original architecture had not frozen an exact numeric bound.
+
+The existing M14 assurance-object raw maximum is:
+
+65,536 bytes
+
+The approved M15 outer-wrapper overhead allowance is:
+
+512 bytes
+
+The frozen M15 signed-wrapper raw maximum is therefore:
+
+66,048 bytes
+
+Required processing order:
+
+raw wrapper
+→
+enforce 66,048-byte outer limit
+→
+strict UTF-8 processing
+→
+strict JSON parsing
+→
+duplicate-member rejection
+→
+closed wrapper schema
+→
+signature metadata validation
+→
+embedded assurance_object validation
+
+The embedded M14 assurance object remains independently subject to:
+
+max_raw_bytes = 65,536
+
+Therefore:
+
+M15 wrapper allowance
+≠
+additional M14 payload capacity
+
+Required boundary evidence:
+
+66,047 bytes
+→
+outer raw-size gate permits processing
+
+66,048 bytes
+→
+outer raw-size gate permits processing
+
+66,049 bytes
+→
+outer raw-size rejection
+
+Passing the outer size gate does not imply that the wrapper is otherwise valid.
+
+Traceability:
+
+M15 Architecture Gate
+→
+TD-M15-002
+→
+M15-02.1 wrapper-bound amendment
+→
+signed-wrapper implementation
+→
+resource-bound tests
+
+This closure changes no claim concerning:
+
+- signature validity;
+- authentication;
+- freshness;
+- anti-replay;
+- physical truth;
+- authorization;
+- actuator authority;
+- production identity;
+- certification.
+
+Gate disposition:
+
+The condition requiring an explicit M15 signed-wrapper raw resource bound is
+CLOSED.
+
+Implementation remains subject to software validation and all remaining M15
+acceptance criteria.
+
+Status: CLOSED — wrapper raw maximum frozen at 66,048 bytes before implementation.
