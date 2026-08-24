@@ -2,6 +2,53 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
+## [0.14.2] - 2026-08-24
+
+### Added
+
+- Added the portable Guardian F401 µVision structural-review project.
+- Added the M15/G15-01D AXF adjudication incident record.
+- Added reproducibility evidence showing identical loadable images between
+  absolute-path and portable project builds.
+- Added narrowly scoped ignore rules for local Keil-generated artifacts.
+
+### Changed
+
+- Replaced machine-specific paths in the structural-review project with
+  portable relative paths.
+- Updated release and citation metadata for the v0.14.2 corrective release.
+- Regenerated the tracked-file integrity manifest after the M15 integration.
+
+### Corrected
+
+- Corrected README DOI attribution: the version DOI
+  `10.5281/zenodo.21923859` belongs to v0.13.0.
+- Recorded the v0.14.0 version DOI:
+  `10.5281/zenodo.21980859`.
+- Documented that GitHub release v0.14.1 has no Zenodo version DOI and that
+  its immutable tag contains stale v0.14.0 citation metadata.
+
+### Validation
+
+- Guardian F401 structural-review target: 21 source entries and 13 include
+  paths.
+- Arm Compiler 6.24 rebuild: 0 errors and 0 warnings.
+- `CreateHexFile`: 0.
+- Two portable AXF rebuilds produced SHA-256
+  `A9A0383BDE722753ACD663F571B848A4696D4D7101FFA80D1E3FC101C912EDA8`.
+- Baseline and portable loadable images were identical: 36,088 bytes,
+  SHA-256
+  `89217348214D73CFA5011A8DD6AFACDD479336AF9F120886952CBEFA793FE5D7`.
+- Existing tracked HEX was confirmed as unchanged v0.13.0 evidence after
+  CRLF/LF normalization; no HEX was generated for this release preparation.
+
+### Limitations
+
+- Physical STM32F401 hardware validation remains pending.
+- No flashing, deployment, production certification or safety certification
+  is authorized or claimed.
+- The tracked historical HEX is evidence from v0.13.0 and is not presented
+  as a newly generated or hardware-qualified v0.14.2 firmware artifact.
 ## [0.14.1] - 2026-08-22
 
 ### Fixed

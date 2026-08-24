@@ -40,3 +40,6 @@
 
 # Keep ignore files deterministic across platforms.
 .gitignore text eol=lf
+CITATION.cff text eol=lf
+VERSION text eol=lf
+.gitattributes text eol=lf
