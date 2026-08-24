@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you reference Guardian F401, please cite the archived release."
 title: "Guardian F401: Deterministic Embedded Decision Assurance for Machine Health, Cybersecurity, and Supervisory Control"
-version: "0.14.1"
-date-released: "2026-08-22"
+version: "0.14.2"
+date-released: "2026-08-24"
 type: software
 authors:
   - given-names: "Antonio José"

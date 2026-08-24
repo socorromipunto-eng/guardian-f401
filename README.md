@@ -125,21 +125,29 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.14.1
+Project release: v0.14.2
 Guardian Protocol: v0.1
-Firmware semantic version: 0.14.1
+Firmware semantic version: 0.14.2
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
 
-Archived release: https://doi.org/10.5281/zenodo.21923859
-All versions: https://doi.org/10.5281/zenodo.21923858
-GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.1
+Published Zenodo releases:
+
+- v0.14.0: https://doi.org/10.5281/zenodo.21980859
+- v0.13.0: https://doi.org/10.5281/zenodo.21923859
+
+All Zenodo versions: https://doi.org/10.5281/zenodo.21923858
+GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.2
+
+The GitHub-only v0.14.1 release has no Zenodo version DOI. Its immutable tag
+contains stale v0.14.0 citation metadata; this historical inconsistency is
+preserved and documented rather than rewriting the published tag.
 
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
 open-source license. Physical board qualification and safety certification are
-not claimed. See `docs/release-evidence-v0.13.0.md`.
+not claimed. See `docs/release-evidence-v0.14.2.md`.
 
 ## Reproducible software validation
 
