@@ -1385,3 +1385,63 @@ The condition requiring an exact top-level trust-store representation and TEST/P
 Trust-store runtime implementation remains PENDING.
 
 Status: CLOSED — trust-store document schema frozen before runtime implementation.
+
+---
+
+## TD-M15-004 Closure — Trust Store Resource Bounds
+
+Status: CONDITION CLOSED
+
+Technical Destruction identified that the trust-store architecture had no explicit raw-file or record-count resource bounds.
+
+The architecture now freezes:
+
+Raw trust-store file maximum:
+1,048,576 bytes
+
+Maximum TrustRecord count:
+4,096 records
+
+Required raw-input rule:
+raw trust-store length > 1,048,576 bytes → reject before UTF-8 decoding and JSON parsing.
+
+Required record-count rule:
+records count > 4,096 → reject before credential resolution.
+
+Boundary cases:
+
+1,048,575 bytes → raw-size gate permits processing.
+1,048,576 bytes → raw-size gate permits processing.
+1,048,577 bytes → raw-size rejection.
+
+4,095 records → records-count gate permits processing.
+4,096 records → records-count gate permits processing.
+4,097 records → records-count rejection.
+
+Passing a resource gate does not imply trust-store validity.
+
+Processing order remains:
+
+raw bytes
+→ raw-size gate
+→ strict UTF-8
+→ strict JSON
+→ duplicate-member rejection
+→ closed schema
+→ environment validation
+→ records-count gate
+→ TrustRecord validation
+→ duplicate and ambiguity validation
+→ RFC 8785 canonicalization
+→ trust resolution
+
+These limits do not change schema, lifecycle, public-key, lookup, environment, or trust semantics.
+
+Traceability:
+Decision #5 → TD-M15-004 → resource-bound amendment → trust-store runtime → validation evidence.
+
+The resource-bound condition is CLOSED.
+
+Trust-store runtime implementation remains PENDING.
+
+Status: CLOSED — resource bounds frozen before trust-store runtime implementation.

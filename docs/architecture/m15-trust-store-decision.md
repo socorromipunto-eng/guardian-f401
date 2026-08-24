@@ -498,3 +498,60 @@ Initial file representation remains UTF-8 JSON without BOM with strict parsing, 
 Integrity evidence shall include raw SHA-256, canonical SHA-256, schema version, environment, record count, validation result, and repository commit SHA when applicable.
 
 Status: APPROVED — top-level trust-store schema and environment separation frozen before runtime implementation.
+
+---
+
+## TD-M15-004 — Trust Store Resource Bounds Amendment
+
+Status: APPROVED
+
+Decision #5 is amended to freeze explicit resource bounds for the trust-store runtime.
+
+Raw trust-store file maximum:
+
+1,048,576 bytes
+
+Maximum TrustRecord count:
+
+4,096 records
+
+Required raw-input rule:
+
+raw trust-store length > 1,048,576 bytes → reject before UTF-8 decoding and JSON parsing.
+
+Required record-count rule:
+
+records count > 4,096 → reject before credential resolution.
+
+Boundary requirements:
+
+1,048,575 bytes → raw-size gate permits processing.
+1,048,576 bytes → raw-size gate permits processing.
+1,048,577 bytes → raw-size rejection.
+
+4,095 records → records-count gate permits processing.
+4,096 records → records-count gate permits processing.
+4,097 records → records-count rejection.
+
+Passing either resource gate does not imply that the trust store is otherwise valid.
+
+Processing order:
+
+raw bytes
+→ raw-size gate
+→ strict UTF-8
+→ strict JSON
+→ duplicate-member rejection
+→ closed top-level schema
+→ environment validation
+→ records-count gate
+→ TrustRecord validation
+→ duplicate and ambiguity validation
+→ RFC 8785 canonicalization
+→ trust resolution
+
+These limits do not alter the existing schema, lifecycle, public-key, lookup, environment, or duplicate-handling contracts.
+
+Increasing either limit requires explicit architecture review.
+
+Status: APPROVED — trust-store resource bounds frozen before runtime implementation.
