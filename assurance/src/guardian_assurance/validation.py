@@ -74,13 +74,19 @@ def _require_text(value: Any, field: str, pattern: re.Pattern[str] | None = None
     return value
 
 
+def validate_producer_id(producer_id: Any) -> str:
+    """Validate producer_id using the authoritative M14 identity grammar."""
+
+    return _require_text(producer_id, "producer_id", _PRODUCER)
+
+
 def validate_envelope(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or frozenset(value) != _ENVELOPE_KEYS:
         raise AssuranceError(ErrorCode.SCHEMA, "envelope must contain exactly the defined members")
     object_type = _require_text(value["object_type"], "object_type")
     if object_type not in _OBJECT_TYPES:
         raise AssuranceError(ErrorCode.SCHEMA, "unsupported object_type")
-    _require_text(value["producer_id"], "producer_id", _PRODUCER)
+    validate_producer_id(value["producer_id"])
     _require_text(value["producer_epoch"], "producer_epoch", _HEX_128)
     _require_text(value["object_id"], "object_id", _HEX_128)
     logical_time = value["logical_time"]
