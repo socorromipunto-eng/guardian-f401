@@ -823,3 +823,109 @@ TRUE
 AUTHORIZED
 
 Status: APPROVED — architecture accepted; implementation remains pending.
+---
+
+## TD-M15-001 — Purpose-Specific Cryptographic Domain Amendment
+
+Status: APPROVED
+
+The pre-implementation Technical Destruction review identified that the
+original global signed-assurance domain:
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1
+
+authenticated the canonical M14 assurance object, including its validated
+`domain` and `object_type`, but did not independently freeze the exact
+purpose-specific cryptographic signing domains required by Decision #7.
+
+Before implementation acceptance, Guardian therefore freezes these exact ASCII
+signing domains:
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:OBSERVATION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:DECISION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:WITNESS
+
+No terminating NUL byte is included.
+
+No BOM is included.
+
+No implicit whitespace is included.
+
+No case folding is permitted.
+
+The validated M14 `object_type` determines exactly one applicable signing
+domain:
+
+observation
+→
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:OBSERVATION
+
+decision
+→
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:DECISION
+
+witness
+→
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:WITNESS
+
+No other mapping is valid.
+
+The caller must not independently select a signing domain inconsistent with the
+validated M14 object type.
+
+The amended transcript layout is:
+
+PURPOSE_DOMAIN
+||
+uint16_be(key_id_length)
+||
+key_id
+||
+uint16_be(producer_id_length)
+||
+producer_id
+||
+uint32_be(canonical_assurance_object_length)
+||
+canonical_assurance_object
+
+The existing `key_id`, `producer_id`, RFC 8785 canonicalization, and big-endian
+length rules remain unchanged.
+
+Purpose is intentionally authenticated twice:
+
+1. through the M15 purpose-specific signing domain; and
+2. through the canonical M14 object's validated `domain` and `object_type`.
+
+The implementation must demonstrate successful same-purpose construction for:
+
+Observation → Observation
+
+Decision → Decision
+
+Witness → Witness
+
+and rejection of all six cross-object substitutions:
+
+Observation → Decision
+
+Observation → Witness
+
+Decision → Observation
+
+Decision → Witness
+
+Witness → Observation
+
+Witness → Decision
+
+Where earlier M15-02.1 text describes
+`GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1` as the complete signing domain, this
+amendment supersedes that interpretation.
+
+The original value remains the common versioned prefix of the three
+purpose-specific domains.
+
+Status: APPROVED — exact purpose-specific byte domains frozen before implementation acceptance.

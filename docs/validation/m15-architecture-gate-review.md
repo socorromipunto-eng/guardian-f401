@@ -1132,3 +1132,82 @@ Deterministic policy authorizes.
 Evidence proves.
 
 Status: PASS WITH CONDITIONS — M15 software implementation may begin within the bounded approved scope.
+---
+
+## TD-M15-001 Closure — Purpose-Domain Representation
+
+Status: CONDITION CLOSED
+
+The pre-implementation Technical Destruction review identified that the original
+M15-02.1 transcript authenticated the validated M14 `domain` and `object_type`
+inside the canonical assurance object, but had not independently frozen the
+exact byte-level purpose-specific signing domains required by Decision #7.
+
+The architecture was corrected before the first M15 implementation commit.
+
+M15-02.1 now freezes these exact ASCII signing domains:
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:OBSERVATION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:DECISION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:WITNESS
+
+The validated M14 `object_type` determines the applicable M15 purpose domain.
+
+The caller must not independently select a purpose domain inconsistent with the
+validated M14 object.
+
+Acceptance requires successful same-purpose coverage for:
+
+Observation → Observation
+
+Decision → Decision
+
+Witness → Witness
+
+and rejection of all six cross-object substitutions:
+
+Observation → Decision
+
+Observation → Witness
+
+Decision → Observation
+
+Decision → Witness
+
+Witness → Observation
+
+Witness → Decision
+
+Traceability:
+
+Decision #7
+→
+TD-M15-001
+→
+M15-02.1 purpose-domain amendment
+→
+implementation
+→
+cross-object validation
+
+This closure does not change any claim concerning:
+
+- freshness;
+- anti-replay;
+- physical truth;
+- authorization;
+- actuator authority;
+- hardware identity;
+- production key custody;
+- certification.
+
+Gate disposition:
+
+The condition requiring exact byte-level purpose/domain representation is CLOSED.
+
+Implementation remains subject to software validation and all remaining M15
+acceptance criteria.
+
+Status: CLOSED — architecture corrected before first implementation commit.
