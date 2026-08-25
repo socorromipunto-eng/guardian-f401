@@ -30,6 +30,7 @@ from guardian_assurance.authorization_trust_store import (
 )
 from guardian_assurance.crypto_provider import HostEd25519Provider
 from guardian_assurance.signed_authorization import (
+    parse_and_validate_signed_authorization,
     encode_authorization_signature_base64url,
 )
 
@@ -116,6 +117,38 @@ class M15AuthorizationAuthenticationTests(unittest.TestCase):
         )
         self.assertTrue(result.authenticated)
         self.assertEqual(result.authorization_sequence, 1)
+
+    def test_authenticated_result_preserves_exact_signed_object(self) -> None:
+        raw = self.signed_envelope()
+        validated = parse_and_validate_signed_authorization(raw)
+
+        result = authenticate_authorization(
+            raw,
+            trust_store=self.trust_store(),
+            provider=self.provider,
+        )
+
+        self.assertTrue(result.authenticated)
+        self.assertEqual(
+            result.authorization_object,
+            validated.authorization_object,
+        )
+        self.assertEqual(
+            result.authorization_object_raw,
+            validated.authorization_object_raw,
+        )
+        self.assertEqual(
+            result.authorization_object.producer_epoch,
+            validated.authorization_object.producer_epoch,
+        )
+        self.assertEqual(
+            result.authorization_object.initial_high_water_state,
+            validated.authorization_object.initial_high_water_state,
+        )
+        self.assertEqual(
+            result.authorization_object.initial_logical_time,
+            validated.authorization_object.initial_logical_time,
+        )
 
     def test_changed_signed_content_is_signature_invalid(self) -> None:
         raw = json.loads(self.signed_envelope().decode("utf-8"))

@@ -17,6 +17,7 @@ authorization, or actuation.
 
 from __future__ import annotations
 
+from .authorization_objects import ValidatedAuthorizationObject
 from dataclasses import dataclass
 from enum import Enum
 
@@ -75,6 +76,8 @@ class AuthorizationAuthenticationResult:
     authorization_id: str | None = None
     authorization_sequence: int | None = None
     producer_id: str | None = None
+    authorization_object: ValidatedAuthorizationObject | None = None
+    authorization_object_raw: bytes | None = None
     trust_code: AuthorizationTrustErrorCode | None = None
     crypto_code: CryptoResultCode | None = None
     provider_identifier: str | None = None
@@ -283,6 +286,8 @@ def authenticate_authorization(
         authorization_id=authorization_id,
         authorization_sequence=authorization_sequence,
         producer_id=producer_id,
+        authorization_object=envelope.authorization_object,
+        authorization_object_raw=envelope.authorization_object_raw,
         trust_code=trust.code,
         crypto_code=crypto.code,
         provider_identifier=crypto.provider_identifier,
