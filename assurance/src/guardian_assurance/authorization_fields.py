@@ -48,6 +48,35 @@ def validate_authorization_id(authorization_id: Any) -> str:
     return authorization_id
 
 
+def parse_uint64_decimal_wire(value: Any, field_name: str) -> int:
+    """Parse one canonical unsigned 64-bit decimal wire string.
+
+    Signed authorization objects encode uint64 counters as canonical decimal
+    strings so the full uint64 domain remains compatible with RFC 8785/JCS.
+    """
+
+    if not isinstance(value, str):
+        raise AuthorizationFieldError(f"invalid {field_name}")
+
+    if value == "0":
+        return 0
+
+    if not value:
+        raise AuthorizationFieldError(f"invalid {field_name}")
+
+    if value[0] == "0":
+        raise AuthorizationFieldError(f"invalid {field_name}")
+
+    if not value.isascii() or not value.isdigit():
+        raise AuthorizationFieldError(f"invalid {field_name}")
+
+    parsed = int(value, 10)
+
+    if not 0 <= parsed <= UINT64_MAX:
+        raise AuthorizationFieldError(f"invalid {field_name}")
+
+    return parsed
+
 def validate_authorization_sequence(authorization_sequence: Any) -> int:
     """Validate one unsigned 64-bit authorization replay sequence."""
 

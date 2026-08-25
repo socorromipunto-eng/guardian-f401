@@ -16,6 +16,7 @@ from typing import Any
 from .authorization_fields import (
     UINT64_MAX,
     AuthorizationFieldError,
+    parse_uint64_decimal_wire,
     validate_authority_id,
     validate_authorization_id,
     validate_authorization_sequence,
@@ -248,18 +249,26 @@ def _field_call(function: Any, value: Any, field: str) -> Any:
         ) from exc
 
 
+def _parse_authorization_sequence_wire(value: Any) -> int:
+    return parse_uint64_decimal_wire(
+        value,
+        "authorization_sequence",
+    )
+
+
 def _validate_transition_sequence(value: Any) -> int:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 0 <= value <= UINT64_MAX
-    ):
+    try:
+        return parse_uint64_decimal_wire(
+            value,
+            "transition_sequence",
+        )
+    except AuthorizationFieldError as exc:
         raise AuthorizationObjectError(
             AuthorizationObjectErrorCode.SCHEMA,
             "invalid transition_sequence",
-        )
+        ) from exc
 
-    return value
+
 
 
 def _validate_bootstrap(value: dict[str, Any]) -> BootstrapAuthorization:
@@ -292,7 +301,7 @@ def _validate_bootstrap(value: dict[str, Any]) -> BootstrapAuthorization:
         "producer_id",
     )
     authorization_sequence = _field_call(
-        validate_authorization_sequence,
+        _parse_authorization_sequence_wire,
         value["authorization_sequence"],
         "authorization_sequence",
     )
@@ -374,7 +383,7 @@ def _validate_epoch_transition(
         "producer_id",
     )
     authorization_sequence = _field_call(
-        validate_authorization_sequence,
+        _parse_authorization_sequence_wire,
         value["authorization_sequence"],
         "authorization_sequence",
     )

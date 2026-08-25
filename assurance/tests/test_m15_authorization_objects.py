@@ -37,7 +37,7 @@ def bootstrap() -> dict[str, object]:
         "authorization_id": "0123456789abcdef0123456789abcdef",
         "authority_id": "root.bootstrap-authority:01",
         "producer_id": "plant-a.guardian-01",
-        "authorization_sequence": 1,
+        "authorization_sequence": "1",
         "producer_epoch": "11111111111111111111111111111111",
         "initial_high_water_state": HIGH_WATER_UNSET,
         "initial_logical_time": None,
@@ -51,10 +51,10 @@ def transition() -> dict[str, object]:
         "authorization_id": "abcdefabcdefabcdefabcdefabcdefab",
         "authority_id": "root.epoch-authority:01",
         "producer_id": "plant-a.guardian-01",
-        "authorization_sequence": 7,
+        "authorization_sequence": "7",
         "from_epoch": "11111111111111111111111111111111",
         "to_epoch": "22222222222222222222222222222222",
-        "transition_sequence": 3,
+        "transition_sequence": "3",
     }
 
 
@@ -170,13 +170,13 @@ class M15AuthorizationObjectTests(unittest.TestCase):
 
     def test_authorization_sequence_uint64_max_accepted(self) -> None:
         value = bootstrap()
-        value["authorization_sequence"] = UINT64_MAX
+        value["authorization_sequence"] = str(UINT64_MAX)
         result = parse_and_validate_authorization_object(encoded(value))
         self.assertEqual(result.authorization_sequence, UINT64_MAX)
 
     def test_authorization_sequence_over_uint64_rejected(self) -> None:
         value = bootstrap()
-        value["authorization_sequence"] = UINT64_MAX + 1
+        value["authorization_sequence"] = str(UINT64_MAX + 1)
         self.assert_code(encoded(value), AuthorizationObjectErrorCode.SCHEMA)
 
     def test_authorization_sequence_bool_rejected(self) -> None:
@@ -214,13 +214,13 @@ class M15AuthorizationObjectTests(unittest.TestCase):
 
     def test_transition_sequence_uint64_max_accepted(self) -> None:
         value = transition()
-        value["transition_sequence"] = UINT64_MAX
+        value["transition_sequence"] = str(UINT64_MAX)
         result = parse_and_validate_authorization_object(encoded(value))
         self.assertEqual(result.transition_sequence, UINT64_MAX)
 
     def test_transition_sequence_over_uint64_rejected(self) -> None:
         value = transition()
-        value["transition_sequence"] = UINT64_MAX + 1
+        value["transition_sequence"] = str(UINT64_MAX + 1)
         self.assert_code(encoded(value), AuthorizationObjectErrorCode.SCHEMA)
 
     def test_transition_sequence_bool_rejected(self) -> None:

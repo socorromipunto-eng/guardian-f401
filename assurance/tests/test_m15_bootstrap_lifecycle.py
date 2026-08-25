@@ -111,7 +111,7 @@ class M15BootstrapLifecycleTests(unittest.TestCase):
             "authorization_id": "0123456789abcdef0123456789abcdef",
             "authority_id": "root.bootstrap-authority:01",
             "producer_id": producer_id,
-            "authorization_sequence": authorization_sequence,
+            "authorization_sequence": str(authorization_sequence),
             "producer_epoch": producer_epoch,
             "initial_high_water_state": HIGH_WATER_ESTABLISHED,
             "initial_logical_time": logical_time,

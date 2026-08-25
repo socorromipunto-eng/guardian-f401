@@ -39,7 +39,7 @@ def bootstrap() -> dict[str, object]:
         "authorization_id": "0123456789abcdef0123456789abcdef",
         "authority_id": "root.bootstrap-authority:01",
         "producer_id": "plant-a.guardian-01",
-        "authorization_sequence": 1,
+        "authorization_sequence": "1",
         "producer_epoch": "11111111111111111111111111111111",
         "initial_high_water_state": HIGH_WATER_UNSET,
         "initial_logical_time": None,
@@ -53,10 +53,10 @@ def transition() -> dict[str, object]:
         "authorization_id": "abcdefabcdefabcdefabcdefabcdefab",
         "authority_id": "root.epoch-authority:01",
         "producer_id": "plant-a.guardian-01",
-        "authorization_sequence": 2,
+        "authorization_sequence": "2",
         "from_epoch": "11111111111111111111111111111111",
         "to_epoch": "22222222222222222222222222222222",
-        "transition_sequence": 1,
+        "transition_sequence": "1",
     }
 
 
@@ -114,7 +114,7 @@ class M15AuthorizationTranscriptTests(unittest.TestCase):
     def test_changed_authorization_content_changes_transcript(self) -> None:
         first = bootstrap()
         second = bootstrap()
-        second["authorization_sequence"] = 2
+        second["authorization_sequence"] = "2"
         self.assertNotEqual(
             build_authorization_transcript(
                 encoded(first),

@@ -46,7 +46,7 @@ def authorization() -> dict[str, object]:
         "authorization_id": "0123456789abcdef0123456789abcdef",
         "authority_id": "root.bootstrap-authority:01",
         "producer_id": "plant-a.guardian-01",
-        "authorization_sequence": 1,
+        "authorization_sequence": "1",
         "producer_epoch": "11111111111111111111111111111111",
         "initial_high_water_state": HIGH_WATER_UNSET,
         "initial_logical_time": None,
@@ -152,7 +152,7 @@ class M15AuthorizationAuthenticationTests(unittest.TestCase):
 
     def test_changed_signed_content_is_signature_invalid(self) -> None:
         raw = json.loads(self.signed_envelope().decode("utf-8"))
-        raw["authorization_object"]["authorization_sequence"] = 2
+        raw["authorization_object"]["authorization_sequence"] = "2"
         result = authenticate_authorization(
             encoded(raw),
             trust_store=self.trust_store(),

@@ -79,7 +79,7 @@ def _authorization_mapping(
             "authorization_id": authorization.authorization_id,
             "authority_id": authorization.authority_id,
             "producer_id": authorization.producer_id,
-            "authorization_sequence": authorization.authorization_sequence,
+            "authorization_sequence": str(authorization.authorization_sequence),
             "producer_epoch": authorization.producer_epoch,
             "initial_high_water_state": authorization.initial_high_water_state,
             "initial_logical_time": authorization.initial_logical_time,
@@ -92,10 +92,10 @@ def _authorization_mapping(
             "authorization_id": authorization.authorization_id,
             "authority_id": authorization.authority_id,
             "producer_id": authorization.producer_id,
-            "authorization_sequence": authorization.authorization_sequence,
+            "authorization_sequence": str(authorization.authorization_sequence),
             "from_epoch": authorization.from_epoch,
             "to_epoch": authorization.to_epoch,
-            "transition_sequence": authorization.transition_sequence,
+            "transition_sequence": str(authorization.transition_sequence),
         }
 
     raise AuthorizationTranscriptError("unsupported authorization object")
