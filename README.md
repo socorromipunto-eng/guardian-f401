@@ -125,29 +125,50 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.14.0
+Project release: v0.14.2
 Guardian Protocol: v0.1
-Firmware semantic version: 0.14.0
+Firmware semantic version: 0.14.2
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
 
-Archived release: https://doi.org/10.5281/zenodo.21923859
-All versions: https://doi.org/10.5281/zenodo.21923858
-GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.13.0
+Current GitHub-integrated Zenodo releases:
+
+- v0.14.2: https://doi.org/10.5281/zenodo.22075322
+- v0.14.1: https://doi.org/10.5281/zenodo.22062543
+- v0.14.0: https://doi.org/10.5281/zenodo.21981234
+- Concept DOI: https://doi.org/10.5281/zenodo.21981233
+
+Historical manually prepared Zenodo releases:
+
+- v0.14.0: https://doi.org/10.5281/zenodo.21980859
+- v0.13.0: https://doi.org/10.5281/zenodo.21923859
+- Historical concept DOI: https://doi.org/10.5281/zenodo.21923858
+
+GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.2
+
+Version v0.14.0 exists in both Zenodo families because it was deposited
+manually and subsequently archived through the GitHub integration. These
+published records are preserved as distinct historical deposits.
+
+The immutable v0.14.1 tag contains stale v0.14.0 citation metadata. Its
+GitHub-integrated Zenodo record nevertheless identifies the archived release
+as v0.14.1. Published tags and deposits were not rewritten.
 
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
 open-source license. Physical board qualification and safety certification are
-not claimed. See `docs/release-evidence-v0.13.0.md`.
+not claimed. See `docs/release-evidence-v0.14.2.md`.
 
 ## Reproducible software validation
 
 ```text
+python -m pip install -r assurance/requirements.lock
 python tools/validate_keil_manifest.py
 PYTHONPATH=protocol/python python -m unittest discover -s protocol/python/tests -v
 PYTHONPATH=protocol/python:simulator/src python -m unittest discover -s simulator/tests -v
 PYTHONPATH=protocol/python:simulator/src:console/src python -m unittest discover -s console/tests -v
+PYTHONPATH=assurance/src python -m unittest discover -s assurance/tests -v
 ```
 
 The GitHub Actions workflows also compile and execute the portable C suites,

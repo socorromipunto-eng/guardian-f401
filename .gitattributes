@@ -21,3 +21,25 @@
 
 # Keep binary fuzz corpus entries byte-exact across every platform.
 *.bin -text
+
+# Keep CSV evidence manifests deterministic across platforms.
+*.csv text eol=lf
+
+# Keep plain-text manifests and notices deterministic across platforms.
+*.txt text eol=lf
+
+# Keep JSON evidence deterministic across platforms.
+*.json text eol=lf
+
+# Keep the built firmware image byte-exact; never apply text normalization.
+*.hex text eol=lf
+
+# Keep compiled and archive artifacts byte-exact.
+*.npz -text
+*.zip -text
+
+# Keep ignore files deterministic across platforms.
+.gitignore text eol=lf
+CITATION.cff text eol=lf
+VERSION text eol=lf
+.gitattributes text eol=lf
