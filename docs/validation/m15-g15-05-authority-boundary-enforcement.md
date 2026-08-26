@@ -4,7 +4,7 @@
 
 IMPLEMENTED_AND_LOCALLY_VALIDATED
 
-REMOTE_CI_EXECUTION_NOT_DEMONSTRATED
+REMOTE_CI_EXECUTION_CONFIRMED
 
 ## Purpose
 
@@ -102,7 +102,20 @@ The workflow:
 
 The workflow is committed to the local integration branch.
 
-Remote GitHub Actions execution remains NOT_DEMONSTRATED because no push has been performed.
+Remote GitHub Actions execution is CONFIRMED for the reviewed integration branch.
+
+Remote evidence:
+
+- reviewed head SHA: `3e3318f491b3ca371a9a4dd25ba6cf80d5b37dda`;
+- pull request: `#11`;
+- Authority Boundary Tests run: `32922326472`;
+- Authority Boundary Tests status: `completed`;
+- Authority Boundary Tests conclusion: `success`;
+- M14 Assurance Python 3.12 run: `32922326454`;
+- M14 Assurance Python 3.12 status: `completed`;
+- M14 Assurance Python 3.12 conclusion: `success`.
+
+The reviewed PR check set completed successfully after correction of the stale M14 historical test-discovery scope.
 
 ## Platform portability
 
@@ -140,7 +153,7 @@ Locked full regression: CONFIRMED
 
 CI workflow committed: CONFIRMED
 
-Remote CI execution: NOT_DEMONSTRATED
+Remote CI execution: CONFIRMED
 
 Physical actuation: NOT_DEMONSTRATED
 
@@ -148,8 +161,18 @@ Physical actuation: NOT_DEMONSTRATED
 
 G15-05 implementation is complete and locally validated.
 
-G15-05 must remain OPEN_FOR_REMOTE_CI_EVIDENCE until the committed authority-boundary workflow is executed by the repository CI service and produces passing evidence.
+The remote-CI closure condition for G15-05 has been satisfied.
+
+Final Human Readability and Devil's Advocate review found no demonstrated basis to withhold closure of the G15-05 logical/mechanical authority-enforcement boundary.
+
+G15-05 disposition: CLOSED_FOR_LOGICAL_MECHANICAL_AUTHORITY_BOUNDARY.
 
 RT-M15-001 must not yet be rewritten as fully closed solely from local evidence.
 
-After remote CI PASS, G15-05 may be reconsidered for closure of the logical/mechanical authority-enforcement finding while physical actuation remains separately open.
+Remote CI PASS has now been demonstrated for the reviewed head.
+
+G15-05 logical/mechanical authority-enforcement closure is confirmed for the reviewed evidence set.
+
+Physical actuation remains separately open and NOT_DEMONSTRATED.
+
+RT-M15-001 must be reconciled separately before its disposition is changed.
