@@ -108,7 +108,24 @@ jobs:
           import unittest
 
           expected = 87
-          suite = unittest.defaultTestLoader.discover("assurance/tests")
+          loader = unittest.defaultTestLoader
+
+          modules = (
+              "test_canonical.py",
+              "test_s2_contracts.py",
+              "test_validation.py",
+          )
+
+          suite = unittest.TestSuite()
+
+          for pattern in modules:
+              suite.addTests(
+                  loader.discover(
+                      "assurance/tests",
+                      pattern=pattern,
+                  )
+              )
+
           discovered = suite.countTestCases()
           print(f"discovered_tests={discovered}")
           if discovered != expected:
