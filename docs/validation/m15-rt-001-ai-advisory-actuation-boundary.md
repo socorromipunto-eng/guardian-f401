@@ -2,7 +2,7 @@
 
 ## Status
 
-PARTIAL
+PARTIAL_RECONCILED
 
 ## Classification
 
@@ -128,7 +128,17 @@ No physical actuator-enforcement claim is authorized by this record.
 
 Status:
 
-`OPEN`
+`CLOSED_FOR_CURRENT_LOGICAL_MECHANICAL_BOUNDARY`
+
+G15-05 has converted the current architectural authority restriction into a
+mechanically enforced repository property.
+
+This disposition applies to the reviewed implementation in which no
+AI/advisory execution plane is present.
+
+Introduction of an AI/advisory execution plane requires reopening this
+validation surface for implementation-specific isolation and bypass-resistance
+review.
 
 Required future control:
 
@@ -160,16 +170,22 @@ repository property.
 
 ## Decision
 
-RT-M15-001 remains globally:
+RT-M15-001 is reconciled globally as:
 
-`PARTIAL`
+`PARTIAL_RECONCILED`
 
-The current implementation demonstrates deterministic logical-output ownership
-and fail-closed control behavior.
+The current implementation demonstrates deterministic logical-output ownership,
+fail-closed control behavior and mechanically enforced logical authority
+boundaries.
 
-The current implementation does not demonstrate physical actuator enforcement.
+G15-05 logical/mechanical authority enforcement is closed for the reviewed
+implementation.
 
-Future AI/advisory bypass resistance remains an explicit open architecture gate.
+The current implementation still does not demonstrate physical actuator
+enforcement.
+
+Future introduction of an AI/advisory execution plane requires a new
+implementation-specific isolation and bypass-resistance validation.
 
 No claim equivalent to:
 
@@ -193,5 +209,12 @@ This adjudication does not authorize:
 - functional-safety claims;
 - certification claims.
 
-RT-01 may become fully CLOSED only after the remaining G15-05 authority-boundary
-controls are implemented and independently validated.
+The former G15-05 logical/mechanical authority-boundary closure condition has
+been satisfied.
+
+RT-M15-001 is not globally CLOSED because RT-01C physical actuator authority
+remains NOT_DEMONSTRATED.
+
+Global closure requires separate evidence for any remaining applicable
+boundaries; physical actuator qualification must not be inferred from G15-05
+logical/mechanical closure.
