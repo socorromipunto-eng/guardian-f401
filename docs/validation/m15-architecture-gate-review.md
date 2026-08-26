@@ -1,0 +1,1790 @@
+# Guardian F401 — M15 Architecture Gate Review
+
+Status: PASS WITH CONDITIONS
+Milestone: M15
+Review Type: Architecture / Security / Assurance / Implementation Readiness
+Target: Guardian F401
+Branch: feature/m15-node-identity-architecture
+Implementation status: NOT IMPLEMENTED
+Gate status: IMPLEMENTATION MAY PROCEED ONLY WITHIN THE APPROVED M15 SCOPE
+
+---
+
+## 1. Purpose
+
+This document records the formal architecture gate review for the Guardian F401 M15 node-identity and signed-assurance work.
+
+The review determines whether the architecture is sufficiently defined, internally consistent, bounded, traceable, and adversarially reviewed to permit implementation to begin.
+
+This gate does not claim that M15 functionality is implemented.
+
+It evaluates architecture readiness only.
+
+---
+
+## 2. Baseline
+
+Reviewed branch:
+
+feature/m15-node-identity-architecture
+
+Architecture baseline commits:
+
+2930d8b — docs(m15): add node identity and signed assurance ADR
+
+ef126f9 — docs(m15): add signed transcript specification
+
+98d664e — docs(m15): record identity signing decisions
+
+4468520 — docs(m15): define trust store architecture
+
+d95ee19 — docs(m15): define provider error API
+
+e0c839a — docs(m15): define assurance key separation
+
+09ad4c5 — docs(m15): normalize architecture document encoding
+
+The review was performed against a clean working tree after the encoding correction commit.
+
+---
+
+## 3. Reviewed artifacts
+
+The architecture gate reviewed the following controlled documents:
+
+1. `docs/adr/ADR-M15-001-node-identity-and-signed-assurance-messages.md`
+
+2. `docs/architecture/m15-signed-transcript-specification.md`
+
+3. `docs/architecture/m15-identity-signing-decisions.md`
+
+4. `docs/architecture/m15-trust-store-decision.md`
+
+5. `docs/architecture/m15-provider-error-api-decision.md`
+
+6. `docs/architecture/m15-key-separation-decision.md`
+
+The six documents passed the document-integrity gate:
+
+- strict UTF-8;
+- no UTF-8 BOM;
+- no U+FFFD replacement characters;
+- deterministic Git line-ending policy through `.gitattributes`;
+- clean working tree after corrective commit.
+
+---
+
+## 4. Architectural thesis preserved
+
+The M15 architecture remains consistent with the Guardian architectural thesis.
+
+Guardian separates:
+
+Integrity
+≠
+Authenticity
+≠
+Authority
+
+The architecture does not collapse those properties into one control.
+
+### Integrity
+
+The M14 validation boundary remains upstream of authentication.
+
+The M15 work does not permit cryptographic authentication to bypass:
+
+- strict parsing;
+- duplicate-member rejection;
+- closed schema validation;
+- resource bounds;
+- deterministic canonicalization.
+
+### Authenticity
+
+M15 introduces the architecture required to bind accepted canonical assurance objects to trusted producer credentials.
+
+Authentication establishes provenance under a trusted credential.
+
+It does not establish physical truth.
+
+### Authority
+
+M15 introduces no new physical authority.
+
+A valid signature remains evidence input.
+
+It does not directly authorize actuation.
+
+---
+
+## 5. Core processing order
+
+The architecture preserves the following dependency order:
+
+UNTRUSTED INPUT
+  ↓
+BOUNDED PARSING
+  ↓
+STRICT VALIDATION
+  ↓
+CLOSED CONTRACT
+  ↓
+RFC 8785 CANONICALIZATION
+  ↓
+SIGNED TRANSCRIPT CONSTRUCTION
+  ↓
+TRUST LOOKUP
+  ↓
+CRYPTOGRAPHIC AUTHENTICATION
+  ↓
+FRESHNESS EVALUATION
+  ↓
+CORROBORATION / EVIDENCE
+  ↓
+DETERMINISTIC POLICY
+  ↓
+AUTHORITY DECISION
+  ↓
+PHYSICAL GATE
+
+The first M15 implementation slice terminates at authenticated provenance.
+
+Freshness, corroboration, and authority remain downstream.
+
+---
+
+## 6. Decision #1 — Signed-message representation
+
+Status: APPROVED
+
+Decision:
+
+M15 shall use a versioned outer signed-message wrapper.
+
+The existing M14 assurance envelope remains closed and semantically unchanged.
+
+Assessment:
+
+PASS
+
+Rationale:
+
+- prevents silent M14 schema drift;
+- separates assurance semantics from authentication metadata;
+- preserves independent validation of the M14 object;
+- allows future signature evolution without redefining Observation, Decision, and Witness semantics.
+
+---
+
+## 7. Decision #2 — key_id representation
+
+Status: APPROVED
+
+Decision:
+
+`key_id` is an opaque bounded ASCII-compatible credential identifier.
+
+Initial grammar:
+
+^[A-Za-z0-9._:-]{1,128}$
+
+Assessment:
+
+PASS
+
+The architecture maintains:
+
+producer_id
+≠
+key_id
+≠
+public key
+≠
+private key
+≠
+authority
+
+---
+
+## 8. Decision #3 — Signature external encoding
+
+Status: APPROVED
+
+Decision:
+
+Ed25519 signatures use RFC 4648 base64url without padding in the external signed-message representation.
+
+Raw Ed25519 signature length:
+
+64 bytes
+
+Assessment:
+
+PASS
+
+The architecture explicitly rejects:
+
+- padding;
+- invalid alphabet;
+- whitespace;
+- non-canonical encoding;
+- decoded lengths other than 64 bytes.
+
+---
+
+## 9. Decision #4 — Host/test Ed25519 backend
+
+Status: APPROVED FOR HOST/TEST
+
+Decision:
+
+Python `cryptography` is the reference Ed25519 backend for host/test work behind a Guardian provider abstraction.
+
+Assessment:
+
+PASS WITH CONDITION
+
+Condition:
+
+The exact dependency version, dependency evidence, license metadata, and reproducible environment must be frozen during implementation.
+
+This decision does not define:
+
+- embedded production signer;
+- STM32 private-key storage;
+- non-extractable production identity;
+- hardware secure element.
+
+---
+
+## 10. Decision #5 — Trust-store representation
+
+Status: APPROVED
+
+Decision:
+
+Guardian shall use a closed, versioned external trust store based on explicit public-key pinning.
+
+Core resolution:
+
+producer_id
++
+key_id
++
+algorithm
+→
+trusted public key
++
+lifecycle state
+
+Assessment:
+
+PASS
+
+The message cannot introduce its own trust anchor.
+
+Unknown or ambiguous mappings fail closed.
+
+The trust store contains no private keys.
+
+---
+
+## 11. Decision #6 — Provider Error API
+
+Status: APPROVED
+
+Decision:
+
+Signing and verification providers use structured machine-readable results rather than boolean-only outcomes.
+
+The architecture distinguishes:
+
+AUTHENTICATED
+IDENTITY_UNKNOWN
+KEY_UNKNOWN
+KEY_REVOKED
+KEY_RETIRED_FOR_NEW_USE
+ALGORITHM_UNSUPPORTED
+SIGNATURE_ENCODING_INVALID
+SIGNATURE_INVALID
+TRANSCRIPT_VERSION_UNSUPPORTED
+TRUST_STORE_INVALID
+TRUST_STORE_UNAVAILABLE
+CRYPTO_PROVIDER_UNAVAILABLE
+CRYPTO_PROVIDER_FAILURE
+INTERNAL_ERROR
+
+Assessment:
+
+PASS
+
+This preserves the distinction between:
+
+malformed input
+≠
+unknown identity
+≠
+unknown key
+≠
+revoked credential
+≠
+invalid signature
+≠
+provider failure
+
+---
+
+## 12. Decision #7 — Assurance key separation
+
+Status: APPROVED
+
+Decision:
+
+M15 permits one assurance signing key per node, provided that strict authenticated domain separation prevents cross-purpose signature reuse between:
+
+Observation
+Decision
+Witness
+
+Assessment:
+
+PASS WITH CONDITION
+
+Condition:
+
+Implementation must provide adversarial test vectors proving that every cross-object substitution fails.
+
+The architecture explicitly acknowledges:
+
+domain separation
+≠
+independent key custody
+
+Future higher-assurance roles may require purpose-specific keys.
+
+---
+
+## 13. Firmware-signing boundary
+
+M15 preserves:
+
+firmware signing key
+≠
+assurance signing key
+
+The existing M12 Ed25519 direction may inform algorithm selection but does not merge trust domains.
+
+Assessment:
+
+PASS
+
+No automatic cross-purpose key reuse is authorized.
+
+---
+
+## 14. Factory UID boundary
+
+The STM32F401 factory UID remains a hardware attribute.
+
+It is not:
+
+- a secret;
+- a private key;
+- proof of possession;
+- an authentication credential;
+- authorization evidence.
+
+Assessment:
+
+PASS
+
+Any future binding between physical UID and cryptographic identity requires independent provisioning evidence.
+
+---
+
+## 15. producer_id boundary
+
+`producer_id` remains a logical identity claim until bound to a trusted credential.
+
+Structural validation alone does not authenticate it.
+
+Assessment:
+
+PASS
+
+M15 explicitly upgrades:
+
+producer identity claim
+
+toward:
+
+authenticated producer provenance
+
+without changing the meaning of the existing M14 field.
+
+---
+
+## 16. producer_epoch boundary
+
+`producer_epoch` is authenticated when included in the signed canonical object.
+
+However:
+
+signed producer_epoch
+≠
+persistent freshness
+
+Assessment:
+
+PASS
+
+Persistent interpretation across reset remains deferred to M15-03.
+
+---
+
+## 17. logical_time boundary
+
+`logical_time` may be authenticated.
+
+However:
+
+signed logical_time
+≠
+trusted wall-clock time
+≠
+persistent freshness
+
+Assessment:
+
+PASS
+
+No secure-time claim is introduced.
+
+---
+
+## 18. Freshness boundary
+
+Persistent anti-replay is explicitly out of scope for the current signed-identity slice.
+
+Assessment:
+
+PASS
+
+The architecture repeatedly preserves:
+
+AUTHENTICATED
+≠
+FRESH
+
+M15-03 remains required before replay resistance across reset can be claimed.
+
+---
+
+## 19. Physical truth boundary
+
+Cryptographic authentication proves provenance of the signed statement under the selected trust configuration.
+
+It does not prove correspondence with physical reality.
+
+Assessment:
+
+PASS
+
+The architecture preserves:
+
+AUTHENTICATED
+≠
+TRUE
+
+A compromised legitimate signing node remains a known threat.
+
+---
+
+## 20. Authority boundary
+
+The architecture explicitly prohibits:
+
+valid signature
+→
+physical authority
+
+Assessment:
+
+PASS
+
+Required downstream chain remains:
+
+AUTHENTICATED
+  ↓
+FRESHNESS
+  ↓
+CORROBORATION
+  ↓
+DETERMINISTIC POLICY
+  ↓
+AUTHORIZATION
+  ↓
+PHYSICAL GATE
+
+No M15 architecture artifact grants advisory or authenticated messages direct actuator authority.
+
+---
+
+## 21. Trust-store lifecycle consistency
+
+Approved lifecycle states:
+
+ACTIVE
+RETIRED
+REVOKED
+
+Assessment:
+
+PASS
+
+Semantics are consistent across trust-store and provider-error documents.
+
+ACTIVE:
+
+may authenticate current statements.
+
+RETIRED:
+
+not approved for new authentication; historical verification remains a future evidence-policy concern.
+
+REVOKED:
+
+fails current authentication.
+
+---
+
+## 22. Fail-closed consistency
+
+The reviewed architecture consistently requires fail-closed behavior for:
+
+- unknown producer;
+- unknown key;
+- revoked key;
+- unsupported algorithm;
+- unsupported transcript version;
+- malformed signature encoding;
+- invalid signature;
+- ambiguous trust mapping;
+- invalid trust store;
+- unavailable trust store;
+- unavailable crypto provider.
+
+Assessment:
+
+PASS
+
+No automatic fallback is authorized.
+
+---
+
+## 23. Domain separation consistency
+
+The signed transcript and key-separation decisions both require protocol and object-purpose separation.
+
+Assessment:
+
+PASS WITH CONDITION
+
+Condition:
+
+The final implementation must freeze the exact byte-level purpose/domain representation before test vectors are considered authoritative.
+
+Cross-protocol and cross-object negative tests are mandatory.
+
+---
+
+## 24. Trust injection review
+
+Threat:
+
+An attacker supplies a public key inside the signed message and convinces the verifier to trust it.
+
+Architectural result:
+
+BLOCKED
+
+Reason:
+
+Trusted keys are resolved externally through the approved trust store.
+
+Message-controlled trust establishment is explicitly prohibited.
+
+Assessment:
+
+PASS
+
+---
+
+## 25. Algorithm downgrade review
+
+Threat:
+
+An attacker changes or omits the algorithm and triggers fallback to another verification method.
+
+Architectural result:
+
+BLOCKED
+
+Reason:
+
+Algorithm identity is explicit and unsupported algorithms fail closed.
+
+Silent fallback is prohibited.
+
+Assessment:
+
+PASS
+
+---
+
+## 26. Transcript downgrade review
+
+Threat:
+
+A future signed message is interpreted using an older transcript format.
+
+Architectural result:
+
+BLOCKED
+
+Reason:
+
+Transcript version is explicit.
+
+Unsupported transcript versions fail closed.
+
+Assessment:
+
+PASS
+
+---
+
+## 27. Cross-object signature reuse review
+
+Threat:
+
+A valid Observation signature is reused as a Decision or Witness signature.
+
+Architectural result:
+
+DESIGNED TO BE BLOCKED
+
+Evidence status:
+
+NOT IMPLEMENTED
+
+Assessment:
+
+PASS WITH CONDITION
+
+Required evidence:
+
+Implementation must demonstrate all six cross-object substitution failures:
+
+Observation → Decision
+Observation → Witness
+Decision → Observation
+Decision → Witness
+Witness → Observation
+Witness → Decision
+
+---
+
+## 28. Cross-protocol signature reuse review
+
+Threat:
+
+An assurance signature is reused as a firmware signature or vice versa.
+
+Architectural result:
+
+DESIGNED TO BE BLOCKED
+
+Assessment:
+
+PASS WITH CONDITION
+
+Required evidence:
+
+Negative interoperability tests must demonstrate firmware/assurance transcript incompatibility.
+
+---
+
+## 29. Shared assurance-key compromise review
+
+Threat:
+
+One node assurance private key is compromised.
+
+Impact:
+
+Every assurance purpose authorized for that credential may be forged.
+
+Architectural response:
+
+Known limitation.
+
+Assessment:
+
+ACCEPTED WITH CONDITION
+
+Condition:
+
+The limitation remains documented.
+
+Purpose-specific credentials remain architecturally supported for future higher-assurance roles.
+
+---
+
+## 30. Compromised trusted-node review
+
+Threat:
+
+A legitimate node possessing its correct private key emits semantically false but correctly signed data.
+
+Architectural response:
+
+Not solved by cryptography.
+
+Assessment:
+
+KNOWN RESIDUAL RISK
+
+Future controls include:
+
+- independent Witness nodes;
+- heterogeneous implementations;
+- corroboration;
+- attestation;
+- quorum;
+- physical-signal diversity.
+
+No claim is made that M15 eliminates this threat.
+
+---
+
+## 31. Test/production identity separation
+
+M15 distinguishes:
+
+development/test identity
+
+from:
+
+production identity
+
+Assessment:
+
+PASS
+
+Software-accessible test keys are permitted only in explicitly non-production contexts.
+
+No host-test success may be used to claim non-extractable production identity.
+
+---
+
+## 32. Production key-custody review
+
+Production private-key custody remains undecided.
+
+Possible future implementations may include:
+
+- secure element;
+- external cryptographic signer;
+- protected provisioning mechanism;
+- future MCU security capability;
+- separately reviewed architecture.
+
+Assessment:
+
+OPEN GATE
+
+This does not block host/test implementation.
+
+It does block any claim of production-grade non-extractable device identity.
+
+---
+
+## 33. Dependency review
+
+The architecture selects Python `cryptography` for host/test reference Ed25519 operations.
+
+Assessment:
+
+PASS WITH CONDITION
+
+Before dependency integration:
+
+- exact version must be selected;
+- dependency must be pinned;
+- license must be recorded;
+- runtime compatibility must be verified;
+- SBOM/provenance evidence must capture the dependency;
+- CI environment must be reproducible.
+
+---
+
+## 34. Human Readability Review
+
+Result:
+
+PASS
+
+Findings:
+
+- identity, credential, trust, authentication, freshness, truth, and authority are explicitly separated;
+- implementation status remains clearly marked;
+- deferred work is visible;
+- claims do not imply production readiness;
+- future architecture is distinguished from implemented functionality.
+
+---
+
+## 35. Devil's Advocate Review
+
+Result:
+
+PASS WITH CONDITIONS
+
+Primary challenges:
+
+1. One assurance key per node increases compromise blast radius.
+2. Trust-store integrity is initially hash-verifiable but not yet securely distributed.
+3. Production key custody remains unresolved.
+4. Freshness is not yet implemented.
+5. Authentication cannot detect a trusted node that lies using a legitimate key.
+6. The exact host/test dependency version remains unfrozen.
+7. Domain separation must be demonstrated by negative test vectors, not only documented.
+
+None of these invalidate the current architecture slice.
+
+They define implementation and future milestone gates.
+
+---
+
+## 36. Technical Destruction Review
+
+Result:
+
+PASS WITH CONDITIONS
+
+Attempted architectural attacks include:
+
+- producer_id substitution;
+- key_id substitution;
+- public-key injection;
+- algorithm downgrade;
+- transcript-version downgrade;
+- signature encoding ambiguity;
+- cross-object signature reuse;
+- cross-protocol signature reuse;
+- revoked-key acceptance;
+- trust-store ambiguity;
+- provider outage misclassified as attacker input;
+- authenticated message interpreted as authority;
+- shared-key compromise;
+- legitimate compromised producer.
+
+The architecture provides explicit controls or explicit residual-risk declarations for each category.
+
+Where proof depends on implementation, the gate remains conditional.
+
+---
+
+## 37. Security Review
+
+Result:
+
+PASS WITH CONDITIONS
+
+Security properties sufficiently defined for implementation:
+
+- validated canonical object precedes authentication;
+- producer credential lookup is external and deterministic;
+- trust injection is prohibited;
+- Ed25519 algorithm target is explicit;
+- signature external encoding is explicit;
+- provider failure taxonomy is explicit;
+- trust lifecycle states are explicit;
+- no silent fallback;
+- firmware and assurance signing remain separate;
+- authentication does not imply authority.
+
+Security properties not yet implemented:
+
+- signed assurance messages;
+- operational trust store;
+- Ed25519 provider integration;
+- persistent freshness;
+- production key custody;
+- attestation;
+- quorum;
+- failover.
+
+---
+
+## 38. Regulatory-readiness review
+
+Result:
+
+PASS AS ARCHITECTURAL READINESS ONLY
+
+The architecture improves:
+
+- traceability;
+- provenance;
+- separation of responsibilities;
+- deterministic validation;
+- explicit trust boundaries;
+- error classification;
+- lifecycle evidence;
+- demonstrable authority separation.
+
+No claim is made of:
+
+- IEC 61508 certification;
+- IEC 62443 certification;
+- SIL rating;
+- EU AI Act conformity;
+- Cyber Resilience Act conformity;
+- Machinery Regulation conformity;
+- formal conformity assessment.
+
+Regulatory readiness remains an evidence-building objective, not a certification claim.
+
+---
+
+## 39. Claim/evidence review
+
+Current architecture claims are limited to design decisions.
+
+No M15 document shall be interpreted as evidence that node identity or signed assurance is already implemented.
+
+Required current statement:
+
+ARCHITECTURE APPROVED
+IMPLEMENTATION NOT YET PRESENT
+
+Assessment:
+
+PASS
+
+---
+
+## 40. Conditions before implementation completion
+
+Implementation may begin, but M15-02 cannot be declared complete until evidence demonstrates at least:
+
+1. deterministic transcript construction;
+2. Ed25519 host/test signing and verification;
+3. exact signature base64url encoding;
+4. closed outer wrapper validation;
+5. trust-store strict parsing and deterministic lookup;
+6. provider structured result states;
+7. unknown identity fail-closed;
+8. unknown key fail-closed;
+9. revoked key fail-closed;
+10. unsupported algorithm fail-closed;
+11. unsupported transcript version fail-closed;
+12. malformed signature encoding fail-closed;
+13. invalid signature fail-closed;
+14. cross-object substitution rejection;
+15. firmware/assurance cross-protocol rejection;
+16. reproducible test vectors;
+17. evidence hashes;
+18. CI gate;
+19. dependency provenance;
+20. no code path converting authentication directly into physical authority.
+
+---
+
+## 41. Explicitly deferred gates
+
+The following remain outside the current implementation authorization:
+
+### M15-03 — Persistent Freshness and Anti-Replay
+
+- persistent monotonic state;
+- producer epoch semantics across reset;
+- rollback resistance;
+- nonce lifecycle;
+- replay windows;
+- power-loss behavior.
+
+### M15-04 — Attestation and Witness Exchange
+
+- attestation transcript;
+- witness relationships;
+- independent observations;
+- trust evaluation.
+
+### Later architecture
+
+- quorum;
+- partition handling;
+- split-brain prevention;
+- distributed failover;
+- heterogeneous node federation;
+- advisory AI integration;
+- physical authority credentials;
+- production key-custody hardware.
+
+---
+
+## 42. Implementation authorization
+
+Architecture gate result:
+
+PASS WITH CONDITIONS
+
+Implementation authorization:
+
+GRANTED FOR THE M15 NODE-IDENTITY / SIGNED-ASSURANCE SOFTWARE SLICE ONLY
+
+Authorized implementation scope:
+
+- outer signed-message wrapper;
+- deterministic transcript builder;
+- key_id handling;
+- base64url signature encoding;
+- host/test Ed25519 provider;
+- verification provider;
+- closed trust store;
+- lifecycle-state lookup;
+- structured provider results;
+- domain-separated Observation, Decision, and Witness authentication;
+- positive and adversarial test vectors;
+- CI/evidence integration.
+
+Not authorized by this gate:
+
+- production private-key provisioning;
+- claim of non-extractable identity;
+- persistent anti-replay;
+- attestation;
+- quorum;
+- failover;
+- physical authority changes;
+- certification claims.
+
+---
+
+## 43. Final adjudication
+
+Architecture consistency:
+
+PASS
+
+Threat-model consistency:
+
+PASS WITH CONDITIONS
+
+Claim/evidence consistency:
+
+PASS
+
+Document integrity:
+
+PASS
+
+Implementation readiness:
+
+PASS WITH CONDITIONS
+
+Overall gate:
+
+PASS WITH CONDITIONS
+
+The conditions are implementation evidence requirements and explicitly deferred security properties.
+
+They do not require reopening the approved M15 architecture before the software implementation slice begins.
+
+---
+
+## 44. Final statement
+
+Guardian F401 M15 is architecturally ready to begin implementation of node identity and signed assurance messages within the approved software-only scope.
+
+The gate does not claim that authenticity, freshness, distributed assurance, physical truth, or production identity are already achieved.
+
+The governing invariants remain:
+
+VALIDATED
+≠
+AUTHENTICATED
+≠
+FRESH
+≠
+TRUE
+≠
+AUTHORIZED
+
+and:
+
+Intelligence may advise.
+Deterministic policy authorizes.
+Evidence proves.
+
+Status: PASS WITH CONDITIONS — M15 software implementation may begin within the bounded approved scope.
+---
+
+## TD-M15-001 Closure — Purpose-Domain Representation
+
+Status: CONDITION CLOSED
+
+The pre-implementation Technical Destruction review identified that the original
+M15-02.1 transcript authenticated the validated M14 `domain` and `object_type`
+inside the canonical assurance object, but had not independently frozen the
+exact byte-level purpose-specific signing domains required by Decision #7.
+
+The architecture was corrected before the first M15 implementation commit.
+
+M15-02.1 now freezes these exact ASCII signing domains:
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:OBSERVATION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:DECISION
+
+GUARDIAN-F401:M15:SIGNED-ASSURANCE:V1:WITNESS
+
+The validated M14 `object_type` determines the applicable M15 purpose domain.
+
+The caller must not independently select a purpose domain inconsistent with the
+validated M14 object.
+
+Acceptance requires successful same-purpose coverage for:
+
+Observation → Observation
+
+Decision → Decision
+
+Witness → Witness
+
+and rejection of all six cross-object substitutions:
+
+Observation → Decision
+
+Observation → Witness
+
+Decision → Observation
+
+Decision → Witness
+
+Witness → Observation
+
+Witness → Decision
+
+Traceability:
+
+Decision #7
+→
+TD-M15-001
+→
+M15-02.1 purpose-domain amendment
+→
+implementation
+→
+cross-object validation
+
+This closure does not change any claim concerning:
+
+- freshness;
+- anti-replay;
+- physical truth;
+- authorization;
+- actuator authority;
+- hardware identity;
+- production key custody;
+- certification.
+
+Gate disposition:
+
+The condition requiring exact byte-level purpose/domain representation is CLOSED.
+
+Implementation remains subject to software validation and all remaining M15
+acceptance criteria.
+
+Status: CLOSED — architecture corrected before first implementation commit.
+---
+
+## TD-M15-002 Closure — Signed Wrapper Raw Resource Bound
+
+Status: CONDITION CLOSED
+
+The pre-implementation Technical Destruction review identified that the M15
+signed-message verification sequence required a raw wrapper resource limit but
+the original architecture had not frozen an exact numeric bound.
+
+The existing M14 assurance-object raw maximum is:
+
+65,536 bytes
+
+The approved M15 outer-wrapper overhead allowance is:
+
+512 bytes
+
+The frozen M15 signed-wrapper raw maximum is therefore:
+
+66,048 bytes
+
+Required processing order:
+
+raw wrapper
+→
+enforce 66,048-byte outer limit
+→
+strict UTF-8 processing
+→
+strict JSON parsing
+→
+duplicate-member rejection
+→
+closed wrapper schema
+→
+signature metadata validation
+→
+embedded assurance_object validation
+
+The embedded M14 assurance object remains independently subject to:
+
+max_raw_bytes = 65,536
+
+Therefore:
+
+M15 wrapper allowance
+≠
+additional M14 payload capacity
+
+Required boundary evidence:
+
+66,047 bytes
+→
+outer raw-size gate permits processing
+
+66,048 bytes
+→
+outer raw-size gate permits processing
+
+66,049 bytes
+→
+outer raw-size rejection
+
+Passing the outer size gate does not imply that the wrapper is otherwise valid.
+
+Traceability:
+
+M15 Architecture Gate
+→
+TD-M15-002
+→
+M15-02.1 wrapper-bound amendment
+→
+signed-wrapper implementation
+→
+resource-bound tests
+
+This closure changes no claim concerning:
+
+- signature validity;
+- authentication;
+- freshness;
+- anti-replay;
+- physical truth;
+- authorization;
+- actuator authority;
+- production identity;
+- certification.
+
+Gate disposition:
+
+The condition requiring an explicit M15 signed-wrapper raw resource bound is
+CLOSED.
+
+Implementation remains subject to software validation and all remaining M15
+acceptance criteria.
+
+Status: CLOSED — wrapper raw maximum frozen at 66,048 bytes before implementation.
+
+---
+
+## TD-M15-003 Closure — Trust Store Document Schema
+
+Status: CONDITION CLOSED
+
+Technical Destruction identified that Decision #5 defined the trusted credential record but did not freeze the exact top-level trust-store JSON document.
+
+The architecture now freezes a closed top-level object containing exactly:
+
+- schema_version
+- environment
+- records
+
+Initial schema version:
+
+guardian-f401:m15:trust-store:v1
+
+Allowed environments:
+
+- TEST
+- PRODUCTION
+
+The configured verifier environment must exactly match the loaded trust-store environment.
+
+TEST trust store ≠ PRODUCTION trust store.
+
+The signed assurance message cannot select or override the trust-store environment.
+
+Each records entry remains a closed TrustRecord containing exactly:
+
+- producer_id
+- key_id
+- algorithm
+- public_key
+- lifecycle_state
+
+Lookup remains exact:
+
+producer_id + key_id + algorithm → exactly one TrustRecord or explicit failure.
+
+No wildcard matching, fallback key, default producer, first-match-wins, or last-match-wins behavior is permitted.
+
+Ed25519 trusted public keys use canonical base64url without padding and decode to exactly 32 bytes.
+
+Lifecycle semantics remain ACTIVE, RETIRED, and REVOKED.
+
+Trust resolution remains separate from cryptographic verification.
+
+VERIFIED ≠ AUTHENTICATED until trusted credential resolution succeeds.
+
+ACTIVE credential ≠ physical authority.
+
+File representation remains strict UTF-8 JSON without BOM with duplicate-member rejection, closed schema, deterministic validation, and RFC 8785 canonical representation.
+
+Traceability:
+
+Decision #5
+→
+TD-M15-003
+→
+Trust Store Document Schema Amendment
+→
+Trust Store Runtime implementation
+→
+validation evidence
+
+Gate disposition:
+
+The condition requiring an exact top-level trust-store representation and TEST/PRODUCTION separation is CLOSED.
+
+Trust-store runtime implementation remains PENDING.
+
+Status: CLOSED — trust-store document schema frozen before runtime implementation.
+
+---
+
+## TD-M15-004 Closure — Trust Store Resource Bounds
+
+Status: CONDITION CLOSED
+
+Technical Destruction identified that the trust-store architecture had no explicit raw-file or record-count resource bounds.
+
+The architecture now freezes:
+
+Raw trust-store file maximum:
+1,048,576 bytes
+
+Maximum TrustRecord count:
+4,096 records
+
+Required raw-input rule:
+raw trust-store length > 1,048,576 bytes → reject before UTF-8 decoding and JSON parsing.
+
+Required record-count rule:
+records count > 4,096 → reject before credential resolution.
+
+Boundary cases:
+
+1,048,575 bytes → raw-size gate permits processing.
+1,048,576 bytes → raw-size gate permits processing.
+1,048,577 bytes → raw-size rejection.
+
+4,095 records → records-count gate permits processing.
+4,096 records → records-count gate permits processing.
+4,097 records → records-count rejection.
+
+Passing a resource gate does not imply trust-store validity.
+
+Processing order remains:
+
+raw bytes
+→ raw-size gate
+→ strict UTF-8
+→ strict JSON
+→ duplicate-member rejection
+→ closed schema
+→ environment validation
+→ records-count gate
+→ TrustRecord validation
+→ duplicate and ambiguity validation
+→ RFC 8785 canonicalization
+→ trust resolution
+
+These limits do not change schema, lifecycle, public-key, lookup, environment, or trust semantics.
+
+Traceability:
+Decision #5 → TD-M15-004 → resource-bound amendment → trust-store runtime → validation evidence.
+
+The resource-bound condition is CLOSED.
+
+Trust-store runtime implementation remains PENDING.
+
+Status: CLOSED — resource bounds frozen before trust-store runtime implementation.
+
+---
+
+## Post-Implementation Reconciliation — Signed Identity and Authentication
+
+Status: IMPLEMENTATION EVIDENCE SATISFIED
+
+This section records post-gate implementation evidence for the bounded M15 signed-identity and authentication software slice.
+
+Historical statements elsewhere in this gate that trust-store runtime implementation remained pending are retained for traceability and reflect the repository state at the time those sections were written.
+
+Subsequent implementation evidence now demonstrates completion of that bounded slice.
+
+Implemented and validated components:
+
+- purpose-separated assurance transcript
+- closed signed assurance wrapper
+- host/test Ed25519 cryptographic provider
+- shared producer identity validation contract
+- trust-store document schema
+- trust-store resource bounds
+- trust-store credential resolution
+- signed assurance authentication orchestrator
+
+Implementation commits:
+
+963337f — feat(m15): add purpose-separated assurance transcript builder
+be7d39b — feat(m15): add closed signed assurance wrapper
+6c59e2a — build(m15): lock host Ed25519 dependencies
+1967413 — feat(m15): add host Ed25519 crypto provider
+1a68be3 — docs(m15): freeze trust store document schema
+6c29512 — docs(m15): freeze trust store resource bounds
+99bdd6e — refactor(m15): expose producer identity validator
+e2dd227 — feat(m15): add trust store credential resolution
+1b18886 — feat(m15): add signed assurance authentication orchestrator
+b864e11 — docs(m15): validate signed identity implementation
+
+Validation evidence:
+
+docs/validation/m15-signed-identity-implementation-validation.md
+
+Final software regression recorded for the slice:
+
+203 tests executed
+203 tests passed
+0 failures
+0 errors
+
+Authentication composition demonstrated:
+
+validated signed wrapper
+→ trusted credential resolution
+→ purpose-separated transcript
+→ Ed25519 verification
+→ AUTHENTICATED
+
+The following boundaries remain authoritative:
+
+RESOLVED ≠ VERIFIED
+VERIFIED ≠ AUTHENTICATED
+AUTHENTICATED ≠ FRESH
+AUTHENTICATED ≠ PHYSICALLY TRUE
+AUTHENTICATED ≠ AUTHORIZED
+AUTHENTICATED ≠ ACTUATION PERMISSION
+
+The implementation evidence satisfies the previously pending trust-store runtime and signed-authentication software conditions for this bounded slice.
+
+The following M15 properties remain explicitly deferred and are not closed by this reconciliation:
+
+M15-03 — Persistent Freshness and Anti-Replay
+M15-04 — Attestation and Witness Exchange
+
+No persistent replay resistance across reset is claimed.
+No attestation mechanism is claimed.
+No distributed witness assurance is claimed.
+No physical authority or production hardware identity is claimed.
+
+Overall M15 Architecture Gate status therefore remains:
+
+PASS WITH CONDITIONS
+
+The remaining conditions are the explicitly deferred M15-03 and M15-04 properties and any implementation evidence requirements associated with those later slices.
+
+---
+
+## M15-03 Closure Reconciliation — Persistent Freshness and Anti-Replay
+
+Status: CONDITION CLOSED — ARCHITECTURE
+
+The M15 Architecture Gate previously deferred persistent freshness and anti-replay to M15-03.
+
+Those architecture decisions have now been adjudicated and closed by:
+
+TD-M15-005 — Persistent Freshness State Model
+
+TD-M15-005 SHA-256:
+BE52461F33E92EE15532D290AC2DE3EFC470042407E3847F93271B693618E860
+
+TD-M15-005 final status:
+
+RESOLVED
+
+Finding:
+
+CLOSED
+
+Software implementation disposition:
+
+APPROVED FOR BOUNDED IMPLEMENTATION
+
+The closed M15-03 architecture now freezes:
+
+- strict same-epoch monotonic logical_time semantics;
+- explicit epoch transition authorization;
+- reset behavior;
+- old-epoch rollback behavior;
+- FIRST_SEEN boundaries;
+- persistent state atomicity and commit ordering;
+- corruption and unavailable-state failure semantics;
+- persistent rollback classification;
+- replay acceptance window = 0;
+- nonce requirement = NOT REQUIRED for M15-03 v1;
+- portable freshness-state capacity = 4,096 producers;
+- backend-specific capacity declaration;
+- bounded current_epoch + previous_epoch retention;
+- unsigned 64-bit transition_sequence;
+- unsigned 64-bit persistent generation;
+- fail-closed exhaustion semantics.
+
+The authoritative freshness ordering is:
+
+AUTHENTICATED
+→ persistent freshness evaluation
+→ FRESH_CANDIDATE
+→ durable commit
+→ verified commit
+→ FRESH
+
+No authentication success bypasses freshness.
+
+No freshness success establishes policy authority.
+
+Therefore:
+
+AUTHENTICATED ≠ FRESH
+FRESH ≠ AUTHORIZED
+FRESH ≠ PHYSICALLY TRUE
+FRESH ≠ ACTUATION AUTHORITY
+
+Historical M15-03 PENDING statements in earlier sections remain preserved as temporal evidence of the gate state before TD-M15-005 adjudication.
+
+They are superseded for current implementation authorization by this reconciliation and TD-M15-005.
+
+Production STM32 persistence remains subject to separate backend evidence including flash allocation, endurance, erase/write behavior, power-loss recovery, integrity, rollback-detection capability, and demonstrated capacity.
+
+M15-03 architecture condition: CLOSED
+
+M15-03 software implementation evidence: PENDING
+
+M15-04 — Attestation and Witness Exchange: PENDING
+
+Overall M15 Architecture Gate remains:
+
+PASS WITH CONDITIONS
+
+The remaining conditions now include M15-03 implementation/validation evidence and the separately deferred M15-04 architecture and implementation work.
+
+---
+
+## M15-03 Software Evidence Reconciliation — Post #2F
+
+Evidence baseline: `d37714d`
+
+Complete assurance regression: 307 tests passed
+
+### Evidence disposition
+
+M15-03 architecture condition: CLOSED
+
+M15-03 bounded host software implementation evidence: CLOSED
+
+M15-03 bounded host software validation evidence: CLOSED
+
+Production STM32F401 persistence evidence: OPEN
+
+Explicit bootstrap authorization implementation: OPEN
+
+Explicit epoch-transition authorization implementation: OPEN
+
+Hardware-backed rollback-resistance evidence: OPEN
+
+M15-04 — Attestation and Witness Exchange: PENDING
+
+### Implemented and validated software evidence
+
+- authoritative producer_epoch and logical_time field contracts;
+- bounded producer freshness-state model;
+- pure same-epoch freshness evaluator;
+- strict replay-window-zero semantics;
+- backend-neutral persistence contract;
+- host transactional persistence backend;
+- candidate validation before atomic replacement;
+- commit and verify separation;
+- corruption and truncation fail-closed behavior;
+- interrupted-write preservation of the previous committed host state;
+- freshness orchestration;
+- FRESH only after verified persistence;
+- authenticated freshness-claim handoff;
+- authentication-to-freshness integration without wrapper reparsing;
+- authentication failure terminates before freshness evaluation;
+- 307-test complete assurance regression.
+
+### Claims explicitly not established
+
+- automatic FIRST_SEEN bootstrap;
+- automatic epoch-transition authorization;
+- arbitrary-storage rollback resistance;
+- hardware-backed monotonic state;
+- production STM32F401 persistence capacity;
+- STM32F401 flash layout or endurance;
+- physical target power-loss behavior;
+- freshness as authorization;
+- freshness as physical truth;
+- M15-04 distributed attestation or witness assurance.
+
+### Historical-status reconciliation
+
+Earlier statements such as Implementation status: NOT IMPLEMENTED, Freshness is not yet implemented, and M15-03 software implementation evidence: PENDING remain preserved as temporal gate evidence.
+
+For the bounded host software path those historical statements are superseded by the implementation evidence ending at commit d37714d and the 307-test assurance regression.
+
+They are not superseded for production STM32F401 persistence, bootstrap authorization, epoch-transition authorization, hardware-backed rollback resistance, or M15-04.
+
+### Gate status
+
+PASS WITH CONDITIONS
+
+The M15-03 bounded host software implementation and validation condition is satisfied.
+
+The remaining conditions concern explicitly unimplemented or separately deferred security properties and production-target evidence. They do not authorize claims beyond the validated host software scope.
+
+---
+
+## M15-03 Authorization Architecture Gate Reconciliation - TD-M15-006
+
+Evidence authority: TD-M15-006
+
+TD-M15-006 status: RESOLVED
+
+Finding: CLOSED
+
+Architecture disposition: APPROVED FOR BOUNDED SOFTWARE IMPLEMENTATION
+
+### Current gate disposition
+
+Bootstrap authorization architecture: CLOSED
+
+Epoch-transition authorization architecture: CLOSED
+
+Bounded host authorization software implementation: AUTHORIZED
+
+Bounded host authorization implementation evidence: PENDING
+
+Bounded host authorization validation evidence: PENDING
+
+Production STM32 authorization persistence: NOT AUTHORIZED
+
+Hardware-backed rollback resistance: NOT DEMONSTRATED
+
+M15-04 - Attestation and Witness Exchange: PENDING
+
+### Frozen authorization architecture
+
+- ordinary assurance trust remains separate from authorization trust;
+- bootstrap and epoch-transition authorization remain separate capabilities;
+- dedicated signed authorization objects are required;
+- dedicated purpose domains are required;
+- AuthorizationTrustStoreV1 is separate from the ordinary assurance trust store;
+- authorization replay state is independent of producer logical_time;
+- authorization replay acceptance window is zero;
+- authorization_sequence is monotonic and must not wrap;
+- authorization consumption and protected freshness-state mutation form one verified logical transaction;
+- BootstrapAuthorizationV1 and EpochTransitionAuthorizationV1 use closed distinct schemas;
+- authorization signatures bind exact canonical authorization bytes;
+- bootstrap and epoch-transition lifecycle semantics are frozen;
+- portable authorization resource bounds are explicit and fail closed.
+
+### Required semantic separations
+
+ASSURANCE_AUTHENTICATED != BOOTSTRAP_AUTHORIZED
+
+ASSURANCE_AUTHENTICATED != EPOCH_TRANSITION_AUTHORIZED
+
+FIRST_SEEN != BOOTSTRAP_AUTHORIZED
+
+EPOCH_TRANSITION_REQUIRED != EPOCH_TRANSITION_AUTHORIZED
+
+AUTHORIZATION_AUTHENTICATED != AUTHORIZATION_CANDIDATE
+
+AUTHORIZATION_CANDIDATE != AUTHORIZATION_CONSUMED
+
+EPOCH_TRANSITION_AUTHORIZED != FRESH
+
+FRESH != AUTHORIZED
+
+PREPARED != COMMITTED
+
+COMMITTED != VERIFIED
+
+### Historical-status reconciliation
+
+Earlier Gate statements that explicit bootstrap authorization implementation and explicit epoch-transition authorization implementation were OPEN remain preserved as temporal evidence.
+
+Those earlier OPEN statements are superseded for architecture status by TD-M15-006.
+
+They are not superseded as implementation or validation evidence.
+
+No bounded host authorization implementation evidence has yet been produced.
+
+### Explicitly unclaimed
+
+- production STM32F401 authorization persistence;
+- STM32F401 flash layout or capacity;
+- target flash endurance;
+- physical target power-loss behavior;
+- hardware-backed monotonic state;
+- hardware-backed rollback resistance;
+- arbitrary-storage rollback resistance;
+- M15-04 attestation or witness implementation;
+- authorization as physical truth;
+- authorization as general actuation permission.
+
+### Gate status
+
+PASS WITH CONDITIONS
+
+The bootstrap and epoch-transition authorization architecture condition is satisfied.
+
+Bounded host software implementation may begin within the exact scope authorized by TD-M15-006.
+
+Implementation and validation evidence remain required before authorization software may be represented as implemented.
+
+Production STM32 authorization persistence and hardware rollback-resistance claims remain separately gated.

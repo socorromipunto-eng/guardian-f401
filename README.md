@@ -107,7 +107,12 @@ M9 supervisory control + fault policy — completed.
 
 M10 authenticated sessions + authorization + anti-replay — completed.
 
-M11 robustness + fuzzing + fault injection — completed.
+M11 bounded parser/security robustness + fuzzing + fault injection — completed for the documented M11 scope.
+
+M11 completion applies to the bounded parser/security robustness campaigns
+documented in `docs/m11-robustness.md`. It does not claim fuzz coverage of
+later control, embedded-link, firmware-lifecycle, physical-I/O, or hardware
+execution paths.
 
 M12 secure firmware lifecycle + rollback protection — completed.
 
