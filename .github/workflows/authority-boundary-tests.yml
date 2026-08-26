@@ -1,0 +1,39 @@
+name: Authority Boundary Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authority-boundary:
+    name: G15-05 Authority Boundary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install locked assurance dependencies
+        run: |
+          python -m pip install --require-hashes -r assurance/requirements.lock
+
+      - name: Validate authority boundary
+        run: |
+          python tools/validate_authority_boundary.py
+
+      - name: Run permanent G15-05 regression suite
+        env:
+          PYTHONPATH: assurance/src
+        run: |
+          python -m unittest assurance.tests.test_m15_authority_boundary_validator -v
