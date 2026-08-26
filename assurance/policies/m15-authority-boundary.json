@@ -1,0 +1,73 @@
+﻿{
+  "schema_version": 1,
+  "policy_id": "G15-05-AUTHORITY-BOUNDARY",
+  "status": "implementation_candidate",
+  "architecture_source": "docs/architecture/m15-g15-05-authority-reachability-model.md",
+  "architecture_commit": "808db44",
+  "principles": {
+    "static_memory_required": true,
+    "runtime_heap_allowed": false,
+    "authority_state_single_owner": true,
+    "output_invocation_single_owner": true,
+    "platform_adapter_subordinate": true
+  },
+  "authority": {
+    "control_implementation": "firmware/Control/Src/guardian_control.c",
+    "control_public_header": "firmware/Control/Inc/guardian_control.h",
+    "embedded_link_implementation": "firmware/Platform/Src/guardian_embedded_link.c",
+    "application_implementation": "firmware/App/Src/guardian_firmware_app.c"
+  },
+  "protected_surfaces": {
+    "authority_state_field": "status.run_permit",
+    "output_callback_field": "output.apply",
+    "output_configuration_api": "guardian_control_configure_output",
+    "platform_output_configuration_api": "guardian_embedded_link_configure_control_output"
+  },
+  "rules": [
+    {
+      "id": "AUTH-001",
+      "description": "Canonical run-permit mutation is owned by Guardian Control.",
+      "kind": "field_write_owner",
+      "surface": "status.run_permit",
+      "allowed_files": [
+        "firmware/Control/Src/guardian_control.c"
+      ]
+    },
+    {
+      "id": "AUTH-002",
+      "description": "Authority-output callback invocation is owned by Guardian Control.",
+      "kind": "callback_invocation_owner",
+      "surface": "output.apply",
+      "allowed_files": [
+        "firmware/Control/Src/guardian_control.c"
+      ]
+    },
+    {
+      "id": "AUTH-003",
+      "description": "Guardian Control output binding may only be configured through the approved control and platform APIs.",
+      "kind": "configuration_path",
+      "surface": "guardian_control_configure_output",
+      "allowed_files": [
+        "firmware/Control/Src/guardian_control.c",
+        "firmware/Platform/Src/guardian_embedded_link.c"
+      ]
+    },
+    {
+      "id": "AUTH-004",
+      "description": "Production firmware must remain free of runtime heap allocation.",
+      "kind": "forbidden_calls",
+      "calls": [
+        "malloc",
+        "calloc",
+        "realloc",
+        "free"
+      ],
+      "scope": "firmware"
+    }
+  ],
+  "portability": {
+    "stm32f401_specific_policy": false,
+    "platform_adapter_replaceable": true,
+    "core_authority_semantics_platform_independent": true
+  }
+}
