@@ -83,7 +83,7 @@ merely because the target MCU, SoC or execution environment changes.
 
 | RT | Finding | Current status | Demonstrated boundary | Remaining gap | Future owner | Portability impact |
 | --- | --- | --- | --- | --- | --- | --- |
-| RT-M15-001 | AI/advisory -> actuation authority | PARTIAL | No current AI/advisory execution plane; logical deterministic run-permit authority demonstrated | Physical gate and continuously enforced future advisory boundary | G15-05 | Must be platform-neutral above the physical actuator adapter |
+| RT-M15-001 | AI/advisory -> actuation authority | PARTIAL_RECONCILED | Current logical/mechanical authority boundary is mechanically enforced and remotely CI-validated; no current AI/advisory execution plane | Physical actuator authority remains NOT_DEMONSTRATED; future AI/advisory introduction requires reopening implementation-specific isolation validation | Physical validation / future AI integration | Must remain platform-neutral above the physical actuator adapter |
 | RT-M15-003 | Hardware validation | PARTIAL | Structural/build and software acquisition evidence demonstrated | Physical board, ADC characterization, WCET/jitter, fault injection, physical output | Hardware validation program | Each target requires its own physical qualification package |
 | RT-M15-004 | Fuzzing claims and coverage | PARTIAL | M11 parser/security fuzz infrastructure and documented campaigns confirmed | `guardian_control`, `guardian_firmware_lifecycle`, `guardian_embedded_link` fuzzing | Critical hardening | Fuzz contracts should remain reusable across target ports |
 | RT-M15-005 | Prior art / related work | CLOSED_FOR_PRIOR_ART_CONTEXT | Simplex, Runtime Assurance, SACEM and formal-method context bounded correctly | Extend only when architecture or novelty claims materially change | Research governance | Prior-art context applies to architecture independent of MCU |
@@ -109,44 +109,53 @@ Closure of these findings does not imply complete project maturity.
 
 ## Open technical findings
 
-The following findings remain PARTIAL:
+The following findings remain open or partially reconciled:
 
-- RT-M15-001;
-- RT-M15-003;
-- RT-M15-004;
-- RT-M15-006;
-- RT-M15-008;
-- RT-M15-009.
+- RT-M15-001 — PARTIAL_RECONCILED;
+- RT-M15-003 — PARTIAL;
+- RT-M15-004 — PARTIAL;
+- RT-M15-006 — PARTIAL;
+- RT-M15-008 — PARTIAL;
+- RT-M15-009 — PARTIAL.
 
-Each PARTIAL finding has an explicit technical, physical or organizational
-closure condition.
+RT-M15-001 has closed its current logical/mechanical authority-enforcement
+surface through G15-05, while physical actuator authority remains
+NOT_DEMONSTRATED.
+
+Each remaining open or partial finding has an explicit technical, physical or
+organizational closure condition.
 
 ## Immediate engineering priority
 
-### Priority 1 — G15-05 Authority Boundary
+### Resolved gate — G15-05 Authority Boundary
 
-Required outcome:
+Disposition:
 
-Convert the advisory/authority restriction from an architectural rule into a
-continuously enforced repository property.
+`CLOSED_FOR_LOGICAL_MECHANICAL_AUTHORITY_BOUNDARY`
 
-Expected controls include:
+Demonstrated controls include:
 
-- generated call graph;
-- authority-reachable module allowlist;
-- negative architectural tests;
-- CI enforcement;
-- explicit platform-actuator adapter boundary;
-- prohibition of advisory/AI direct access to acquisition or actuation paths.
+- machine-readable authority policy;
+- canonical logical authority ownership enforcement;
+- authority-output callback ownership enforcement;
+- approved output-configuration path enforcement;
+- production runtime-heap prohibition;
+- adversarial Technical Destruction with 7 of 7 cases handled correctly;
+- nine permanent authority-boundary regression tests;
+- locked full-assurance regression;
+- dedicated platform-neutral CI enforcement;
+- successful remote GitHub Actions execution.
 
-Portability requirement:
+This closure applies to the current logical/mechanical authority boundary.
 
-The authority contract must be platform-neutral.
+It does not establish physical actuator enforcement.
 
-Only the final physical adapter should depend on target-specific output
-mechanisms.
+Physical actuator authority remains NOT_DEMONSTRATED.
 
-### Priority 2 — G15-07 Build and Supply-Chain Security
+Introduction of an AI/advisory execution plane requires reopening
+implementation-specific isolation and bypass-resistance validation.
+
+### Priority 1 — G15-07 Build and Supply-Chain Security
 
 Required outcome:
 
@@ -175,7 +184,7 @@ The SBOM must distinguish:
 - vendor-generated dependencies;
 - host/test dependencies.
 
-### Priority 3 — Critical-module fuzzing
+### Priority 2 — Critical-module fuzzing
 
 Required targets:
 
@@ -333,7 +342,7 @@ The following distinctions remain normative:
 This matrix must be reviewed or reopened when:
 
 - a PARTIAL RT is materially advanced;
-- G15-05 is implemented;
+- the closed G15-05 authority contract or its implementation materially changes;
 - G15-07 is implemented;
 - critical fuzz coverage changes;
 - physical STM32F401 validation is performed;
@@ -344,6 +353,24 @@ This matrix must be reviewed or reopened when:
 - a new public release is prepared;
 - material public claims change.
 
+## Current hardening-gate reconciliation
+
+G15-05 has progressed from planned hardening work to a closed
+logical/mechanical authority-enforcement gate for the reviewed implementation.
+
+This does not close:
+
+- physical actuator authority;
+- physical STM32F401 qualification;
+- critical-module fuzz coverage;
+- SBOM / supply-chain hardening;
+- heterogeneous multi-node implementation;
+- independent external technical review.
+
+The next controlled hardening priorities are:
+
+1. G15-07 Build and Supply-Chain Security;
+2. critical-module state-aware fuzzing.
 ## Closure disposition
 
 The current M15 Red-Team pass is complete for the reviewed claim,
