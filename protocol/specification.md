@@ -2,7 +2,25 @@
 
 ## Status
 
-Version `0.1` is frozen for implementation.
+Guardian Protocol wire version `0.1`, encoded as `VERSION = 0x01`, is frozen for implementation.
+
+In this specification, **frozen** applies to the outer wire profile and its parser invariants:
+
+- the `GF` magic bytes;
+- field order, offsets and widths in the fixed header;
+- big-endian encoding of multi-byte integers;
+- the `VERSION = 0x01` wire value;
+- the 256-byte payload bound;
+- IEEE CRC-32 parameters and coverage;
+- `FLAGS = 0x00`;
+- rejection of unsupported versions, message types, flags, lengths and CRC values;
+- bounded parser recovery without dynamic allocation in the embedded implementation.
+
+Published registries may receive backward-compatible additive entries while wire version `0.1` remains active. An additive entry must use a previously unassigned identifier, preserve every published identifier and meaning, and use an explicitly versioned payload schema where a payload is present. Receivers continue to reject identifiers they do not implement through the published error behavior.
+
+An extension must not reinterpret an existing field, identifier, flag bit or payload schema. Any change to a frozen outer-wire invariant requires a new wire-version value and a documented compatibility decision.
+
+Guardian product releases and Guardian wire-protocol versions are independent. A product release may continue to implement Guardian Protocol wire version `0.1` without changing the `VERSION` byte.
 
 The protocol is intentionally transport-independent. UART, USB and the software simulator may carry the same byte stream.
 
