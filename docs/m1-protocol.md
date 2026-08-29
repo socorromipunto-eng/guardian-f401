@@ -2,7 +2,11 @@
 
 ## Objective
 
-M1 freezes and implements the first transport-independent communication contract shared by the STM32 firmware and host tools.
+M1 freezes and implements the first transport-independent outer-wire contract shared by the STM32 firmware and host tools.
+
+The frozen scope is the Guardian Protocol wire version `0.1` framing and parser invariants defined in `protocol/specification.md`. Later milestones may add backward-compatible registry entries and explicitly versioned payload schemas under the extension policy in `protocol/commands.md`; they do not silently redefine the frozen outer frame.
+
+Guardian product release versions are independent from the wire-protocol version.
 
 ## Completed
 

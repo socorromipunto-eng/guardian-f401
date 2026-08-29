@@ -2,7 +2,24 @@
 
 ## Version
 
-Guardian Protocol `0.1`.
+Guardian Protocol wire version `0.1`.
+
+Product release versions do not change this wire-version identifier.
+
+## Registry Extension Policy
+
+This registry may receive backward-compatible additive entries under wire version `0.1`.
+
+Each additive entry must:
+
+- use a previously unassigned identifier;
+- preserve the meaning of every published identifier;
+- define the message class and direction in which it is legal;
+- define a versioned payload schema when a payload is present;
+- preserve the frozen outer frame defined by `protocol/specification.md`;
+- remain safely rejectable by implementations that do not support it.
+
+An existing identifier, payload schema or flag bit must not be reinterpreted. A change to the frozen outer frame requires a new wire-protocol version and a documented compatibility decision.
 
 ## Commands
 
