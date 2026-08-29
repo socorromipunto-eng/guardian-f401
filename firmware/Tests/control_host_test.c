@@ -103,6 +103,37 @@ static void test_configure_output(
     assert(output->last_permit == 0U);
 }
 
+/* Verify zero callback return is treated as output failure and remains fail-safe. */
+static void test_output_callback_zero_return_contract(void)
+{
+    guardian_control_t control = {0};
+    test_output_t output = {0};
+    guardian_control_output_t adapter = {0};
+
+    guardian_control_init(&control);
+
+    output.fail = 1U;
+    adapter.apply = test_output_apply;
+    adapter.context = &output;
+
+    assert(
+        guardian_control_configure_output(
+            &control,
+            &adapter) ==
+        GUARDIAN_CONTROL_ERROR_OUTPUT);
+
+    assert(
+        control.status.state ==
+        GUARDIAN_CONTROL_STATE_FAULT_LATCHED);
+
+    assert(
+        (control.status.latched_faults &
+         GUARDIAN_CONTROL_FAULT_OUTPUT_FAILURE) != 0U);
+
+    assert(control.status.run_permit == 0U);
+    assert(output.last_permit == 0U);
+}
+
 /* Verify startup is disabled and cannot arm without proven safe-entry conditions. */
 static void test_safe_startup_and_arm_gate(void)
 {
@@ -743,6 +774,9 @@ int main(void)
 
     /* Verify baseline readiness loss fails safe. */
     test_health_readiness_loss_latches();
+
+    /* Verify zero-return callback contract fails safe. */
+    test_output_callback_zero_return_contract();
 
     /* Verify output application failure fails safe. */
     test_output_failure_latches();

@@ -85,7 +85,16 @@ typedef enum
     GUARDIAN_CONTROL_ERROR_OUTPUT
 } guardian_control_result_t;
 
-/* Apply one logical run-permit value to the board-specific safe-output boundary. */
+/* Apply one logical run-permit value to the board-specific safe-output boundary.
+ *
+ * Return non-zero when the output was applied successfully.
+ * Return zero to report an output failure. Guardian will latch
+ * GUARDIAN_CONTROL_FAULT_OUTPUT_FAILURE and preserve the safe state.
+ *
+ * NOTE: this callback convention differs from guardian_control_result_t,
+ * where GUARDIAN_CONTROL_OK is zero.
+ */
+
 typedef int (*guardian_control_output_fn)(
     void *context,
     uint8_t run_permit);
