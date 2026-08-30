@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/evidence-register/v1",
+  "title": "Guardian F401 Governance Evidence Register",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^guardian:evidence:[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+          "maxLength": 96
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "command",
+            "test",
+            "review",
+            "external"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

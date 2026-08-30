@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/document-register/v1",
+  "title": "Guardian F401 Governance Document Register",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/document"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "documents"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "document": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^guardian:document:[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+          "maxLength": 96
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$"
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

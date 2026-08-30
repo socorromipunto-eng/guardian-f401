@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/project-state/v1",
+  "title": "Guardian F401 Governance Project State",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "id": {
+      "const": "guardian:project-state:current"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_tree": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "registers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/register"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "source_commit",
+    "source_tree",
+    "registers"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "register": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-F]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "schema_id",
+        "schema_version",
+        "sha256"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

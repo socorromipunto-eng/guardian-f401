@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/claims-register/v1",
+  "title": "Guardian F401 Governance Claims Register",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "claims"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^guardian:claim:[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+          "maxLength": 96
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "DEMONSTRATED",
+            "PARTIAL",
+            "NOT_DEMONSTRATED"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

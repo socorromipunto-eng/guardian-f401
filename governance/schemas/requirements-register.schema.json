@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/requirements-register/v1",
+  "title": "Guardian F401 Governance Requirements Register",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "requirements"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^guardian:requirement:[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$",
+          "maxLength": 96
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "CONFIRMED",
+            "PARTIAL",
+            "NOT_DEMONSTRATED"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
