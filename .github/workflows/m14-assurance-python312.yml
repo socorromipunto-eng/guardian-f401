@@ -75,7 +75,7 @@ jobs:
       - name: Execute exactly 87 M14 tests
         shell: bash
         env:
-          PYTHONPATH: assurance/src
+          PYTHONPATH: common/python:assurance/src
         run: |
           set -euo pipefail
           python - <<'PY'

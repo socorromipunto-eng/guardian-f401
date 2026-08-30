@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
+
+from guardian_common.strict_json import (
+    DuplicateMemberError,
+    InvalidJsonError,
+    InvalidUtf8Error,
+    decode_strict_json,
+)
 
 from .domain import expected_domain
 from .errors import AssuranceError, ErrorCode
@@ -16,15 +22,6 @@ _PRODUCER = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 _OBJECT_TYPES = frozenset({"observation", "decision", "witness"})
 _SAFE_INTEGER = 9_007_199_254_740_991
 _ENVELOPE_KEYS = frozenset({"domain", "object_type", "producer_id", "producer_epoch", "object_id", "logical_time", "payload"})
-
-
-def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise AssuranceError(ErrorCode.DUPLICATE_KEY, f"duplicate member {key!r}")
-        result[key] = value
-    return result
 
 
 def _validate_structure(value: Any, limits: AssuranceLimits) -> None:
@@ -122,14 +119,12 @@ def parse_and_validate_envelope(raw: bytes, limits: AssuranceLimits | None = Non
     if len(raw) > selected.max_raw_bytes:
         raise AssuranceError(ErrorCode.RAW_LIMIT, "raw byte limit exceeded")
     try:
-        text = raw.decode("utf-8", errors="strict")
-    except UnicodeDecodeError as exc:
+        value = decode_strict_json(raw)
+    except InvalidUtf8Error as exc:
         raise AssuranceError(ErrorCode.INVALID_UTF8, "input is not strict UTF-8") from exc
-    try:
-        value = json.loads(text, object_pairs_hook=_reject_duplicates)
-    except AssuranceError:
-        raise
-    except (json.JSONDecodeError, ValueError) as exc:
+    except DuplicateMemberError as exc:
+        raise AssuranceError(ErrorCode.DUPLICATE_KEY, str(exc)) from exc
+    except InvalidJsonError as exc:
         raise AssuranceError(ErrorCode.INVALID_JSON, "input is not valid JSON") from exc
     _validate_structure(value, selected)
     return validate_envelope(value)
