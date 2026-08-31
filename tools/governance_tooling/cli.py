@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 import sys
 
+from .candidate import run_candidate
 from .evidence import DEFAULT_NOT_PROVEN
 from .errors import GovernanceToolError
 from .gates import run_precommit, run_prepr, run_verify
@@ -26,6 +27,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("verify", help="Gate repository identity and cleanliness")
     subparsers.add_parser("precommit", help="Gate technical readiness for human commit decision")
     subparsers.add_parser("prepr", help="Gate technical readiness for human push/PR decision")
+    candidate = subparsers.add_parser("candidate", help="Gate exact candidate scope, artifact identity, evidence, and authority boundaries")
+    candidate.add_argument("--allow", action="append", required=True, help="Exact repository-relative candidate path; repeat per allowed path")
+    candidate.add_argument("--forbid", action="append", default=[], help="Repository-relative forbidden candidate path; repeat as needed")
     return parser
 
 
@@ -85,14 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         repo = GitRepository(Path(args.repo))
-        runners = {
-            "inspect": run_inspect,
-            "baseline": run_baseline,
-            "verify": run_verify,
-            "precommit": run_precommit,
-            "prepr": run_prepr,
-        }
-        result = runners[args.command](repo)
+        if args.command == "candidate":
+            result = run_candidate(repo, tuple(args.allow), tuple(args.forbid))
+        else:
+            runners = {
+                "inspect": run_inspect,
+                "baseline": run_baseline,
+                "verify": run_verify,
+                "precommit": run_precommit,
+                "prepr": run_prepr,
+            }
+            result = runners[args.command](repo)
     except GovernanceToolError as exc:
         print(str(exc), file=sys.stderr)
         return 2
