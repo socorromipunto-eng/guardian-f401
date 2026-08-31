@@ -58,6 +58,19 @@ class GitRepository:
             )
         return output
 
+    def git_bytes(self, *args: str) -> bytes:
+        command = ["git", "-C", str(self.root), *args]
+        try:
+            completed = subprocess.run(command, capture_output=True, text=False, timeout=self.timeout_seconds, shell=False, check=False)
+        except FileNotFoundError as exc:
+            raise GovernanceToolError(FailureClass.ENVIRONMENT, "GIT_NOT_FOUND", "git executable not found") from exc
+        except subprocess.TimeoutExpired as exc:
+            raise GovernanceToolError(FailureClass.ENVIRONMENT, "GIT_TIMEOUT", "git command timed out") from exc
+        if completed.returncode != 0:
+            stderr = completed.stderr.decode("utf-8", errors="replace").rstrip("\n")
+            raise GovernanceToolError(FailureClass.ENVIRONMENT, "GIT_COMMAND_FAILED", f"git {args!r} exited {completed.returncode}: {stderr}")
+        return completed.stdout
+
     def branch(self) -> str:
         return self.git("branch", "--show-current").stdout.strip()
 
@@ -94,3 +107,6 @@ class GitRepository:
             raise GovernanceToolError(
                 FailureClass.HARNESS, "DIVERGENCE_PARSE", "non-integer rev-list output"
             ) from exc
+
+    def index_blob(self, relative_path: str) -> bytes:
+        return self.git_bytes("show", f":{relative_path}")
