@@ -8,6 +8,7 @@ import sys
 
 from .evidence import DEFAULT_NOT_PROVEN
 from .errors import GovernanceToolError
+from .gates import run_precommit, run_prepr, run_verify
 from .repository import GitRepository
 from .result import Result
 
@@ -20,12 +21,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", default=".", help="Repository root (default: current directory)")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("inspect", help="Inspect repository identity and cleanliness")
-    subparsers.add_parser("baseline", help="Compare local HEAD with origin/main")
+    subparsers.add_parser("inspect", help="Observe repository identity and working-tree state")
+    subparsers.add_parser("baseline", help="Observe relation between local HEAD and origin/main")
+    subparsers.add_parser("verify", help="Gate repository identity and cleanliness")
+    subparsers.add_parser("precommit", help="Gate technical readiness for human commit decision")
+    subparsers.add_parser("prepr", help="Gate technical readiness for human push/PR decision")
     return parser
 
 
 def run_inspect(repo: GitRepository) -> Result:
+    """Observe state without converting a dirty worktree into an execution error."""
     result = Result(command="inspect", repository=str(repo.root))
     branch = repo.branch()
     head = repo.head()
@@ -34,9 +39,11 @@ def run_inspect(repo: GitRepository) -> Result:
     untracked = repo.untracked()
     result.source_of_truth = head
     result.add("INSIDE_WORK_TREE", repo.is_inside_work_tree())
-    result.add("BRANCH_PRESENT", bool(branch), branch or "DETACHED_HEAD")
-    result.add("STAGED_CLEAN", len(staged) == 0, f"count={len(staged)}")
-    result.add("TRACKED_CLEAN", len(tracked) == 0, f"count={len(tracked)}")
+    result.add("BRANCH_OBSERVED", True, branch or "DETACHED_HEAD")
+    result.add("HEAD_OBSERVED", len(head) == 40, head)
+    result.add("STAGED_STATE_OBSERVED", True, f"count={len(staged)}")
+    result.add("TRACKED_STATE_OBSERVED", True, f"count={len(tracked)}")
+    result.add("UNTRACKED_STATE_OBSERVED", True, f"count={len(untracked)}")
     result.proven.extend(
         [
             f"current branch is {branch or 'DETACHED'}",
@@ -78,7 +85,14 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         repo = GitRepository(Path(args.repo))
-        result = run_inspect(repo) if args.command == "inspect" else run_baseline(repo)
+        runners = {
+            "inspect": run_inspect,
+            "baseline": run_baseline,
+            "verify": run_verify,
+            "precommit": run_precommit,
+            "prepr": run_prepr,
+        }
+        result = runners[args.command](repo)
     except GovernanceToolError as exc:
         print(str(exc), file=sys.stderr)
         return 2
