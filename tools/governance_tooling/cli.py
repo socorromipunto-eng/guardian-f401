@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
 from .candidate import run_candidate
 from .evidence import DEFAULT_NOT_PROVEN
-from .errors import GovernanceToolError
+from .evidence_manifest import build_evidence_manifest, verify_evidence_manifest, write_manifest
+from .errors import FailureClass, GovernanceToolError
 from .gates import run_precommit, run_prepr, run_verify
 from .repository import GitRepository
 from .result import Result
@@ -27,14 +29,23 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("verify", help="Gate repository identity and cleanliness")
     subparsers.add_parser("precommit", help="Gate technical readiness for human commit decision")
     subparsers.add_parser("prepr", help="Gate technical readiness for human push/PR decision")
-    candidate = subparsers.add_parser("candidate", help="Gate exact candidate scope, artifact identity, evidence, and authority boundaries")
-    candidate.add_argument("--allow", action="append", required=True, help="Exact repository-relative candidate path; repeat per allowed path")
-    candidate.add_argument("--forbid", action="append", default=[], help="Repository-relative forbidden candidate path; repeat as needed")
+
+    candidate = subparsers.add_parser("candidate", help="Gate exact candidate scope and identity")
+    candidate.add_argument("--allow", action="append", required=True)
+    candidate.add_argument("--forbid", action="append", default=[])
+
+    evidence = subparsers.add_parser("evidence", help="Write canonical evidence outside repository")
+    evidence.add_argument("--allow", action="append", required=True)
+    evidence.add_argument("--forbid", action="append", default=[])
+    evidence.add_argument("--output", required=True)
+    evidence.add_argument("--run-id", default=None)
+
+    verify_evidence = subparsers.add_parser("verify-evidence", help="Verify evidence manifest")
+    verify_evidence.add_argument("--manifest", required=True)
     return parser
 
 
 def run_inspect(repo: GitRepository) -> Result:
-    """Observe state without converting a dirty worktree into an execution error."""
     result = Result(command="inspect", repository=str(repo.root))
     branch = repo.branch()
     head = repo.head()
@@ -85,12 +96,45 @@ def run_baseline(repo: GitRepository) -> Result:
     return result
 
 
+def _outside_repository(repo: GitRepository, path: Path) -> bool:
+    try:
+        path.resolve().relative_to(repo.root)
+        return False
+    except ValueError:
+        return True
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         repo = GitRepository(Path(args.repo))
         if args.command == "candidate":
             result = run_candidate(repo, tuple(args.allow), tuple(args.forbid))
+        elif args.command == "evidence":
+            output = Path(args.output).resolve()
+            if not _outside_repository(repo, output):
+                raise GovernanceToolError(
+                    FailureClass.AUTHORITY,
+                    "EVIDENCE_OUTPUT_INSIDE_REPOSITORY",
+                    "evidence output must be outside the repository",
+                )
+            result, envelope = build_evidence_manifest(
+                repo, tuple(args.allow), tuple(args.forbid), run_id=args.run_id
+            )
+            write_manifest(output, envelope)
+            if args.format == "json":
+                print(json.dumps({
+                    "result": result.to_dict(),
+                    "manifest_path": str(output),
+                    "manifest_sha256": envelope["manifest_sha256"],
+                }, indent=2, sort_keys=True))
+            else:
+                print(result.to_text())
+                print(f"EVIDENCE_MANIFEST_PATH={output}")
+                print(f"EVIDENCE_MANIFEST_SHA256={envelope['manifest_sha256']}")
+            return 0 if result.final == "PASS" else 1
+        elif args.command == "verify-evidence":
+            result = verify_evidence_manifest(repo, Path(args.manifest).resolve())
         else:
             runners = {
                 "inspect": run_inspect,
