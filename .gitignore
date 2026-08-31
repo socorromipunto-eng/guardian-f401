@@ -39,3 +39,6 @@ reports/
 /firmware/MDK-ARM/Objects/
 /firmware/MDK-ARM/RTE/Device/*/*.dbgconf
 /firmware/MDK-ARM/RTE/Device/*/*.dbgconf.base@*
+
+# Local Python virtual environments (reconstructible; not repository evidence)
+/.venv*/
