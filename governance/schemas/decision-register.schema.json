@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.local/schemas/decision-register.schema.json",
+  "title": "Guardian F401 Decision Register",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decisions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "milestone",
+          "decision",
+          "status",
+          "authority",
+          "human_approval",
+          "source_of_truth",
+          "implementation_status",
+          "evidence",
+          "claims_allowed",
+          "claims_prohibited",
+          "dependencies",
+          "downstream_impact",
+          "external_practice_mapping"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DEC-M[0-9]+-[0-9]{3}$"
+          },
+          "milestone": {
+            "type": "string",
+            "pattern": "^M[0-9]+$"
+          },
+          "decision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "PROPOSED",
+              "APPROVED",
+              "SUPERSEDED",
+              "REJECTED"
+            ]
+          },
+          "authority": {
+            "type": "string",
+            "minLength": 1
+          },
+          "human_approval": {
+            "type": "boolean"
+          },
+          "source_of_truth": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "implementation_status": {
+            "enum": [
+              "NOT_IMPLEMENTED",
+              "IMPLEMENTATION_SURFACE_PRESENT",
+              "PARTIALLY_IMPLEMENTED",
+              "IMPLEMENTED",
+              "NOT_ADJUDICATED"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "claims_allowed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "claims_prohibited": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^DEC-M[0-9]+-[0-9]{3}$"
+            },
+            "uniqueItems": true
+          },
+          "downstream_impact": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "external_practice_mapping": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "NASA",
+              "NIST",
+              "CIS"
+            ],
+            "properties": {
+              "NASA": {
+                "const": "NOT_ADJUDICATED"
+              },
+              "NIST": {
+                "const": "NOT_ADJUDICATED"
+              },
+              "CIS": {
+                "const": "NOT_ADJUDICATED"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
