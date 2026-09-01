@@ -1,4 +1,45 @@
 {
-  "schema_version": "1.0.0",
-  "requirements": []
+    "schema_version":  "1.0.0",
+    "requirements":  [
+                         {
+                             "id":  "guardian:requirement:m16-node-protocol-separation",
+                             "statement":  "M16 node-to-node supervision shall use a contract distinct from Guardian Protocol v0.1 host/device command semantics.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-authentication-not-authority",
+                             "statement":  "Successful node authentication shall not directly grant physical actuation authority.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-sequence-reject-duplicate",
+                             "statement":  "Within one initialized runtime session, NodeLink shall reject duplicate or regressing sequence values.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-link-loss-bounded-state",
+                             "statement":  "Loss of the supervisory link shall resolve through a deterministic bounded local state and shall not silently increase authority.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-disagreement-no-escalation",
+                             "statement":  "Disagreement between the STM32F401 node and the NXP supervisory node shall not silently grant unilateral authority to either node.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-transport-independent-core",
+                             "statement":  "NodeLink core semantics shall remain independent of UART, SPI, CAN, CAN-FD or other physical transport adapters.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-crc-not-authentication",
+                             "statement":  "NodeLink CRC integrity shall not be represented as cryptographic authentication.",
+                             "status":  "NOT_DEMONSTRATED"
+                         },
+                         {
+                             "id":  "guardian:requirement:m16-physical-validation-separate",
+                             "statement":  "Host validation of M16 NodeLink shall not be promoted to evidence of physical dual-node hardware behavior.",
+                             "status":  "NOT_DEMONSTRATED"
+                         }
+                     ]
 }
