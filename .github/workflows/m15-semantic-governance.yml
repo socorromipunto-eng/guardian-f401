@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -31,3 +33,11 @@ jobs:
       - name: Validate M15 semantic registry
         run: |
           python -m tools.governance_tooling --repo . semantic-validate --registry governance/semantic/m15-semantic-registry.json
+
+      - name: Validate release and publication coherence
+        run: |
+          python tools/check_release_coherence.py --repo .
+
+      - name: Verify v0.15.0 release manifest against immutable Git blobs
+        run: |
+          python tools/release_manifest.py --repo . verify --ref v0.15.0 --manifest release-evidence/release-file-sha256-v0.15.0.csv

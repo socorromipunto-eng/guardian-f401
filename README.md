@@ -23,6 +23,8 @@ M12 signed firmware lifecycle / anti-rollback
 M13 STM32F401 hardware / Keil qualification
   |
 M14 bounded assurance software slice
+  |
+M15 governance / semantic assurance foundation
 ```
 
 ## M13 hardware qualification
@@ -52,8 +54,8 @@ authenticate privileged sessions or upload firmware.
 
 ## M14 bounded assurance software slice
 
-The current M14 feature branch adds a software-only deterministic assurance
-boundary for strict JSON validation and RFC 8785 canonicalization. It includes
+The M14 bounded assurance slice provides a software-only deterministic
+assurance boundary for strict JSON validation and RFC 8785 canonicalization. It includes
 closed observation, decision and witness payload contracts, explicit resource
 bounds and an exact 87-test CPython 3.12 CI gate.
 
@@ -122,6 +124,12 @@ M14 distributed Guardian architecture — partial software-only assurance slice
 validated; distributed architecture, simulation and hardware gates remain
 open.
 
+M15 governance / semantic assurance foundation — completed for the bounded
+documented M15 scope: governance tooling, decision tracking, semantic
+claim/evidence validation and read-only CI integration. Governance
+completeness, full ADR conformance, physical qualification, production
+readiness and external certification remain NOT_DEMONSTRATED.
+
 Physical completion still requires a real Keil target build,
 STM32F401CDU6 board, bench wiring and a generated hardware-validation JSON
 report.
@@ -130,15 +138,16 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.14.2
+Project release: v0.15.0
 Guardian Protocol: v0.1
-Firmware semantic version: 0.14.2
+Firmware semantic version: 0.15.0
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
 
 Current GitHub-integrated Zenodo releases:
 
+- v0.15.0: https://doi.org/10.5281/zenodo.22218923
 - v0.14.2: https://doi.org/10.5281/zenodo.22075322
 - v0.14.1: https://doi.org/10.5281/zenodo.22062543
 - v0.14.0: https://doi.org/10.5281/zenodo.21981234
@@ -150,7 +159,7 @@ Historical manually prepared Zenodo releases:
 - v0.13.0: https://doi.org/10.5281/zenodo.21923859
 - Historical concept DOI: https://doi.org/10.5281/zenodo.21923858
 
-GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.14.2
+GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.15.0
 
 Version v0.14.0 exists in both Zenodo families because it was deposited
 manually and subsequently archived through the GitHub integration. These
@@ -163,7 +172,7 @@ as v0.14.1. Published tags and deposits were not rewritten.
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
 open-source license. Physical board qualification and safety certification are
-not claimed. See `docs/release-evidence-v0.14.2.md`.
+not claimed. See `docs/release-evidence-v0.15.0.md`.
 
 ## Reproducible software validation
 

@@ -1,9 +1,16 @@
 cff-version: 1.2.0
 message: "If you reference Guardian F401, please cite the archived release."
 title: "Guardian F401: Deterministic Embedded Decision Assurance for Machine Health, Cybersecurity, and Supervisory Control"
-version: "0.14.2"
-date-released: "2026-08-24"
+version: "0.15.0"
+date-released: "2026-09-01"
 type: software
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22218923"
+    description: "Guardian F401 v0.15.0 archived release"
+  - type: doi
+    value: "10.5281/zenodo.21981233"
+    description: "Guardian F401 GitHub-integrated concept DOI"
 authors:
   - given-names: "Antonio José"
     family-names: "Socorro Marín"
