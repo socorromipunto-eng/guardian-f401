@@ -12,6 +12,7 @@ from .evidence import DEFAULT_NOT_PROVEN
 from .evidence_manifest import build_evidence_manifest, verify_evidence_manifest, write_manifest
 from .errors import FailureClass, GovernanceToolError
 from .gates import run_precommit, run_prepr, run_verify
+from .integration import run_foundation_phase, write_foundation_record
 from .repository import GitRepository
 from .result import Result
 
@@ -42,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify_evidence = subparsers.add_parser("verify-evidence", help="Verify evidence manifest")
     verify_evidence.add_argument("--manifest", required=True)
+    foundation = subparsers.add_parser("foundation", help="Run phase-aware end-to-end foundation gate")
+    foundation.add_argument("--phase", choices=("candidate", "precommit", "prepr"), required=True)
+    foundation.add_argument("--allow", action="append", default=[])
+    foundation.add_argument("--forbid", action="append", default=[])
+    foundation.add_argument("--evidence-output", default=None)
+    foundation.add_argument("--record-output", required=True)
     return parser
 
 
@@ -135,6 +142,19 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if result.final == "PASS" else 1
         elif args.command == "verify-evidence":
             result = verify_evidence_manifest(repo, Path(args.manifest).resolve())
+        elif args.command == "foundation":
+            record_output = Path(args.record_output).resolve()
+            if not _outside_repository(repo, record_output):
+                raise GovernanceToolError(FailureClass.AUTHORITY, "FOUNDATION_RECORD_INSIDE_REPOSITORY", "foundation record must be outside the repository")
+            evidence_output = Path(args.evidence_output).resolve() if args.evidence_output else None
+            if evidence_output is not None and not _outside_repository(repo, evidence_output):
+                raise GovernanceToolError(FailureClass.AUTHORITY, "FOUNDATION_EVIDENCE_INSIDE_REPOSITORY", "foundation evidence must be outside the repository")
+            result, record = run_foundation_phase(repo, args.phase, tuple(args.allow), tuple(args.forbid), evidence_output)
+            write_foundation_record(record_output, record)
+            print(result.to_json() if args.format == "json" else result.to_text())
+            print("FOUNDATION_RECORD_PATH=" + str(record_output))
+            print("FOUNDATION_RECORD_SHA256=" + str(record["foundation_record_sha256"]))
+            return 0 if result.final == "PASS" else 1
         else:
             runners = {
                 "inspect": run_inspect,
