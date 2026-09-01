@@ -1,0 +1,33 @@
+name: M15 Semantic Governance
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-governance:
+    name: M15 Semantic Governance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run governance tooling regression suite
+        run: |
+          python -m unittest discover -s tests/governance_tooling -p "test_*.py" -v
+
+      - name: Validate M15 semantic registry
+        run: |
+          python -m tools.governance_tooling --repo . semantic-validate --registry governance/semantic/m15-semantic-registry.json
