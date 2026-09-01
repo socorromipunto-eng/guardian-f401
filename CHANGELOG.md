@@ -2,6 +2,41 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
+## [0.15.0] - 2026-09-01
+
+### Added
+
+- Added the M15 governance tooling foundation, machine-readable decision register,
+  decision/evidence matrix, semantic claim/evidence validator and read-only M15
+  semantic CI gate.
+- Added deterministic post-publication release-manifest tooling that hashes
+  canonical Git blob bytes rather than platform-dependent working-tree bytes.
+- Added release/publication coherence validation across VERSION, README,
+  CITATION metadata, CHANGELOG, M15 closure state and release evidence.
+
+### Published
+
+- GitHub release: `v0.15.0`.
+- Release merge commit: `18ec274b156e3fc5b53095fe45f38243a520a2dc`.
+- Zenodo version DOI: `10.5281/zenodo.22218923`.
+- GitHub-integrated Zenodo concept DOI: `10.5281/zenodo.21981233`.
+
+### Validation
+
+- M15 semantic CI integration Technical Destruction: 23/23 PASS.
+- M15 closure Technical Destruction: 22/22 PASS.
+- PR #30 pre-merge workflow set observed: 10/10 SUCCESS.
+
+### Limitations
+
+- Physical STM32F401 qualification, production readiness, external certification
+  and governance completeness remain NOT_DEMONSTRATED.
+- ADR-M15-001 full implementation remains NOT_ADJUDICATED.
+- Full ADR-M15-002/003/004 conformance remains NOT_DEMONSTRATED.
+- The v0.15.0 annotated tag is unsigned.
+- The immutable release is not rewritten by this post-publication coherence
+  correction.
+
 ## [0.14.2] - 2026-08-24
 
 ### Added

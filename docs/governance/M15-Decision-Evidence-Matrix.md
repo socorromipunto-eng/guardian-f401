@@ -1,6 +1,6 @@
 # M15 Decision & Evidence Matrix
 
-Status: CANDIDATE  
+Status: PUBLISHED / BOUNDED  
 Milestone: M15  
 Role: HUMAN-READABLE VIEW OF `governance/decision-register.json`
 
