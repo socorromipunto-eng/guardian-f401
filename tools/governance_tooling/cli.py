@@ -15,6 +15,7 @@ from .gates import run_precommit, run_prepr, run_verify
 from .integration import run_foundation_phase, write_foundation_record
 from .repository import GitRepository
 from .result import Result
+from .semantic import validate_registry_file
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,6 +50,8 @@ def build_parser() -> argparse.ArgumentParser:
     foundation.add_argument("--forbid", action="append", default=[])
     foundation.add_argument("--evidence-output", default=None)
     foundation.add_argument("--record-output", required=True)
+    semantic = subparsers.add_parser("semantic-validate", help="Validate explicit semantic registry")
+    semantic.add_argument("--registry", required=True)
     return parser
 
 
@@ -142,6 +145,10 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if result.final == "PASS" else 1
         elif args.command == "verify-evidence":
             result = verify_evidence_manifest(repo, Path(args.manifest).resolve())
+        elif args.command == "semantic-validate":
+            report = validate_registry_file(Path(args.registry).resolve())
+            print(report.to_json() if args.format == "json" else report.to_text())
+            return 0 if report.final == "PASS" else 1
         elif args.command == "foundation":
             record_output = Path(args.record_output).resolve()
             if not _outside_repository(repo, record_output):
