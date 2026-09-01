@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0.0",
+  "decisions": [
+    {
+      "id": "DEC-M15-001",
+      "milestone": "M15",
+      "decision": "AI/advisory capability is distinct from authority and from actuation; advisory output cannot itself grant actuation authority.",
+      "status": "APPROVED",
+      "authority": "HUMAN_GOVERNED",
+      "human_approval": true,
+      "source_of_truth": [
+        "governance/semantic/m15-semantic-registry.json",
+        ".github/workflows/m15-semantic-governance.yml"
+      ],
+      "implementation_status": "IMPLEMENTATION_SURFACE_PRESENT",
+      "evidence": [
+        "tests/governance_tooling/test_semantic.py",
+        "tests/governance_tooling/test_semantic_ci_contract.py"
+      ],
+      "claims_allowed": [
+        "The repository contains software/governance controls that test the advisory-authority-actuation separation within their bounded scope."
+      ],
+      "claims_prohibited": [
+        "Physical actuation safety is proven.",
+        "AI has actuation authority.",
+        "Production readiness is proven."
+      ],
+      "dependencies": [],
+      "downstream_impact": [
+        "M16 backup-chip authority design",
+        "M17 heterogeneous corroboration and quorum",
+        "M18 advisory AI integration"
+      ],
+      "external_practice_mapping": {
+        "NASA": "NOT_ADJUDICATED",
+        "NIST": "NOT_ADJUDICATED",
+        "CIS": "NOT_ADJUDICATED"
+      }
+    },
+    {
+      "id": "DEC-M15-002",
+      "milestone": "M15",
+      "decision": "Repository governance uses machine-readable registers, schemas, project-state materialization and evidence-oriented tooling without treating technical PASS as human authority.",
+      "status": "APPROVED",
+      "authority": "HUMAN_GOVERNED",
+      "human_approval": true,
+      "source_of_truth": [
+        "docs/adr/ADR-M15-002-repository-governance-source-of-truth-and-evidence-architecture.md",
+        "governance/project-state.json"
+      ],
+      "implementation_status": "IMPLEMENTATION_SURFACE_PRESENT",
+      "evidence": [
+        "tools/governance_tooling/integration.py",
+        "tools/governance_tooling/evidence_manifest.py"
+      ],
+      "claims_allowed": [
+        "Governance implementation surface exists in the repository."
+      ],
+      "claims_prohibited": [
+        "Full governance completeness is demonstrated.",
+        "All governance registers are fully populated."
+      ],
+      "dependencies": [
+        "DEC-M15-001"
+      ],
+      "downstream_impact": [
+        "All later milestone evidence and release governance"
+      ],
+      "external_practice_mapping": {
+        "NASA": "NOT_ADJUDICATED",
+        "NIST": "NOT_ADJUDICATED",
+        "CIS": "NOT_ADJUDICATED"
+      }
+    },
+    {
+      "id": "DEC-M15-003",
+      "milestone": "M15",
+      "decision": "Governance serialization is versioned and schema-constrained; implementation presence does not by itself establish complete governance conformance.",
+      "status": "APPROVED",
+      "authority": "HUMAN_GOVERNED",
+      "human_approval": true,
+      "source_of_truth": [
+        "docs/adr/ADR-M15-003-governance-register-serialization-schema-versioning-and-identifier-namespaces.md",
+        "common/python/guardian_common/strict_json.py"
+      ],
+      "implementation_status": "IMPLEMENTATION_SURFACE_PRESENT",
+      "evidence": [
+        "governance/schemas/requirements-register.schema.json",
+        "governance/schemas/project-state.schema.json"
+      ],
+      "claims_allowed": [
+        "Versioned governance serialization and schema artifacts exist."
+      ],
+      "claims_prohibited": [
+        "Full ADR-M15-003 implementation is demonstrated.",
+        "Governance completeness is demonstrated."
+      ],
+      "dependencies": [
+        "DEC-M15-002"
+      ],
+      "downstream_impact": [
+        "Future register population",
+        "Evidence manifests",
+        "Semantic governance"
+      ],
+      "external_practice_mapping": {
+        "NASA": "NOT_ADJUDICATED",
+        "NIST": "NOT_ADJUDICATED",
+        "CIS": "NOT_ADJUDICATED"
+      }
+    },
+    {
+      "id": "DEC-M15-004",
+      "milestone": "M15",
+      "decision": "Governance schema validation uses the selected JSON Schema architecture and offline-controlled validation boundary; semantic validity remains a separate concern.",
+      "status": "APPROVED",
+      "authority": "HUMAN_GOVERNED",
+      "human_approval": true,
+      "source_of_truth": [
+        "docs/adr/ADR-M15-004-governance-json-schema-dialect-validation-engine-and-offline-resolution-policy.md",
+        "governance/requirements.lock"
+      ],
+      "implementation_status": "IMPLEMENTATION_SURFACE_PRESENT",
+      "evidence": [
+        "governance/schemas/decision-register.schema.json",
+        "tools/governance_tooling/semantic.py"
+      ],
+      "claims_allowed": [
+        "JSON Schema and semantic validation implementation surfaces exist."
+      ],
+      "claims_prohibited": [
+        "Schema validity proves semantic truth.",
+        "Semantic validation grants authority.",
+        "Full ADR-M15-004 conformance is demonstrated."
+      ],
+      "dependencies": [
+        "DEC-M15-003"
+      ],
+      "downstream_impact": [
+        "Semantic CI",
+        "Future governance schemas and validators"
+      ],
+      "external_practice_mapping": {
+        "NASA": "NOT_ADJUDICATED",
+        "NIST": "NOT_ADJUDICATED",
+        "CIS": "NOT_ADJUDICATED"
+      }
+    }
+  ]
+}
