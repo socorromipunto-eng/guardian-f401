@@ -1,0 +1,87 @@
+{
+  "governance": {
+    "claim_status_change": "HUMAN_GOVERNED",
+    "error_blocks_ci": true,
+    "replaces_adr": false,
+    "replaces_evidence": false,
+    "validator_can_change_status": false,
+    "warning_blocks_ci": false
+  },
+  "records": [
+    {
+      "id": "REQ-M15-AUTH-001",
+      "statement": "Advisory capability shall not grant actuation authority.",
+      "type": "requirement"
+    },
+    {
+      "grants_actuation": false,
+      "id": "AUTH-M15-CONTROLLER-001",
+      "statement": "Semantic validation does not grant actuation authority.",
+      "type": "authority"
+    },
+    {
+      "advisory": true,
+      "authority": "AUTH-M15-CONTROLLER-001",
+      "id": "CAP-M15-ADVISORY-001",
+      "statement": "Advisory processing is non-authoritative.",
+      "type": "capability"
+    },
+    {
+      "evidence_class": "software",
+      "id": "EV-M15-SEMANTIC-TESTS-001",
+      "statement": "FND-05 semantic validator unit and adversarial test evidence.",
+      "type": "evidence"
+    },
+    {
+      "evidence_class": "governance",
+      "id": "EV-M15-AUTHORITY-TESTS-001",
+      "statement": "Existing authority-boundary validation and regression evidence.",
+      "type": "evidence"
+    },
+    {
+      "authority": "AUTH-M15-CONTROLLER-001",
+      "capabilities": [
+        "CAP-M15-ADVISORY-001"
+      ],
+      "claim_class": "software",
+      "evidence": [
+        "EV-M15-SEMANTIC-TESTS-001",
+        "EV-M15-AUTHORITY-TESTS-001"
+      ],
+      "id": "CLAIM-M15-AUTH-001",
+      "requirements": [
+        "REQ-M15-AUTH-001"
+      ],
+      "semantic_key": "m15.advisory.authority.boundary",
+      "statement": "Advisory capability does not grant actuation authority.",
+      "status": "SUPPORTED",
+      "type": "claim"
+    },
+    {
+      "claim_class": "physical_validation",
+      "id": "CLAIM-M15-HW-001",
+      "semantic_key": "m15.stm32f401.physical.qualification.complete",
+      "statement": "Physical STM32F401 qualification is complete.",
+      "status": "NOT_DEMONSTRATED",
+      "type": "claim"
+    },
+    {
+      "claim_class": "certification",
+      "id": "CLAIM-M15-CERT-001",
+      "semantic_key": "m15.external.certification",
+      "statement": "M15 holds external cybersecurity or functional-safety certification.",
+      "status": "NOT_DEMONSTRATED",
+      "type": "claim"
+    },
+    {
+      "id": "CLAIM-M15-PROD-001",
+      "semantic_key": "m15.production.readiness",
+      "statement": "M15 is production ready.",
+      "status": "NOT_DEMONSTRATED",
+      "type": "claim"
+    }
+  ],
+  "registry_id": "M15-SEMANTIC-REGISTRY-001",
+  "role": "CONTROLLED_INDEX",
+  "schema": "guardian.semantic.registry.v1"
+}
