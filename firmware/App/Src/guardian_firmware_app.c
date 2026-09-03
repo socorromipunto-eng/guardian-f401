@@ -1,6 +1,7 @@
 /* Include the public Guardian firmware integration API. */
 #include "guardian_firmware_app.h"
 
+#include "guardian_f401_nodelink_adapter.h"
 /* Include the transport-independent embedded protocol middleware. */
 #include "guardian_embedded_link.h"
 
@@ -61,6 +62,44 @@ static int guardian_firmware_control_output(
 }
 
 /* Initialize UART, Guardian middleware and deterministic M6 acquisition. */
+/*
+ * M16 Block 1C NodeLink runtime state.
+ *
+ * The F401 does not yet have a demonstrated boot/session epoch source.
+ * Therefore NodeLink initialization and transmission remain fail-closed.
+ * This state records only the local supervisory-state projection; it grants
+ * no authority and selects no physical transport.
+ */
+static guardian_node_state_t g_nodelink_projected_state =
+    GUARDIAN_NODE_STATE_BOOT;
+static uint32_t g_nodelink_node_id = 0U;
+static uint8_t g_nodelink_runtime_ready = 0U;
+
+static guardian_node_state_t guardian_firmware_app_map_nodelink_state(
+    guardian_device_state_t state)
+{
+    switch (state)
+    {
+        case GUARDIAN_DEVICE_STATE_BOOT:
+            return GUARDIAN_NODE_STATE_BOOT;
+
+        case GUARDIAN_DEVICE_STATE_IDLE:
+            return GUARDIAN_NODE_STATE_DISCOVERING;
+
+        case GUARDIAN_DEVICE_STATE_RUNNING:
+            return GUARDIAN_NODE_STATE_ACTIVE;
+
+        case GUARDIAN_DEVICE_STATE_DEGRADED:
+            return GUARDIAN_NODE_STATE_DEGRADED;
+
+        case GUARDIAN_DEVICE_STATE_FAULT:
+            return GUARDIAN_NODE_STATE_FAULT;
+
+        default:
+            return GUARDIAN_NODE_STATE_SAFE_HOLD;
+    }
+}
+
 int guardian_firmware_app_init(
     uint32_t baud_rate,
     uint32_t uart_irq_priority)
@@ -133,6 +172,14 @@ int guardian_firmware_app_init(
     identity.device_id =
         guardian_stm32f401_public_device_id();
 
+
+    /*
+     * Record the public transport identifier for future NodeLink use.
+     * It is not a cryptographic identity or an authority credential.
+     */
+    g_nodelink_node_id = identity.device_id;
+    g_nodelink_projected_state = GUARDIAN_NODE_STATE_BOOT;
+    g_nodelink_runtime_ready = 0U;
     /* Initialize parser, device service, telemetry and transport callbacks. */
     result =
         guardian_embedded_link_init(
@@ -273,6 +320,13 @@ void guardian_firmware_app_tick_1ms(void)
 void guardian_firmware_app_set_state(
     guardian_device_state_t state)
 {
+    /*
+     * Maintain a conservative local NodeLink state projection while
+     * sender_epoch remains unavailable and the adapter stays disabled.
+     */
+    g_nodelink_projected_state =
+        guardian_firmware_app_map_nodelink_state(state);
+
     /* Forward application state into Guardian middleware. */
     guardian_embedded_link_set_state(
         &guardian_link,
