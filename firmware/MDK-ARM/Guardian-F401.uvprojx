@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F401xE</Define>
               <Undefine></Undefine>
-              <IncludePath>GuardianF401\Drivers\CMSIS\Device\ST\STM32F4xx\Include;GuardianF401\Drivers\CMSIS\Include;..\Acquisition\Inc;..\App\Inc;..\Control\Inc;..\DSP\Inc;..\Firmware\Inc;..\Health\Inc;..\Platform\Inc;..\Platform\STM32F401\Inc;..\Protocol\Inc;..\Security\Inc;..\Telemetry\Inc</IncludePath>
+              <IncludePath>GuardianF401\Drivers\CMSIS\Device\ST\STM32F4xx\Include;GuardianF401\Drivers\CMSIS\Include;..\Acquisition\Inc;..\App\Inc;..\Control\Inc;..\DSP\Inc;..\Firmware\Inc;..\Health\Inc;..\NodeLink\Inc;..\Platform\Inc;..\Platform\STM32F401\Inc;..\Protocol\Inc;..\Security\Inc;..\Telemetry\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -497,6 +497,20 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Guardian NodeLink</GroupName>
+          <Files>
+            <File>
+              <FileName>guardian_node_link.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_f401_nodelink_adapter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\Src\guardian_f401_nodelink_adapter.c</FilePath>
+            </File>
+          </Files>
+        </Group>        <Group>
           <GroupName>Guardian Protocol</GroupName>
           <Files>
             <File>
