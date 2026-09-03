@@ -140,6 +140,7 @@ jobs:
           -Ifirmware/Tests/CMSISStub
           -Ifirmware/Protocol/Inc
           -Ifirmware/App/Inc
+          -Ifirmware/NodeLink/Inc
           -Ifirmware/Platform/Inc
           -Ifirmware/Platform/STM32F401/Inc
           -Ifirmware/Telemetry/Inc
