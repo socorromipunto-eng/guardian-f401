@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/claims-register/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    }
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "assessment_state",
+        "adjudication_state",
+        "evidence_refs",
+        "contradictory_evidence_refs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assessment_state": {
+          "enum": [
+            "NOT_ASSESSED",
+            "NOT_DEMONSTRATED",
+            "PARTIALLY_DEMONSTRATED",
+            "DEMONSTRATED",
+            "CONTRADICTED",
+            "INVALIDATED"
+          ]
+        },
+        "adjudication_state": {
+          "enum": [
+            "UNADJUDICATED",
+            "ACCEPTED",
+            "REJECTED",
+            "SUPERSEDED",
+            "WITHDRAWN"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "contradictory_evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "current_assessment_record_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_transition_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extensions": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$"
+          }
+        }
+      }
+    }
+  }
+}
