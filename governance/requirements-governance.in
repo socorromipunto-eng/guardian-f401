@@ -1,0 +1,3 @@
+# Guardian F401 M16 governance assurance dependencies
+# Direct dependencies only. Exact resolved environment is recorded in the lock file.
+jsonschema==4.26.0

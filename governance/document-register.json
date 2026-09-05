@@ -1,4 +1,215 @@
 {
-  "schema_version": "1.0.0",
-  "documents": []
+  "schema_version": "2.0.0",
+  "controlled_scope": {
+    "id": "guardian:m16:pre-implementation-assurance-controlled-documents",
+    "description": "Controlled M16 architecture, governance, and NodeLink specification documents explicitly adjudicated for the pre-implementation assurance boundary.",
+    "completeness_status": "NOT_DEMONSTRATED"
+  },
+  "documents": [
+    {
+      "id": "guardian:adr:m16-001",
+      "document_class": "ADR",
+      "version": "1.0.0",
+      "path": "docs/adr/ADR-M16-001-heterogeneous-dual-node-supervision.md",
+      "sha256": "2C0E64FA40B8E59148A55EBEF8DC316765A8828D7CB273FB33D551082F08B13B",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "authority_domain": "guardian:m16:heterogeneous-supervision-architecture",
+      "scope": {
+        "component": [
+          "heterogeneous-supervision"
+        ],
+        "system_role": [
+          "architecture-decision"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:adr:m16-002",
+      "document_class": "ADR",
+      "version": "1.0.0",
+      "path": "docs/adr/ADR-M16-002-versioned-semantic-contract-architecture.md",
+      "sha256": "15B678E39FDC29EA4925A9B0B365CBA06CC46600483E5B188E17B481713FD644",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "authority_domain": "guardian:m16:versioned-semantic-contract-architecture",
+      "scope": {
+        "component": [
+          "semantic-contract"
+        ],
+        "system_role": [
+          "architecture-decision"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:adr:m16-003",
+      "document_class": "ADR",
+      "version": "1.0.0",
+      "path": "docs/adr/ADR-M16-003-document-register-governance-and-authority-resolution.md",
+      "sha256": "5DDAB5333B702B4ED3B0B4EE2B3B594E457D5B0F61BFAED12073570231349CAC",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "APPROVED",
+      "authority_status": "NONE",
+      "authority_domain": "guardian:governance:controlled-document-authority",
+      "scope": {
+        "component": [
+          "document-governance"
+        ],
+        "system_role": [
+          "architecture-decision"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:architecture:m16-versioned-semantic-contract",
+      "document_class": "ARCHITECTURE",
+      "version": "1.0.0",
+      "path": "docs/architecture/m16-versioned-semantic-contract.md",
+      "sha256": "4E7A3F199B7B323CA16144D8A17327FCB2987E9A2CD5FC8D775323C8D2C3CBCD",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "APPROVED",
+      "authority_status": "AUTHORITATIVE",
+      "authority_domain": "guardian:m16:versioned-semantic-contract",
+      "scope": {
+        "component": [
+          "semantic-contract"
+        ],
+        "chip_family": [
+          "*"
+        ],
+        "hardware_revision": [
+          "*"
+        ],
+        "firmware_version": [
+          "*"
+        ],
+        "protocol_version": [
+          "*"
+        ],
+        "semantic_profile": [
+          "*"
+        ],
+        "system_role": [
+          "*"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:governance:engineering-operating-principles",
+      "document_class": "GOVERNANCE",
+      "version": "1.0.0",
+      "path": "docs/governance/Guardian-Engineering-Operating-Principles.md",
+      "sha256": "385550C501B91285F99C1E7CC2FC3377CE3F69EF87F7CFE9D30EEC246ED0DA72",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "APPROVED",
+      "authority_status": "AUTHORITATIVE",
+      "authority_domain": "guardian:governance:engineering-operating-principles",
+      "scope": {
+        "component": [
+          "guardian-engineering"
+        ],
+        "system_role": [
+          "development-governance"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:governance:controlled-document-policy",
+      "document_class": "GOVERNANCE",
+      "version": "1.0.0",
+      "path": "docs/governance/Guardian-Controlled-Document-Governance-Policy.md",
+      "sha256": "FA0C355354B7D3764368323279F51AED7928E7E5E606CD4BF557908F745F8EC3",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "APPROVED",
+      "authority_status": "AUTHORITATIVE",
+      "authority_domain": "guardian:governance:controlled-document-authority",
+      "scope": {
+        "component": [
+          "document-governance"
+        ],
+        "system_role": [
+          "governance-policy"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:spec:m16-f401-nodelink-adapter",
+      "document_class": "SPECIFICATION",
+      "version": "0.1",
+      "path": "docs/specs/M16-F401-NodeLink-Adapter-v0.1.md",
+      "sha256": "CF4B0F23720467002C5B967A766C6CC91D501634E43F2490B535FCB280DA4F41",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "authority_domain": "guardian:nodelink:f401-adapter",
+      "scope": {
+        "component": [
+          "nodelink-adapter"
+        ],
+        "chip_family": [
+          "STM32F401"
+        ],
+        "hardware_revision": [
+          "*"
+        ],
+        "firmware_version": [
+          "*"
+        ],
+        "protocol_version": [
+          "0.1"
+        ],
+        "semantic_profile": [
+          "*"
+        ],
+        "system_role": [
+          "f401-node"
+        ]
+      },
+      "supersedes": []
+    },
+    {
+      "id": "guardian:spec:m16-nodelink-protocol",
+      "document_class": "SPECIFICATION",
+      "version": "0.1",
+      "path": "docs/specs/M16-NodeLink-Protocol-v0.1.md",
+      "sha256": "48EF128E61ECE47C7B33403555703E09750992282FB218639E45756F69C7A6AF",
+      "source_commit": "45ffcc07121a81d3073de22412ec4160f51852dd",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "authority_domain": "guardian:nodelink:protocol",
+      "scope": {
+        "component": [
+          "nodelink-protocol"
+        ],
+        "chip_family": [
+          "*"
+        ],
+        "hardware_revision": [
+          "*"
+        ],
+        "firmware_version": [
+          "*"
+        ],
+        "protocol_version": [
+          "0.1"
+        ],
+        "semantic_profile": [
+          "*"
+        ],
+        "system_role": [
+          "*"
+        ]
+      },
+      "supersedes": []
+    }
+  ]
 }

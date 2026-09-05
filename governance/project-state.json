@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
   "id": "guardian:project-state:current",
-  "source_commit": "ee27e3052b738d35f63053e36bc56e1c562b80f6",
-  "source_tree": "c7b845640fd9a75432a6d331edf627120c7aae03",
+  "source_commit": "b7433a701c6d21a3d15c5e8c9fda67d1ffa41ad5",
+  "source_tree": "23140bb7e05616184e64bf34760a5cc955ff97ee",
   "registers": [
     {
       "path": "governance/requirements-register.json",
@@ -30,9 +30,9 @@
     },
     {
       "path": "governance/document-register.json",
-      "schema_id": "https://guardian-f401.dev/schema/governance/document-register/v1",
-      "schema_version": "1.0.0",
-      "sha256": "6BC85FFB5B1F188D05E61F5F30AA5EDA610046D853352E23FAEC829A30743D05"
+      "schema_id": "https://guardian-f401.dev/schema/governance/document-register/v2",
+      "schema_version": "2.0.0",
+      "sha256": "782D4EFD12DEFA2480D6727CD3EF83AFF7A7E5045C54B6F0242D36AB7D4C9A3A"
     }
   ]
 }
