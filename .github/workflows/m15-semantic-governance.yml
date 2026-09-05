@@ -26,8 +26,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validate repository text encoding
+        run: |
+          python tools/check_repository_encoding.py --repo .
+
       - name: Run governance tooling regression suite
         run: |
+                    # Includes versioned semantic contract tests for project-state and document-register.
           python -m unittest discover -s tests/governance_tooling -p "test_*.py" -v
 
       - name: Validate M15 semantic registry
@@ -41,3 +46,8 @@ jobs:
       - name: Verify v0.15.0 release manifest against immutable Git blobs
         run: |
           python tools/release_manifest.py --repo . verify --ref v0.15.0 --manifest release-evidence/release-file-sha256-v0.15.0.csv
+      - name: Validate current governance project-state integrity
+        run: python tools/validate_project_state.py --repo .
+
+      - name: Validate registered document integrity
+        run: python tools/validate_document_register.py --repo .
