@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/evidence-register/v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0.0"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "$defs": {
+    "applicabilityValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "NOT_APPLICABLE"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "value"
+          ],
+          "properties": {
+            "state": {
+              "const": "EXPLICIT_VALUE"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin_type",
+        "producer",
+        "captured_at"
+      ],
+      "properties": {
+        "origin_type": {
+          "enum": [
+            "HUMAN",
+            "TOOL",
+            "DEVICE",
+            "SYSTEM",
+            "EXTERNAL"
+          ]
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "producer_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "source_uri": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "evidence_class",
+        "validation_state",
+        "role",
+        "observed_at",
+        "applicability",
+        "provenance",
+        "intake_ref"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_class": {
+          "enum": [
+            "PHYSICAL_HARDWARE",
+            "HOST_EXECUTION",
+            "SIMULATOR",
+            "BUILD",
+            "STATIC_ANALYSIS",
+            "UNIT_TEST",
+            "INTEGRATION_TEST",
+            "PROTOCOL_TEST",
+            "FUZZ",
+            "FORMAL_ANALYSIS",
+            "DOCUMENT_REVIEW",
+            "MANUAL_INSPECTION",
+            "EXTERNAL_ATTESTATION",
+            "CUSTOM"
+          ]
+        },
+        "custom_class_namespace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
+        "validation_state": {
+          "enum": [
+            "NOT_VALIDATED",
+            "VALID",
+            "INVALID",
+            "INCONCLUSIVE",
+            "STALE"
+          ]
+        },
+        "role": {
+          "enum": [
+            "SUPPORTING",
+            "CONTRADICTORY",
+            "NEGATIVE",
+            "INCONCLUSIVE"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "eligible_claim_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "applicability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_commit",
+            "source_tree",
+            "firmware_version",
+            "hardware_family",
+            "hardware_revision",
+            "configuration_id",
+            "semantic_contract_id",
+            "semantic_contract_version",
+            "protocol_id",
+            "protocol_version",
+            "toolchain_id",
+            "environment_class",
+            "execution_mode"
+          ],
+          "properties": {
+            "source_commit": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "source_tree": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "firmware_version": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "hardware_family": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "hardware_revision": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "configuration_id": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "semantic_contract_id": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "semantic_contract_version": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "protocol_id": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "protocol_version": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "toolchain_id": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "environment_class": {
+              "$ref": "#/$defs/applicabilityValue"
+            },
+            "execution_mode": {
+              "$ref": "#/$defs/applicabilityValue"
+            }
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "intake_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
+        "extensions": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "evidence_class": {
+                "const": "CUSTOM"
+              }
+            },
+            "required": [
+              "evidence_class"
+            ]
+          },
+          "then": {
+            "required": [
+              "custom_class_namespace"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "evidence_class": {
+                "not": {
+                  "const": "CUSTOM"
+                }
+              }
+            },
+            "required": [
+              "evidence_class"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "custom_class_namespace"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
