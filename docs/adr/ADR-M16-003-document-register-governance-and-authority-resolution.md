@@ -67,9 +67,30 @@ Class does not grant normative authority by itself.
 
 Document identity, document version, and content hash are distinct.
 
+For repository-controlled documents, the canonical content identity is the
+SHA-256 digest of the canonical Git blob bytes at `source_commit:path`.
+
 A stable document identity may have multiple historical versions. Each governed
-version must bind to exact bytes through an integrity hash. A byte change
-requires a new integrity value and any re-adjudication required by policy.
+version must bind to exact canonical Git blob bytes through an integrity hash.
+
+Local checkout representation is not document identity. Platform-specific
+materialization such as CRLF/LF conversion must not create a different governed
+document identity when the canonical Git blob is unchanged.
+
+Current repository coherence must be checked against the canonical Git blob at
+the current authoritative repository state. Local worktree dirtiness is a
+separate repository-state condition and must be evaluated independently.
+
+Therefore:
+
+CANONICAL_DOCUMENT_IDENTITY = SHA256(Git blob at source_commit:path)
+
+WORKTREE_REPRESENTATION != CANONICAL_DOCUMENT_IDENTITY
+
+DIRTY_WORKTREE != HISTORICAL_CONTENT_IDENTITY
+
+A canonical blob change requires a new integrity value and any re-adjudication
+required by policy.
 
 ### Lifecycle and authority
 

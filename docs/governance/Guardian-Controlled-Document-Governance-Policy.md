@@ -65,6 +65,26 @@ A governed document version must have, at minimum:
 
 Identity, version, path, and hash are distinct concepts.
 
+For repository-controlled documents, the content integrity hash is computed from
+the canonical Git blob bytes at `source_commit:path`.
+
+The following distinctions are normative:
+
+CANONICAL_DOCUMENT_IDENTITY = SHA256(Git blob at source_commit:path)
+
+WORKTREE_REPRESENTATION != CANONICAL_DOCUMENT_IDENTITY
+
+CRLF_LF_CHECKOUT_TRANSFORMATION != DOCUMENT_IDENTITY_CHANGE
+
+DIRTY_WORKTREE != HISTORICAL_CONTENT_IDENTITY
+
+Current repository coherence must be evaluated against the canonical Git blob at
+the current authoritative repository state. Local worktree dirtiness must be
+evaluated separately.
+
+A platform-specific checkout transformation must not alter governed document
+identity when the underlying canonical Git blob is unchanged.
+
 ## 6. Lifecycle model
 
 Allowed lifecycle concepts include:
