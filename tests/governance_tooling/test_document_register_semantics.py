@@ -102,18 +102,31 @@ def write_register(td: Path, documents, completeness="NOT_DEMONSTRATED", version
     )
 
 class DocumentRegisterSemanticContractTests(unittest.TestCase):
-    def test_registration_nonclaims_are_explicit_for_current_v1_register(self):
-        cp = run_validator(REPO)
-        self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
-        for marker in (
-            "DOCUMENT_REGISTER_SCHEMA=1.0.0",
-            "REGISTERED_DOES_NOT_IMPLY_APPROVED=PASS",
-            "REGISTERED_DOES_NOT_IMPLY_IMPLEMENTED=PASS",
-            "REGISTERED_DOES_NOT_IMPLY_VALIDATED=PASS",
-            "REGISTERED_DOES_NOT_IMPLY_EVIDENCE_PRESENT=PASS",
-            "CONTROLLED_DOCUMENT_COMPLETENESS=NOT_DEMONSTRATED",
-        ):
-            self.assertIn(marker, cp.stdout)
+    def test_v1_backward_compatibility_nonclaims_are_fixture_based(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+
+            (td / "governance/document-register.json").write_text(
+                json.dumps({
+                    "schema_version": "1.0.0",
+                    "documents": [],
+                }, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
+            for marker in (
+                "DOCUMENT_REGISTER_SCHEMA=1.0.0",
+                "REGISTERED_DOES_NOT_IMPLY_APPROVED=PASS",
+                "REGISTERED_DOES_NOT_IMPLY_IMPLEMENTED=PASS",
+                "REGISTERED_DOES_NOT_IMPLY_VALIDATED=PASS",
+                "REGISTERED_DOES_NOT_IMPLY_EVIDENCE_PRESENT=PASS",
+                "CONTROLLED_DOCUMENT_COMPLETENESS=NOT_DEMONSTRATED",
+            ):
+                self.assertIn(marker, cp.stdout)
 
     def test_valid_v2_single_authoritative_document_passes(self):
         with tempfile.TemporaryDirectory() as raw:

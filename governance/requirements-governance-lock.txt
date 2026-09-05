@@ -1,0 +1,9 @@
+# Guardian F401 M16 governance assurance exact resolved environment
+# Generated from dedicated CPython 3.12 environment.
+attrs==26.1.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+pip==25.0.1
+referencing==0.37.0
+rpds-py==2026.6.3
+typing_extensions==4.16.0
