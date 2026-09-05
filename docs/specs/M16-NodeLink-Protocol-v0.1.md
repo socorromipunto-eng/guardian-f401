@@ -1,4 +1,4 @@
-﻿# M16 NodeLink Protocol v0.1
+# M16 NodeLink Protocol v0.1
 
 Status: CANDIDATE
 

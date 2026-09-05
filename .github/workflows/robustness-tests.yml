@@ -147,3 +147,42 @@ jobs:
           -runs=5000
           -max_len=512
           -timeout=2
+      # M16 portable NodeLink host regression.
+      - name: Compile NodeLink host test
+        run: >
+          gcc -std=c11 -Wall -Wextra -Wpedantic -Werror
+          -Ifirmware/NodeLink/Inc
+          firmware/NodeLink/Src/guardian_node_link.c
+          firmware/Tests/node_link_host_test.c
+          -o build/node_link_host_test
+
+      - name: Run NodeLink host test
+        run: ./build/node_link_host_test
+
+      # M16 F401 adapter host regression.
+      - name: Compile F401 NodeLink adapter host test
+        run: >
+          gcc -std=c11 -Wall -Wextra -Wpedantic -Werror
+          -Ifirmware/NodeLink/Inc -Ifirmware/App/Inc
+          firmware/NodeLink/Src/guardian_node_link.c
+          firmware/App/Src/guardian_f401_nodelink_adapter.c
+          firmware/Tests/f401_nodelink_adapter_host_test.c
+          -o build/f401_nodelink_adapter_host_test
+
+      - name: Run F401 NodeLink adapter host test
+        run: ./build/f401_nodelink_adapter_host_test
+
+      # Production NodeLink decoder under libFuzzer + ASan + UBSan.
+      - name: Compile NodeLink libFuzzer target
+        run: >
+          clang -std=c11 -Wall -Wextra -Wpedantic -Werror -O1 -g
+          -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined
+          -Ifirmware/NodeLink/Inc
+          firmware/NodeLink/Src/guardian_node_link.c
+          fuzz/c/node_link_libfuzzer.c
+          -o build/node_link_fuzzer
+
+      - name: Run NodeLink libFuzzer smoke campaign
+        run: >
+          ./build/node_link_fuzzer fuzz/corpus/node_link
+          -runs=5000 -max_len=88 -timeout=2

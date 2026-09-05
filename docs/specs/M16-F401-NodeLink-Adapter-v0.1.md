@@ -1,4 +1,4 @@
-﻿# M16 F401 NodeLink Adapter v0.1
+# M16 F401 NodeLink Adapter v0.1
 
 Status: CANDIDATE
 

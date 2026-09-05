@@ -1,38 +1,38 @@
 {
-    "schema_version":  "1.0.0",
-    "id":  "guardian:project-state:current",
-    "source_commit":  "b0aa800c11777566bd9309f32fd22ff581154553",
-    "source_tree":  "a1f543e80de799475098c6264e5a3e471409502e",
-    "registers":  [
-                      {
-                          "path":  "governance/requirements-register.json",
-                          "schema_id":  "https://guardian-f401.dev/schema/governance/requirements-register/v1",
-                          "schema_version":  "1.0.0",
-                          "sha256":  "8F2155BAE130F6F4545726DA034A5DB3FCFDFFD722B9646814E83C405CF3AD3C"
-                      },
-                      {
-                          "path":  "governance/capability-register.json",
-                          "schema_id":  "https://guardian-f401.dev/schema/governance/capability-register/v1",
-                          "schema_version":  "1.0.0",
-                          "sha256":  "FBB9E3F6EE5AC67DB653809310F6BB54B5E1366C4DD7A73366D330BBA1F313CE"
-                      },
-                      {
-                          "path":  "governance/claims-register.json",
-                          "schema_id":  "https://guardian-f401.dev/schema/governance/claims-register/v1",
-                          "schema_version":  "1.0.0",
-                          "sha256":  "FBDD5545B5808633AB056C68873DC9C9A17BB6E5DCC07EB11FBDE982AB1F31F1"
-                      },
-                      {
-                          "path":  "governance/evidence-register.json",
-                          "schema_id":  "https://guardian-f401.dev/schema/governance/evidence-register/v1",
-                          "schema_version":  "1.0.0",
-                          "sha256":  "940BC0A1BA778FEE22335CB8E0FDC4E85D0F80DBB490790BEFF64805B5E9EF6D"
-                      },
-                      {
-                          "path":  "governance/document-register.json",
-                          "schema_id":  "https://guardian-f401.dev/schema/governance/document-register/v1",
-                          "schema_version":  "1.0.0",
-                          "sha256":  "6BC85FFB5B1F188D05E61F5F30AA5EDA610046D853352E23FAEC829A30743D05"
-                      }
-                  ]
+  "schema_version": "1.0.0",
+  "id": "guardian:project-state:current",
+  "source_commit": "ee27e3052b738d35f63053e36bc56e1c562b80f6",
+  "source_tree": "c7b845640fd9a75432a6d331edf627120c7aae03",
+  "registers": [
+    {
+      "path": "governance/requirements-register.json",
+      "schema_id": "https://guardian-f401.dev/schema/governance/requirements-register/v1",
+      "schema_version": "1.0.0",
+      "sha256": "F397EDEEBFC1C46A0F0E32A274AFD20C007219635304110AA69BAA984328A8D1"
+    },
+    {
+      "path": "governance/capability-register.json",
+      "schema_id": "https://guardian-f401.dev/schema/governance/capability-register/v1",
+      "schema_version": "1.0.0",
+      "sha256": "FBB9E3F6EE5AC67DB653809310F6BB54B5E1366C4DD7A73366D330BBA1F313CE"
+    },
+    {
+      "path": "governance/claims-register.json",
+      "schema_id": "https://guardian-f401.dev/schema/governance/claims-register/v1",
+      "schema_version": "1.0.0",
+      "sha256": "FBDD5545B5808633AB056C68873DC9C9A17BB6E5DCC07EB11FBDE982AB1F31F1"
+    },
+    {
+      "path": "governance/evidence-register.json",
+      "schema_id": "https://guardian-f401.dev/schema/governance/evidence-register/v1",
+      "schema_version": "1.0.0",
+      "sha256": "940BC0A1BA778FEE22335CB8E0FDC4E85D0F80DBB490790BEFF64805B5E9EF6D"
+    },
+    {
+      "path": "governance/document-register.json",
+      "schema_id": "https://guardian-f401.dev/schema/governance/document-register/v1",
+      "schema_version": "1.0.0",
+      "sha256": "6BC85FFB5B1F188D05E61F5F30AA5EDA610046D853352E23FAEC829A30743D05"
+    }
+  ]
 }

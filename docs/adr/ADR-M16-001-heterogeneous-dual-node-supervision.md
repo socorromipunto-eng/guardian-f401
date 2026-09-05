@@ -1,4 +1,4 @@
-﻿# ADR-M16-001 — Heterogeneous Dual-Node Supervision
+# ADR-M16-001 — Heterogeneous Dual-Node Supervision
 
 Status: CANDIDATE
 
