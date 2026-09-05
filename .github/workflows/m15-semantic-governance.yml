@@ -32,7 +32,7 @@ jobs:
 
       - name: Run governance tooling regression suite
         run: |
-                    # Includes versioned semantic contract tests for project-state and document-register.
+          # Includes versioned semantic contract tests for project-state and document-register.
           python -m unittest discover -s tests/governance_tooling -p "test_*.py" -v
 
       - name: Validate M15 semantic registry
