@@ -208,12 +208,25 @@ class ProjectStateV2Tests(unittest.TestCase):
             self.assertEqual(result["source_commit"], payload_commit)
             self.assertEqual(result["materialization_commit"], materialization_commit)
 
-    def test_project_state_instance_migration_not_materialized_by_stage_a(self):
-        current = json.loads(
-            (ROOT / "governance" / "project-state.json").read_text(encoding="utf-8")
-        )
-        self.assertEqual(current["schema_version"], "1.0.0")
+    def test_stage_a_merge_commit_did_not_materialize_v2_instance(self):
+        stage_a_commit = "b655318288e251ef50fcff6e1a7ec2b658e84869"
+        historical_raw = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{stage_a_commit}:governance/project-state.json",
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        ).stdout
+        historical = json.loads(historical_raw.decode("utf-8", errors="strict"))
 
+        # Stage A introduced the v2 contract but intentionally did not
+        # materialize the repository's current project-state instance.
+        # This is a historical commit-bound invariant, not a requirement
+        # that all later repository states remain on project-state v1.
+        self.assertEqual(historical["schema_version"], "1.0.0")
 
 if __name__ == "__main__":
     unittest.main()
