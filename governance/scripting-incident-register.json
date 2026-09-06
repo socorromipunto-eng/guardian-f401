@@ -162,6 +162,17 @@
         "R-19",
         "R-23"
       ]
+    },
+    {
+      "id": "SG-016",
+      "date": "2026-09-06",
+      "class": "CONTROLLED_DOCUMENT_GOVERNANCE_STATE_DRIFT",
+      "root_cause": "Controlled-document self-status and registry lifecycle/authority metadata were allowed to evolve independently without a mechanical coherence gate; document mutation also requires explicit canonical register rebind verification.",
+      "prevention": "Normalize recognized lifecycle-bearing self-status values and compare them with document-register lifecycle state; fail closed on contradiction or ambiguity; verify source_commit:path and canonical SHA-256 binding after controlled-document mutation.",
+      "rules": [
+        "R-24",
+        "R-25"
+      ]
     }
   ]
 }

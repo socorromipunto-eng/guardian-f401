@@ -32,6 +32,66 @@ SCOPE_DIMS = (
 )
 NON_NORMATIVE_CLASSES = {"EVIDENCE", "INFORMATIONAL"}
 
+SELF_LIFECYCLE_ALIASES = {
+    "DRAFT": "DRAFT",
+    "CANDIDATE": "CANDIDATE",
+    "APPROVED": "APPROVED",
+    "APPROVED - HUMAN ADJUDICATED": "APPROVED",
+    "ACCEPTED": "APPROVED",
+    "SUPERSEDED": "SUPERSEDED",
+    "DEPRECATED": "DEPRECATED",
+    "WITHDRAWN": "WITHDRAWN",
+}
+
+def normalize_self_lifecycle(value: str) -> str | None:
+    normalized = re.sub(r"\s+", " ", value.strip()).upper()
+    return SELF_LIFECYCLE_ALIASES.get(normalized)
+
+def document_self_lifecycle(blob: bytes) -> tuple[str | None, str | None]:
+    try:
+        text = blob.decode("utf-8")
+    except UnicodeDecodeError:
+        return None, "SELF_STATUS_UTF8_INVALID"
+
+    lines = text.splitlines()
+    recognized = []
+
+    for index, line in enumerate(lines[:80]):
+        inline = re.fullmatch(
+            r"\s*(?:\*\*)?Status(?:\*\*)?\s*:\s*(.+?)\s*",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if inline:
+            value = normalize_self_lifecycle(inline.group(1))
+            if value is not None:
+                recognized.append(value)
+            continue
+
+        section = re.fullmatch(
+            r"\s*#{1,6}\s+Status\s*",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if section:
+            for candidate in lines[index + 1 : min(index + 8, len(lines))]:
+                stripped = candidate.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("#"):
+                    break
+                value = normalize_self_lifecycle(stripped)
+                if value is not None:
+                    recognized.append(value)
+                break
+
+    distinct = sorted(set(recognized))
+    if len(distinct) > 1:
+        return None, "SELF_STATUS_CONFLICT:" + "|".join(distinct)
+    if len(distinct) == 1:
+        return distinct[0], None
+    return None, None
+
 def digest_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest().upper()
 
@@ -239,6 +299,22 @@ def validate_v2(repo: Path, data: dict) -> int:
             return bad("CURRENT_HEAD_PATH_MISSING:" + key)
         if digest_bytes(head_blob) != registered_digest:
             return bad("CURRENT_HEAD_BLOB_HASH_MISMATCH:" + key)
+
+        self_lifecycle, self_status_error = document_self_lifecycle(blob)
+        if self_status_error is not None:
+            return bad(self_status_error + ":" + key)
+        if (
+            self_lifecycle is not None
+            and self_lifecycle != entry["lifecycle_status"]
+        ):
+            return bad(
+                "STATUS_METADATA_DRIFT:"
+                + key
+                + ":"
+                + self_lifecycle
+                + "!="
+                + entry["lifecycle_status"]
+            )
 
         # Dirty tracked content is a separate repository-state condition.
         dirty = subprocess.run(
