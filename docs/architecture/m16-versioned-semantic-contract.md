@@ -1,7 +1,6 @@
 # M16 Versioned Semantic Contract Architecture
 
-Status: CANDIDATE
-
+Status: APPROVED
 ## Purpose
 
 This document translates ADR-M16-002 into an engineering model for future
@@ -12,15 +11,15 @@ multi-chip Guardian development.
 Guardian interpretation SHALL conceptually resolve:
 
 Node Identity
-→ Chip Family
-→ Hardware Revision
-→ Firmware/Platform Version
-→ Protocol Version
-→ Semantic Profile
-→ Compatibility Contract
-→ Platform-local Meaning
-→ System-level Interpretation
-→ Authority Boundary
+â†’ Chip Family
+â†’ Hardware Revision
+â†’ Firmware/Platform Version
+â†’ Protocol Version
+â†’ Semantic Profile
+â†’ Compatibility Contract
+â†’ Platform-local Meaning
+â†’ System-level Interpretation
+â†’ Authority Boundary
 
 No step in this chain grants actuation merely because the previous step
 succeeded.
