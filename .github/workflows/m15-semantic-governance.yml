@@ -52,7 +52,22 @@ jobs:
         run: |
           python tools/release_manifest.py --repo . verify --ref v0.15.0 --manifest release-evidence/release-file-sha256-v0.15.0.csv
       - name: Validate current governance project-state integrity
-        run: python tools/validate_project_state.py --repo .
+        shell: bash
+        run: |
+          schema_version="$(python -c 'import json,pathlib; print(json.loads(pathlib.Path("governance/project-state.json").read_text(encoding="utf-8"))["schema_version"])')"
+          case "$schema_version" in
+            "1.0.0")
+              python tools/validate_project_state.py --repo .
+              ;;
+            "2.0.0")
+              python tools/validate_project_state_v2.py --repo . --project-state governance/project-state.json --materialization-commit 3f81869ab39321792e56822e0a71703ad1c0acb9
+              ;;
+            *)
+              echo "PROJECT_STATE_VALIDATION=FAIL"
+              echo "REASON=UNKNOWN_PROJECT_STATE_SCHEMA_VERSION:$schema_version"
+              exit 2
+              ;;
+          esac
 
       - name: Validate registered document integrity
         run: python tools/validate_document_register.py --repo .
