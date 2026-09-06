@@ -92,6 +92,8 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-21 | Dirty worktree state is classified before stopping. Exact expected recovery artifacts are `EXPECTED`, not automatically `UNSAFE`. Unexpected modifications remain fail-closed. | SG-013 |
 | R-22 | Windows PowerShell 5.1 executable source is ASCII-only by default. Smart quotes, em dash, en dash and other non-ASCII punctuation are prohibited in `.ps1` source unless an explicitly proven encoding-safe path is part of the boundary. | SG-014 |
 | R-23 | Exact multiline matching is prohibited when newline representation or byte identity is not proven. Normalize EOL or use bounded semantic parsing/regex and assert exactly one intended match before mutation. | SG-015 |
+| R-24 | A controlled document with an explicit recognized lifecycle-bearing self-status SHALL be semantically coherent with its `document-register` lifecycle state. Recognized aliases may normalize to the governed lifecycle; ambiguity or contradiction fails closed. | SG-016 |
+| R-25 | A controlled-document mutation is not closed until its register binding is verified against the canonical Git blob at `source_commit:path`, including SHA-256 identity and current-HEAD coherence where applicable. | SG-016 |
 
 ---
 
@@ -124,6 +126,8 @@ G2 PLAN
   C-17 CLI version/help check included when first using an option/subcommand
   C-18 expected pre-state and expected post-state both defined
   C-18A multiline matching is EOL-tolerant or byte identity is explicitly proven
+  C-18B controlled-document self-status and register lifecycle semantics are coherent when lifecycle-bearing self-status is present
+  C-18C controlled-document mutations include canonical source_commit:path and SHA-256 register-rebind verification
 
 G3 APPLY
   C-19 script performs only the authorized mutation

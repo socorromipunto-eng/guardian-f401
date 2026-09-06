@@ -193,6 +193,133 @@ class DocumentRegisterSemanticContractTests(unittest.TestCase):
             self.assertNotEqual(cp.returncode, 0)
             self.assertIn("SOURCE_COMMIT_HASH_MISMATCH", cp.stdout)
 
+    def test_self_status_candidate_vs_approved_fails(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(td, "docs/a.md", "# A\n\nStatus: CANDIDATE\n")
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="APPROVED",
+                    authority_status="AUTHORITATIVE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertIn("STATUS_METADATA_DRIFT", cp.stdout)
+
+    def test_self_status_candidate_vs_candidate_passes(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(td, "docs/a.md", "# A\n\nStatus: CANDIDATE\n")
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="CANDIDATE",
+                    authority_status="NONE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
+    def test_self_status_human_adjudicated_vs_approved_passes(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(
+                td,
+                "docs/a.md",
+                "# A\n\nStatus: APPROVED - HUMAN ADJUDICATED\n",
+            )
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="APPROVED",
+                    authority_status="AUTHORITATIVE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
+    def test_self_status_section_accepted_vs_approved_passes(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(
+                td,
+                "docs/a.md",
+                "# A\n\n## Status\n\nACCEPTED\n\n## Context\ntext\n",
+            )
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="APPROVED",
+                    authority_status="AUTHORITATIVE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
+    def test_non_lifecycle_status_metadata_does_not_promote(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(
+                td,
+                "docs/a.md",
+                "# A\n\nStatus: CONTROLLED PROJECT GUIDANCE\n",
+            )
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="APPROVED",
+                    authority_status="AUTHORITATIVE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
+    def test_absent_self_status_uses_register_lifecycle(self):
+        with tempfile.TemporaryDirectory() as raw:
+            td = Path(raw)
+            init_repo(td)
+            commit, digest = commit_doc(td, "docs/a.md", "# A\n\nNo lifecycle metadata.\n")
+            write_register(td, [
+                entry(
+                    doc_id="guardian:doc:a",
+                    version="1",
+                    path="docs/a.md",
+                    sha256=digest,
+                    source_commit=commit,
+                    lifecycle_status="APPROVED",
+                    authority_status="AUTHORITATIVE",
+                )
+            ])
+            cp = run_validator(td)
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+
     def test_information_document_cannot_be_authoritative(self):
         with tempfile.TemporaryDirectory() as raw:
             td = Path(raw)
