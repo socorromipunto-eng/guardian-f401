@@ -94,6 +94,9 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-23 | Exact multiline matching is prohibited when newline representation or byte identity is not proven. Normalize EOL or use bounded semantic parsing/regex and assert exactly one intended match before mutation. | SG-015 |
 | R-24 | A controlled document with an explicit recognized lifecycle-bearing self-status SHALL be semantically coherent with its `document-register` lifecycle state. Recognized aliases may normalize to the governed lifecycle; ambiguity or contradiction fails closed. | SG-016 |
 | R-25 | A controlled-document mutation is not closed until its register binding is verified against the canonical Git blob at `source_commit:path`, including SHA-256 identity and current-HEAD coherence where applicable. | SG-016 |
+| R-26 | Structured native-tool output consumed as JSON MUST come from a dedicated stdout channel. STDERR is diagnostic only and MUST NOT be merged into the JSON parse stream. Native success remains determined by exit code. | SG-017 |
+| R-27 | Local Git graph or object validation MUST NOT assume that a remotely identified commit already exists in the local object database. Prove or materialize the object locally, normally by fetch, before merge-base, show, cat-file or equivalent graph validation. | SG-017 |
+| R-28 | Windows PowerShell automatic variables and reserved runtime variables MUST NOT be reused as script parameters or mutable state variables. Script generation SHALL preflight identifiers that can alter invocation or runtime semantics. | SG-017 |
 
 ---
 
@@ -128,6 +131,9 @@ G2 PLAN
   C-18A multiline matching is EOL-tolerant or byte identity is explicitly proven
   C-18B controlled-document self-status and register lifecycle semantics are coherent when lifecycle-bearing self-status is present
   C-18C controlled-document mutations include canonical source_commit:path and SHA-256 register-rebind verification
+  C-18D structured native-tool JSON is captured from stdout only; stderr remains a separate diagnostic channel
+  C-18E remote Git identity is not treated as local object availability; required objects are proven/materialized before local graph validation
+  C-18F PowerShell automatic/reserved runtime variable names are not reused as parameters or mutable state
 
 G3 APPLY
   C-19 script performs only the authorized mutation
