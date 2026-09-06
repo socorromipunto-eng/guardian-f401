@@ -36,6 +36,53 @@ class SemanticCiContractTests(unittest.TestCase):
             text,
         )
 
+    def test_project_state_workflow_routes_v1_and_v2_fail_closed(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        case_pos = text.index('case "$schema_version" in')
+        v1_pos = text.index('"1.0.0")', case_pos)
+        v1_validator_pos = text.index(
+            "python tools/validate_project_state.py --repo .", v1_pos
+        )
+        v2_pos = text.index('"2.0.0")', v1_validator_pos)
+        v2_validator_pos = text.index(
+            "python tools/validate_project_state_v2.py --repo . "
+            "--project-state governance/project-state.json "
+            "--materialization-commit 3f81869ab39321792e56822e0a71703ad1c0acb9",
+            v2_pos,
+        )
+        unknown_pos = text.index(
+            "REASON=UNKNOWN_PROJECT_STATE_SCHEMA_VERSION:$schema_version",
+            v2_validator_pos,
+        )
+        exit_pos = text.index("exit 2", unknown_pos)
+        esac_pos = text.index("esac", exit_pos)
+
+        self.assertLess(case_pos, v1_pos)
+        self.assertLess(v1_pos, v1_validator_pos)
+        self.assertLess(v1_validator_pos, v2_pos)
+        self.assertLess(v2_pos, v2_validator_pos)
+        self.assertLess(v2_validator_pos, unknown_pos)
+        self.assertLess(unknown_pos, exit_pos)
+        self.assertLess(exit_pos, esac_pos)
+
+    def test_project_state_v2_ci_binding_uses_authorized_materialization_commit(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn(
+            "--materialization-commit "
+            "3f81869ab39321792e56822e0a71703ad1c0acb9",
+            text,
+        )
+        self.assertIn("--project-state governance/project-state.json", text)
+
+    def test_project_state_ci_router_does_not_fall_through_unknown_versions(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn(
+            "REASON=UNKNOWN_PROJECT_STATE_SCHEMA_VERSION:$schema_version",
+            text,
+        )
+        self.assertIn("exit 2", text)
+        self.assertNotIn("UNKNOWN_PROJECT_STATE_SCHEMA_VERSION=PASS", text)
+
     def test_workflow_does_not_ignore_validator_exit_code(self):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertNotIn("|| true", text)
