@@ -210,6 +210,41 @@
         ]
       },
       "supersedes": []
+    },
+    {
+      "id": "guardian:spec:m16-nodelink-protocol",
+      "document_class": "SPECIFICATION",
+      "version": "0.2",
+      "path": "docs/specs/M16-NodeLink-Normative-Specification-v0.2.md",
+      "sha256": "ECF8A88B0795ABF753F1F2D6FA70FC0597A6CF07B8BFAC2E388B109404A60833",
+      "source_commit": "e6f4fc839fc64ea2faa32cd37b95d3558ea0a951",
+      "lifecycle_status": "APPROVED",
+      "authority_status": "AUTHORITATIVE",
+      "authority_domain": "guardian:nodelink:protocol",
+      "scope": {
+        "component": [
+          "nodelink-protocol"
+        ],
+        "chip_family": [
+          "*"
+        ],
+        "hardware_revision": [
+          "*"
+        ],
+        "firmware_version": [
+          "*"
+        ],
+        "protocol_version": [
+          "0.1"
+        ],
+        "semantic_profile": [
+          "*"
+        ],
+        "system_role": [
+          "*"
+        ]
+      },
+      "supersedes": []
     }
   ]
 }
