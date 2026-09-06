@@ -97,6 +97,8 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-26 | Structured native-tool output consumed as JSON MUST come from a dedicated stdout channel. STDERR is diagnostic only and MUST NOT be merged into the JSON parse stream. Native success remains determined by exit code. | SG-017 |
 | R-27 | Local Git graph or object validation MUST NOT assume that a remotely identified commit already exists in the local object database. Prove or materialize the object locally, normally by fetch, before merge-base, show, cat-file or equivalent graph validation. | SG-017 |
 | R-28 | Windows PowerShell automatic variables and reserved runtime variables MUST NOT be reused as script parameters or mutable state variables. Script generation SHALL preflight identifiers that can alter invocation or runtime semantics. | SG-017 |
+| R-29 | Every Windows PowerShell 5.1 script MUST pass a mechanical parser gate before issuance. The parser result MUST contain exactly zero parse errors; otherwise `SCRIPT_ISSUANCE=PROHIBITED`. | SG-017 |
+| R-30 | Expandable PowerShell strings MUST NOT rely on ambiguous variable interpolation next to syntactically significant characters. Prefer the format operator, explicit concatenation, or delimited variable syntax. Ambiguous forms such as a variable immediately followed by a colon are prohibited unless parser-safe delimitation is proven. | SG-017 |
 
 ---
 
@@ -134,6 +136,7 @@ G2 PLAN
   C-18D structured native-tool JSON is captured from stdout only; stderr remains a separate diagnostic channel
   C-18E remote Git identity is not treated as local object availability; required objects are proven/materialized before local graph validation
   C-18F PowerShell automatic/reserved runtime variable names are not reused as parameters or mutable state
+  C-18G Windows PowerShell 5.1 parser validation completed with exactly zero parser errors before script issuance
 
 G3 APPLY
   C-19 script performs only the authorized mutation
