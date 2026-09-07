@@ -1,0 +1,689 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardian-f401.dev/schema/governance/semantic-profile-register/v1",
+  "title": "Guardian M16 Semantic Profile Register v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "registry_role",
+    "governance",
+    "profiles",
+    "compatibility_contracts",
+    "semantic_change_boundaries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "registry_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "registry_role": {
+      "const": "CONTROLLED_SEMANTIC_PROFILE_INDEX"
+    },
+    "governance": {
+      "$ref": "#/$defs/governance"
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/profile"
+      }
+    },
+    "compatibility_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/compatibility_contract"
+      }
+    },
+    "semantic_change_boundaries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/semantic_change_boundary"
+      }
+    }
+  },
+  "$defs": {
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registration_grants_approval",
+        "registration_grants_implementation",
+        "registration_grants_validation",
+        "registration_grants_authority",
+        "registration_grants_actuation",
+        "unknown_semantic_context"
+      ],
+      "properties": {
+        "registration_grants_approval": {
+          "const": false
+        },
+        "registration_grants_implementation": {
+          "const": false
+        },
+        "registration_grants_validation": {
+          "const": false
+        },
+        "registration_grants_authority": {
+          "const": false
+        },
+        "registration_grants_actuation": {
+          "const": false
+        },
+        "unknown_semantic_context": {
+          "const": "FAIL_CLOSED"
+        }
+      }
+    },
+    "lifecycle_status": {
+      "enum": [
+        "DRAFT",
+        "CANDIDATE",
+        "APPROVED",
+        "SUPERSEDED",
+        "DEPRECATED",
+        "WITHDRAWN"
+      ]
+    },
+    "authority_status": {
+      "enum": [
+        "NONE",
+        "AUTHORITATIVE"
+      ]
+    },
+    "applicability": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "value"
+          ],
+          "properties": {
+            "state": {
+              "const": "EXPLICIT_VALUE"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "value"
+          ],
+          "properties": {
+            "state": {
+              "const": "EXPLICIT_RANGE"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "NOT_APPLICABLE"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        }
+      ]
+    },
+    "platform_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chip_family",
+        "hardware_revision",
+        "platform_version",
+        "firmware_version",
+        "protocol_id",
+        "protocol_version",
+        "system_role"
+      ],
+      "properties": {
+        "chip_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hardware_revision": {
+          "$ref": "#/$defs/applicability"
+        },
+        "platform_version": {
+          "$ref": "#/$defs/applicability"
+        },
+        "firmware_version": {
+          "$ref": "#/$defs/applicability"
+        },
+        "protocol_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "system_role": {
+          "enum": [
+            "DETERMINISTIC_REFERENCE_CONTROL_NODE",
+            "INDEPENDENT_SUPERVISORY_PEER"
+          ]
+        }
+      }
+    },
+    "state_semantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wire_value",
+        "platform_meaning",
+        "remote_interpretation",
+        "authority_effect",
+        "actuation_effect"
+      ],
+      "properties": {
+        "wire_value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "platform_meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remote_interpretation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority_effect": {
+          "const": "NONE"
+        },
+        "actuation_effect": {
+          "const": "NONE"
+        }
+      }
+    },
+    "state_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "BOOT",
+        "DISCOVERING",
+        "ACTIVE",
+        "DEGRADED",
+        "SAFE_HOLD",
+        "FAULT"
+      ],
+      "properties": {
+        "BOOT": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 0
+                }
+              }
+            }
+          ]
+        },
+        "DISCOVERING": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 1
+                }
+              }
+            }
+          ]
+        },
+        "ACTIVE": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 2
+                }
+              }
+            }
+          ]
+        },
+        "DEGRADED": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 3
+                }
+              }
+            }
+          ]
+        },
+        "SAFE_HOLD": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 4
+                }
+              }
+            }
+          ]
+        },
+        "FAULT": {
+          "$ref": "#/$defs/state_semantic",
+          "allOf": [
+            {
+              "properties": {
+                "wire_value": {
+                  "const": 5
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "freshness_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "epoch",
+        "persistent_freshness"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "zero",
+            "duplicate",
+            "regression",
+            "wrap_same_session",
+            "large_forward_gap"
+          ],
+          "properties": {
+            "zero": {
+              "const": "REJECT"
+            },
+            "duplicate": {
+              "const": "DUPLICATE_REPLAY"
+            },
+            "regression": {
+              "const": "SEQUENCE_REGRESSION"
+            },
+            "wrap_same_session": {
+              "const": "FAIL_CLOSED"
+            },
+            "large_forward_gap": {
+              "const": "REQUIRES_POLICY"
+            }
+          }
+        },
+        "epoch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "authenticated_epoch_means",
+            "authenticated_epoch_proves_current",
+            "unknown_transition",
+            "reuse_without_governed_acceptance"
+          ],
+          "properties": {
+            "authenticated_epoch_means": {
+              "const": "AUTHENTICATED_PEER_ASSERTION_ONLY"
+            },
+            "authenticated_epoch_proves_current": {
+              "const": false
+            },
+            "unknown_transition": {
+              "const": "FAIL_CLOSED"
+            },
+            "reuse_without_governed_acceptance": {
+              "const": "FAIL_CLOSED"
+            }
+          }
+        },
+        "persistent_freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "implemented",
+            "cross_reboot_anti_replay_claim_allowed"
+          ],
+          "properties": {
+            "implemented": {
+              "const": false
+            },
+            "cross_reboot_anti_replay_claim_allowed": {
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "authority_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_compatibility_grants_authority",
+        "freshness_grants_authority",
+        "authentication_grants_authority",
+        "remote_state_grants_local_transition",
+        "remote_message_grants_actuation",
+        "ai_advisory_grants_authority",
+        "direct_actuation_authority"
+      ],
+      "properties": {
+        "semantic_compatibility_grants_authority": {
+          "const": false
+        },
+        "freshness_grants_authority": {
+          "const": false
+        },
+        "authentication_grants_authority": {
+          "const": false
+        },
+        "remote_state_grants_local_transition": {
+          "const": false
+        },
+        "remote_message_grants_actuation": {
+          "const": false
+        },
+        "ai_advisory_grants_authority": {
+          "const": false
+        },
+        "direct_actuation_authority": {
+          "const": false
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_refs",
+        "source_document_refs"
+      ],
+      "properties": {
+        "decision_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_document_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "profile_version",
+        "lifecycle_status",
+        "authority_status",
+        "platform_context",
+        "state_semantics",
+        "freshness_semantics",
+        "authority_semantics",
+        "provenance"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lifecycle_status": {
+          "$ref": "#/$defs/lifecycle_status"
+        },
+        "authority_status": {
+          "$ref": "#/$defs/authority_status"
+        },
+        "platform_context": {
+          "$ref": "#/$defs/platform_context"
+        },
+        "state_semantics": {
+          "$ref": "#/$defs/state_semantics"
+        },
+        "freshness_semantics": {
+          "$ref": "#/$defs/freshness_semantics"
+        },
+        "authority_semantics": {
+          "$ref": "#/$defs/authority_semantics"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "compatibility_outcome": {
+      "enum": [
+        "COMPATIBLE",
+        "INCOMPATIBLE",
+        "UNKNOWN",
+        "UNSUPPORTED",
+        "HISTORICALLY_IMPOSSIBLE"
+      ]
+    },
+    "compatibility_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compatibility_contract_id",
+        "contract_version",
+        "producer_profile_id",
+        "consumer_profile_id",
+        "protocol_id",
+        "protocol_version",
+        "pre_freshness_compatibility",
+        "full_message_semantic_compatibility",
+        "authority_effect",
+        "actuation_effect"
+      ],
+      "properties": {
+        "compatibility_contract_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "producer_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumer_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pre_freshness_compatibility": {
+          "$ref": "#/$defs/compatibility_outcome"
+        },
+        "full_message_semantic_compatibility": {
+          "$ref": "#/$defs/compatibility_outcome"
+        },
+        "authority_effect": {
+          "const": "NONE"
+        },
+        "actuation_effect": {
+          "const": "NONE"
+        }
+      }
+    },
+    "semantic_change_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boundary_id",
+        "predecessor_profile_id",
+        "successor_profile_id",
+        "effective_boundary",
+        "changed_concepts",
+        "compatibility_effect",
+        "historical_reinterpretation_allowed",
+        "migration_rule",
+        "rollback_rule",
+        "decision_ref",
+        "evidence_refs",
+        "validation_refs"
+      ],
+      "properties": {
+        "boundary_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predecessor_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "successor_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effective_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "firmware_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "platform_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "protocol_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
+        },
+        "changed_concepts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "compatibility_effect": {
+          "enum": [
+            "NO_CHANGE",
+            "REQUIRES_EXPLICIT_REEVALUATION",
+            "INCOMPATIBLE",
+            "UNSUPPORTED"
+          ]
+        },
+        "historical_reinterpretation_allowed": {
+          "const": false
+        },
+        "migration_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rollback_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "validation_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
