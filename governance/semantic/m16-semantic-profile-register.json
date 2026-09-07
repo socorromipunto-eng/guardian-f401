@@ -1,0 +1,246 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "guardian:semantic-profile-registry:m16",
+  "registry_role": "CONTROLLED_SEMANTIC_PROFILE_INDEX",
+  "governance": {
+    "registration_grants_approval": false,
+    "registration_grants_implementation": false,
+    "registration_grants_validation": false,
+    "registration_grants_authority": false,
+    "registration_grants_actuation": false,
+    "unknown_semantic_context": "FAIL_CLOSED"
+  },
+  "profiles": [
+    {
+      "profile_id": "guardian:semantic-profile:stm32f401:control:v1",
+      "profile_version": "1.0.0",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "platform_context": {
+        "chip_family": "STM32F401",
+        "hardware_revision": {
+          "state": "UNKNOWN"
+        },
+        "platform_version": {
+          "state": "NOT_APPLICABLE"
+        },
+        "firmware_version": {
+          "state": "EXPLICIT_VALUE",
+          "value": "0.15.0"
+        },
+        "protocol_id": "guardian:nodelink",
+        "protocol_version": "0.1",
+        "system_role": "DETERMINISTIC_REFERENCE_CONTROL_NODE"
+      },
+      "state_semantics": {
+        "BOOT": {
+          "wire_value": 0,
+          "platform_meaning": "The deterministic reference/control node is initializing its governed local context and is not yet eligible for normal operational control behavior.",
+          "remote_interpretation": "The remote peer may treat the F401 as not fully operational; BOOT does not prove compromise, loss of authority, or permission for takeover.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "DISCOVERING": {
+          "wire_value": 1,
+          "platform_meaning": "The deterministic reference/control node is resolving required local context and dependencies before normal operation.",
+          "remote_interpretation": "The remote peer may observe incomplete operational readiness; DISCOVERING does not establish trust, authentication, semantic compatibility, or authority.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "ACTIVE": {
+          "wire_value": 2,
+          "platform_meaning": "The deterministic reference/control node is operational within its governed local control role and local deterministic policy.",
+          "remote_interpretation": "The remote peer may treat ACTIVE only as evidence that the F401 asserts operational status within its own role; it does not grant remote trust or authority.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "DEGRADED": {
+          "wire_value": 3,
+          "platform_meaning": "The deterministic reference/control node retains bounded local operation while a local condition prevents fully nominal operation.",
+          "remote_interpretation": "The remote peer may use DEGRADED as evidence for its own deterministic policy but must not infer automatic SAFE_HOLD, FAULT, authority loss, or takeover.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "SAFE_HOLD": {
+          "wire_value": 4,
+          "platform_meaning": "The deterministic reference/control node has entered a governed local containment condition in which stronger local consequences are restricted by policy.",
+          "remote_interpretation": "The remote peer may observe that the F401 has restricted its own operation; the remote state does not itself grant supervisory control or direct actuation authority.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "FAULT": {
+          "wire_value": 5,
+          "platform_meaning": "The deterministic reference/control node reports a local fault that prevents assumption of normal operation and requires explicit local policy or recovery handling.",
+          "remote_interpretation": "The remote peer may record and evaluate the F401 fault as evidence; FAULT does not prove a physical failure mode and does not grant unilateral authority to the peer.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        }
+      },
+      "freshness_semantics": {
+        "sequence": {
+          "zero": "REJECT",
+          "duplicate": "DUPLICATE_REPLAY",
+          "regression": "SEQUENCE_REGRESSION",
+          "wrap_same_session": "FAIL_CLOSED",
+          "large_forward_gap": "REQUIRES_POLICY"
+        },
+        "epoch": {
+          "authenticated_epoch_means": "AUTHENTICATED_PEER_ASSERTION_ONLY",
+          "authenticated_epoch_proves_current": false,
+          "unknown_transition": "FAIL_CLOSED",
+          "reuse_without_governed_acceptance": "FAIL_CLOSED"
+        },
+        "persistent_freshness": {
+          "implemented": false,
+          "cross_reboot_anti_replay_claim_allowed": false
+        }
+      },
+      "authority_semantics": {
+        "semantic_compatibility_grants_authority": false,
+        "freshness_grants_authority": false,
+        "authentication_grants_authority": false,
+        "remote_state_grants_local_transition": false,
+        "remote_message_grants_actuation": false,
+        "ai_advisory_grants_authority": false,
+        "direct_actuation_authority": false
+      },
+      "provenance": {
+        "decision_refs": [],
+        "source_document_refs": [
+          {
+            "id": "guardian:adr:m16-001",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:adr:m16-002",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:architecture:m16-versioned-semantic-contract",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:spec:m16-nodelink-protocol",
+            "version": "0.2"
+          }
+        ]
+      }
+    },
+    {
+      "profile_id": "guardian:semantic-profile:mcxn947:supervisory:v1",
+      "profile_version": "1.0.0",
+      "lifecycle_status": "CANDIDATE",
+      "authority_status": "NONE",
+      "platform_context": {
+        "chip_family": "MCXN947",
+        "hardware_revision": {
+          "state": "UNKNOWN"
+        },
+        "platform_version": {
+          "state": "UNKNOWN"
+        },
+        "firmware_version": {
+          "state": "UNKNOWN"
+        },
+        "protocol_id": "guardian:nodelink",
+        "protocol_version": "0.1",
+        "system_role": "INDEPENDENT_SUPERVISORY_PEER"
+      },
+      "state_semantics": {
+        "BOOT": {
+          "wire_value": 0,
+          "platform_meaning": "The independent supervisory peer is initializing its governed local context and is not yet eligible to provide normal governed supervision observations.",
+          "remote_interpretation": "The F401 may treat the MCXN947 as not fully operational; BOOT does not authorize reset, takeover, override, or a local state transition.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "DISCOVERING": {
+          "wire_value": 1,
+          "platform_meaning": "The independent supervisory peer is resolving identity, peer, compatibility, freshness, or other governed context required before normal supervision.",
+          "remote_interpretation": "The F401 may observe incomplete supervisory readiness; DISCOVERING does not establish semantic compatibility, trust, authority, or actuation eligibility.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "ACTIVE": {
+          "wire_value": 2,
+          "platform_meaning": "The independent supervisory peer is operational within its supervisory role and may produce governed observations, challenges, corroboration, disagreement, or recommendations.",
+          "remote_interpretation": "The F401 may treat ACTIVE only as evidence that the supervisor asserts operational status within its own role; ACTIVE does not grant actuator authority or unilateral override authority.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "DEGRADED": {
+          "wire_value": 3,
+          "platform_meaning": "The independent supervisory peer retains bounded supervisory capability while a local condition prevents fully nominal supervision.",
+          "remote_interpretation": "The F401 may use DEGRADED as evidence in its own deterministic policy but must not infer automatic SAFE_HOLD, FAULT, control transfer, or authority escalation.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "SAFE_HOLD": {
+          "wire_value": 4,
+          "platform_meaning": "The independent supervisory peer has entered a governed local containment condition that restricts stronger supervisory consequences.",
+          "remote_interpretation": "The F401 may observe supervisory containment; remote SAFE_HOLD does not force local SAFE_HOLD and does not transfer authority to either node.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        },
+        "FAULT": {
+          "wire_value": 5,
+          "platform_meaning": "The independent supervisory peer reports a local fault affecting its supervisory capability or prerequisites for normal supervisory operation.",
+          "remote_interpretation": "The F401 may treat the supervisor fault as evidence for local policy; FAULT does not prove a physical failure mode and does not alter F401 authority automatically.",
+          "authority_effect": "NONE",
+          "actuation_effect": "NONE"
+        }
+      },
+      "freshness_semantics": {
+        "sequence": {
+          "zero": "REJECT",
+          "duplicate": "DUPLICATE_REPLAY",
+          "regression": "SEQUENCE_REGRESSION",
+          "wrap_same_session": "FAIL_CLOSED",
+          "large_forward_gap": "REQUIRES_POLICY"
+        },
+        "epoch": {
+          "authenticated_epoch_means": "AUTHENTICATED_PEER_ASSERTION_ONLY",
+          "authenticated_epoch_proves_current": false,
+          "unknown_transition": "FAIL_CLOSED",
+          "reuse_without_governed_acceptance": "FAIL_CLOSED"
+        },
+        "persistent_freshness": {
+          "implemented": false,
+          "cross_reboot_anti_replay_claim_allowed": false
+        }
+      },
+      "authority_semantics": {
+        "semantic_compatibility_grants_authority": false,
+        "freshness_grants_authority": false,
+        "authentication_grants_authority": false,
+        "remote_state_grants_local_transition": false,
+        "remote_message_grants_actuation": false,
+        "ai_advisory_grants_authority": false,
+        "direct_actuation_authority": false
+      },
+      "provenance": {
+        "decision_refs": [],
+        "source_document_refs": [
+          {
+            "id": "guardian:adr:m16-001",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:adr:m16-002",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:architecture:m16-versioned-semantic-contract",
+            "version": "1.0.0"
+          },
+          {
+            "id": "guardian:spec:m16-nodelink-protocol",
+            "version": "0.2"
+          }
+        ]
+      }
+    }
+  ],
+  "compatibility_contracts": [],
+  "semantic_change_boundaries": []
+}
