@@ -99,6 +99,8 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-28 | Windows PowerShell automatic variables and reserved runtime variables MUST NOT be reused as script parameters or mutable state variables. Script generation SHALL preflight identifiers that can alter invocation or runtime semantics. | SG-017 |
 | R-29 | Every Windows PowerShell 5.1 script MUST pass a mechanical parser gate before issuance. The parser result MUST contain exactly zero parse errors; otherwise `SCRIPT_ISSUANCE=PROHIBITED`. | SG-017 |
 | R-30 | Expandable PowerShell strings MUST NOT rely on ambiguous variable interpolation next to syntactically significant characters. Prefer the format operator, explicit concatenation, or delimited variable syntax. Ambiguous forms such as a variable immediately followed by a colon are prohibited unless parser-safe delimitation is proven. | SG-017 |
+| R-31 | Remote ref existence or absence SHALL be treated as state, not success or failure. The script SHALL classify the observed remote ref state against the expected operation before deciding whether to stop, reuse, update, create or escalate. | SG-018 |
+| R-32 | Native command output SHALL be parsed with the minimum structure required by the operation. Collection or wrapper abstraction for scalar or line-oriented output is prohibited unless expected cardinality and return shape are explicitly proven. | SG-018 |
 
 ---
 
@@ -137,6 +139,8 @@ G2 PLAN
   C-18E remote Git identity is not treated as local object availability; required objects are proven/materialized before local graph validation
   C-18F PowerShell automatic/reserved runtime variable names are not reused as parameters or mutable state
   C-18G Windows PowerShell 5.1 parser validation completed with exactly zero parser errors before script issuance
+  C-18H remote refs required by the operation are classified as ABSENT / EXPECTED / STALE_EXPECTED / UNEXPECTED before mutation
+  C-18I function and native-command return shapes are explicitly declared and cardinality-tested before indexing or property access
 
 G3 APPLY
   C-19 script performs only the authorized mutation
