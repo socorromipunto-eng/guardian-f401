@@ -1,0 +1,23 @@
+{
+    "schema_version":  "1.0.0",
+    "transition_id":  "guardian:claim-transition:m16-session-sequence-rejection:candidate:v1",
+    "claim_id":  "guardian:claim:m16-session-sequence-rejection",
+    "claim_version":  "1.0.0",
+    "from_assessment_state":  "NOT_ASSESSED",
+    "to_assessment_state":  "DEMONSTRATED",
+    "from_adjudication_state":  "UNADJUDICATED",
+    "to_adjudication_state":  "UNADJUDICATED",
+    "assessment_record_id":  "guardian:assessment-record:m16-session-sequence-rejection:v1",
+    "rule_id":  "guardian:assessment-rule:m16-session-sequence-rejection",
+    "rule_version":  "1.0.0",
+    "evidence_refs":  [
+                          "guardian:evidence:m16-rr04a-session-sequence-host"
+                      ],
+    "contradictory_evidence_refs":  [
+
+                                    ],
+    "source_commit":  "50c34dd540ed9f9c658e6cb8c6d26e58594d4846",
+    "source_tree":  "e5fe67e817b78b95b96d2c8f011de30b96173e92",
+    "created_at":  "2026-09-07T14:55:14.383Z",
+    "transition_reason":  "Candidate technical transition produced from governed M16-RR-04 assessment evidence. No adjudication or authority grant performed."
+}

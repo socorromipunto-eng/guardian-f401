@@ -1,0 +1,18 @@
+{
+    "schema_version":  "1.0.0",
+    "assessment_record_id":  "guardian:assessment-record:m16-session-sequence-rejection:v1",
+    "claim_id":  "guardian:claim:m16-session-sequence-rejection",
+    "claim_version":  "1.0.0",
+    "rule_id":  "guardian:assessment-rule:m16-session-sequence-rejection",
+    "rule_version":  "1.0.0",
+    "assessment_state":  "DEMONSTRATED",
+    "evidence_refs":  [
+                          "guardian:evidence:m16-rr04a-session-sequence-host"
+                      ],
+    "contradictory_evidence_refs":  [
+
+                                    ],
+    "source_commit":  "50c34dd540ed9f9c658e6cb8c6d26e58594d4846",
+    "source_tree":  "e5fe67e817b78b95b96d2c8f011de30b96173e92",
+    "created_at":  "2026-09-07T14:54:25.022Z"
+}

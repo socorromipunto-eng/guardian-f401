@@ -1,4 +1,19 @@
 {
-  "schema_version": "1.0.0",
-  "claims": []
+    "schema_version":  "2.0.0",
+    "claims":  [
+                   {
+                       "id":  "guardian:claim:m16-session-sequence-rejection",
+                       "version":  "1.0.0",
+                       "assessment_state":  "DEMONSTRATED",
+                       "adjudication_state":  "ACCEPTED",
+                       "evidence_refs":  [
+                                             "guardian:evidence:m16-rr04a-session-sequence-host"
+                                         ],
+                       "contradictory_evidence_refs":  [
+
+                                                       ],
+                       "current_assessment_record_id":  "guardian:assessment-record:m16-session-sequence-rejection:v1",
+                       "current_transition_id":  "guardian:claim-transition:m16-session-sequence-rejection:adjudicated:v1"
+                   }
+               ]
 }
