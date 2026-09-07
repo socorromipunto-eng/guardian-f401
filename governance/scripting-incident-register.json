@@ -187,6 +187,17 @@
         "R-29",
         "R-30"
       ]
+    },
+    {
+      "id": "SG-018",
+      "date": "2026-09-06",
+      "class": "REMOTE_REF_AND_RETURN_SHAPE_CLASSIFICATION_FAILURE",
+      "root_cause": "Two related failures occurred after SG-017 hardening: remote branch existence was treated as an error instead of state requiring classification, and simple git ls-remote output was wrapped in collection-return logic whose runtime shape was not proven, reintroducing scalar/array ambiguity.",
+      "prevention": "Classify remote ref state before deciding an action; prefer minimal parsing of native output; explicitly prove function and native-command return shape and cardinality before indexing or property access; keep the parser gate as a necessary but not sufficient control.",
+      "rules": [
+        "R-31",
+        "R-32"
+      ]
     }
   ]
 }
