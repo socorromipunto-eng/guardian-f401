@@ -1,214 +1,214 @@
 {
-    "schema_version":  "1.0.0",
-    "project":  "Guardian F401",
-    "status":  "NORMATIVE_CANDIDATE",
-    "policy":  {
-                   "method_fix_required":  true,
-                   "repeat_allowed":  false,
-                   "repeat_after_guardrail":  "PROCESS_NONCONFORMANCE"
-               },
-    "incidents":  [
-                      {
-                          "id":  "SG-001",
-                          "date":  "2026-08",
-                          "class":  "NATIVE_STDERR_AS_FAILURE",
-                          "root_cause":  "Valid native-command STDERR was treated as PowerShell failure under Windows PowerShell 5.1.",
-                          "prevention":  "Determine native command success from LASTEXITCODE; capture or redirect STDERR deliberately.",
-                          "rules":  [
-                                        "R-01"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-002",
-                          "date":  "2026-08",
-                          "class":  "EMPTY_JSON_AS_EXISTING_OBJECT",
-                          "root_cause":  "Empty gh JSON output was not normalized before existence logic.",
-                          "prevention":  "Normalize null/empty to an empty array and assert count before property use.",
-                          "rules":  [
-                                        "R-02"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-003",
-                          "date":  "2026-08",
-                          "class":  "COLLECTION_CAST_TO_SCALAR",
-                          "root_cause":  "A collection of commit objects was cast to Int32.",
-                          "prevention":  "Use array cardinality with @(...).Count or a documented numeric field.",
-                          "rules":  [
-                                        "R-02"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-004",
-                          "date":  "2026-08",
-                          "class":  "REMOTE_STATE_ASSUMED_LOCAL",
-                          "root_cause":  "Remote PR merge success was treated as proof that local main/HEAD was normalized.",
-                          "prevention":  "Discover local state and perform only an explicitly authorized ff-only normalization when needed.",
-                          "rules":  [
-                                        "R-05",
-                                        "R-06",
-                                        "R-07"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-005",
-                          "date":  "2026-09-05",
-                          "class":  "NESTED_JSON_ARRAY",
-                          "root_cause":  "CLI JSON decoded to a nested array shape that was counted incorrectly.",
-                          "prevention":  "Flatten/enumerate the decoded structure explicitly and assert resulting cardinality.",
-                          "rules":  [
-                                        "R-02"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-006",
-                          "date":  "2026-09-05",
-                          "class":  "PRINTED_ERROR_NOT_STOPPED_MUTATION",
-                          "root_cause":  "A native/tool error message did not terminate the mutation loop as assumed.",
-                          "prevention":  "Use explicit exit-code gates and verify destination inventory after mutation.",
-                          "rules":  [
-                                        "R-05",
-                                        "R-08"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-007",
-                          "date":  "2026-09-05",
-                          "class":  "PLACEHOLDERS_EXECUTED_LITERAL",
-                          "root_cause":  "Placeholder values were issued inside executable commands.",
-                          "prevention":  "Issue only real values or first discover and assign them programmatically.",
-                          "rules":  [
-                                        "R-10"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-008",
-                          "date":  "2026-09-05",
-                          "class":  "MULTILINE_BLOCK_PASTED_LOOSE",
-                          "root_cause":  "A multi-line script block was executed interactively without its complete variable context.",
-                          "prevention":  "Deliver multi-line executable content as a file; console receives only invocation lines.",
-                          "rules":  [
-                                        "R-11"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-009",
-                          "date":  "2026-09-05",
-                          "class":  "VERIFICATION_FORM_NOT_CONTENT",
-                          "root_cause":  "Validation relied on presentation/form artifacts rather than semantic/content evidence.",
-                          "prevention":  "Verify decoded content, hashes, semantic names and independently verifiable artifacts.",
-                          "rules":  [
-                                        "R-12"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-010",
-                          "date":  "2026-09-05",
-                          "class":  "SIGNING_ASSUMED_FROM_CONFIG",
-                          "root_cause":  "A signing configuration flag was treated as proof of signing capability; identity scope also drifted.",
-                          "prevention":  "Prove signing with a detached signature or throwaway-repo commit; keep project identity local.",
-                          "rules":  [
-                                        "R-13"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-011",
-                          "date":  "2026-09-05",
-                          "class":  "URL_PATH_MANGLED",
-                          "root_cause":  "Windows path manipulation was applied to a server-relative URL.",
-                          "prevention":  "Manipulate URLs as URL strings.",
-                          "rules":  [
-                                        "R-14"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-012",
-                          "date":  "2026-09-05",
-                          "class":  "UNREAD_CLI_HELP_OR_STALE_DOWNLOAD",
-                          "root_cause":  "CLI option behavior was assumed and a stale downloaded script was executed.",
-                          "prevention":  "Read local help, capture CLI version, verify downloaded script identity/content marker before execution.",
-                          "rules":  [
-                                        "R-18"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-013",
-                          "date":  "2026-09-06",
-                          "class":  "EXPECTED_RECOVERY_STATE_REJECTED_AS_DIRTY_WORKTREE",
-                          "root_cause":  "A global clean-worktree precondition ignored exact expected recovery artifacts already materialized with verified bytes.",
-                          "prevention":  "Classify worktree entries as EXPECTED or UNEXPECTED before treating non-clean state as unsafe.",
-                          "rules":  [
-                                        "R-21"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-014",
-                          "date":  "2026-09-06",
-                          "class":  "POWERSHELL_5_1_SOURCE_ENCODING_UNSAFE",
-                          "root_cause":  "Non-ASCII punctuation embedded in a Windows PowerShell 5.1 script was decoded incorrectly and caused a parser failure before execution.",
-                          "prevention":  "Use ASCII-only PowerShell 5.1 source by default; prohibit smart punctuation; use ASCII-safe markers or encoded payloads for Unicode document content; byte-check final script before issuance.",
-                          "rules":  [
-                                        "R-19",
-                                        "R-22"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-015",
-                          "date":  "2026-09-06",
-                          "class":  "EXACT_MULTILINE_MATCH_EOL_SENSITIVE",
-                          "root_cause":  "Semantic content was matched using an exact multiline string whose newline representation differed between the document and Windows PowerShell source.",
-                          "prevention":  "Normalize EOL or use bounded semantic parsing/regex before multiline matching; assert exactly one intended match before mutation.",
-                          "rules":  [
-                                        "R-19",
-                                        "R-23"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-016",
-                          "date":  "2026-09-06",
-                          "class":  "CONTROLLED_DOCUMENT_GOVERNANCE_STATE_DRIFT",
-                          "root_cause":  "Controlled-document self-status and registry lifecycle/authority metadata were allowed to evolve independently without a mechanical coherence gate; document mutation also requires explicit canonical register rebind verification.",
-                          "prevention":  "Normalize recognized lifecycle-bearing self-status values and compare them with document-register lifecycle state; fail closed on contradiction or ambiguity; verify source_commit:path and canonical SHA-256 binding after controlled-document mutation.",
-                          "rules":  [
-                                        "R-24",
-                                        "R-25"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-017",
-                          "date":  "2026-09-06",
-                          "class":  "NATIVE_TOOL_AND_PREFLIGHT_CONTRACT_FAILURE",
-                          "root_cause":  "Three related script-generation failures violated native-tool and dependency-order contracts: CLI stdout and stderr were merged before JSON parsing; a Windows PowerShell automatic variable name was reused as a function parameter and altered gh invocation semantics; and a remote merge commit was used for local Git graph validation before the object had been materialized locally. A fourth failure showed that a Windows PowerShell 5.1 script was issued without a mechanical parser gate, allowing ambiguous expandable-string variable interpolation next to a colon to survive generation and fail at parse time before execution.",
-                          "prevention":  "Parse structured CLI JSON from stdout only while preserving stderr as diagnostics; treat PowerShell automatic/reserved runtime variable names as prohibited identifiers for script parameters and mutable state; distinguish remote ref visibility from local object availability and fetch/prove required objects before local graph validation; recovery remains discovery-first before repeating any authorized mutation. Require a zero-error Windows PowerShell 5.1 parser gate before issuance, and prohibit ambiguous expandable-string interpolation next to syntactically significant characters unless explicitly delimited or formatted.",
-                          "rules":  [
-                                        "R-26",
-                                        "R-27",
-                                        "R-28",
-                                        "R-29",
-                                        "R-30"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-018",
-                          "date":  "2026-09-06",
-                          "class":  "REMOTE_REF_AND_RETURN_SHAPE_CLASSIFICATION_FAILURE",
-                          "root_cause":  "Two related failures occurred after SG-017 hardening: remote branch existence was treated as an error instead of state requiring classification, and simple git ls-remote output was wrapped in collection-return logic whose runtime shape was not proven, reintroducing scalar/array ambiguity.",
-                          "prevention":  "Classify remote ref state before deciding an action; prefer minimal parsing of native output; explicitly prove function and native-command return shape and cardinality before indexing or property access; keep the parser gate as a necessary but not sufficient control.",
-                          "rules":  [
-                                        "R-31",
-                                        "R-32"
-                                    ]
-                      },
-                      {
-                          "id":  "SG-019",
-                          "date":  "2026-09-07",
-                          "class":  "SCHEMA_VERSION_AND_IDENTIFIER_FIELD_ASSUMPTION_FAILURE",
-                          "root_cause":  "A coherence validator assumed generic claim_id and evidence_id fields instead of first binding to the observed governance schema. The active registers were schema_version 2.0.0 with canonical collections claims[] and evidence[] and canonical identifier field id. The assumption produced a false negative even though the governed claim and evidence objects existed.",
-                          "prevention":  "Discover and bind schema version, canonical container, and canonical identifier field before object resolution; never infer equivalence from similar or legacy field names without explicit schema mapping; validate cross-register references bidirectionally and with exact cardinality to reduce both false negatives and false positives.",
-                          "rules":  [
-                                        "R-33",
-                                        "R-34"
-                                    ]
-                      }
-                  ]
+  "schema_version": "1.0.0",
+  "project": "Guardian F401",
+  "status": "NORMATIVE_CANDIDATE",
+  "policy": {
+    "method_fix_required": true,
+    "repeat_allowed": false,
+    "repeat_after_guardrail": "PROCESS_NONCONFORMANCE"
+  },
+  "incidents": [
+    {
+      "id": "SG-001",
+      "date": "2026-08",
+      "class": "NATIVE_STDERR_AS_FAILURE",
+      "root_cause": "Valid native-command STDERR was treated as PowerShell failure under Windows PowerShell 5.1.",
+      "prevention": "Determine native command success from LASTEXITCODE; capture or redirect STDERR deliberately.",
+      "rules": [
+        "R-01"
+      ]
+    },
+    {
+      "id": "SG-002",
+      "date": "2026-08",
+      "class": "EMPTY_JSON_AS_EXISTING_OBJECT",
+      "root_cause": "Empty gh JSON output was not normalized before existence logic.",
+      "prevention": "Normalize null/empty to an empty array and assert count before property use.",
+      "rules": [
+        "R-02"
+      ]
+    },
+    {
+      "id": "SG-003",
+      "date": "2026-08",
+      "class": "COLLECTION_CAST_TO_SCALAR",
+      "root_cause": "A collection of commit objects was cast to Int32.",
+      "prevention": "Use array cardinality with @(...).Count or a documented numeric field.",
+      "rules": [
+        "R-02"
+      ]
+    },
+    {
+      "id": "SG-004",
+      "date": "2026-08",
+      "class": "REMOTE_STATE_ASSUMED_LOCAL",
+      "root_cause": "Remote PR merge success was treated as proof that local main/HEAD was normalized.",
+      "prevention": "Discover local state and perform only an explicitly authorized ff-only normalization when needed.",
+      "rules": [
+        "R-05",
+        "R-06",
+        "R-07"
+      ]
+    },
+    {
+      "id": "SG-005",
+      "date": "2026-09-05",
+      "class": "NESTED_JSON_ARRAY",
+      "root_cause": "CLI JSON decoded to a nested array shape that was counted incorrectly.",
+      "prevention": "Flatten/enumerate the decoded structure explicitly and assert resulting cardinality.",
+      "rules": [
+        "R-02"
+      ]
+    },
+    {
+      "id": "SG-006",
+      "date": "2026-09-05",
+      "class": "PRINTED_ERROR_NOT_STOPPED_MUTATION",
+      "root_cause": "A native/tool error message did not terminate the mutation loop as assumed.",
+      "prevention": "Use explicit exit-code gates and verify destination inventory after mutation.",
+      "rules": [
+        "R-05",
+        "R-08"
+      ]
+    },
+    {
+      "id": "SG-007",
+      "date": "2026-09-05",
+      "class": "PLACEHOLDERS_EXECUTED_LITERAL",
+      "root_cause": "Placeholder values were issued inside executable commands.",
+      "prevention": "Issue only real values or first discover and assign them programmatically.",
+      "rules": [
+        "R-10"
+      ]
+    },
+    {
+      "id": "SG-008",
+      "date": "2026-09-05",
+      "class": "MULTILINE_BLOCK_PASTED_LOOSE",
+      "root_cause": "A multi-line script block was executed interactively without its complete variable context.",
+      "prevention": "Deliver multi-line executable content as a file; console receives only invocation lines.",
+      "rules": [
+        "R-11"
+      ]
+    },
+    {
+      "id": "SG-009",
+      "date": "2026-09-05",
+      "class": "VERIFICATION_FORM_NOT_CONTENT",
+      "root_cause": "Validation relied on presentation/form artifacts rather than semantic/content evidence.",
+      "prevention": "Verify decoded content, hashes, semantic names and independently verifiable artifacts.",
+      "rules": [
+        "R-12"
+      ]
+    },
+    {
+      "id": "SG-010",
+      "date": "2026-09-05",
+      "class": "SIGNING_ASSUMED_FROM_CONFIG",
+      "root_cause": "A signing configuration flag was treated as proof of signing capability; identity scope also drifted.",
+      "prevention": "Prove signing with a detached signature or throwaway-repo commit; keep project identity local.",
+      "rules": [
+        "R-13"
+      ]
+    },
+    {
+      "id": "SG-011",
+      "date": "2026-09-05",
+      "class": "URL_PATH_MANGLED",
+      "root_cause": "Windows path manipulation was applied to a server-relative URL.",
+      "prevention": "Manipulate URLs as URL strings.",
+      "rules": [
+        "R-14"
+      ]
+    },
+    {
+      "id": "SG-012",
+      "date": "2026-09-05",
+      "class": "UNREAD_CLI_HELP_OR_STALE_DOWNLOAD",
+      "root_cause": "CLI option behavior was assumed and a stale downloaded script was executed.",
+      "prevention": "Read local help, capture CLI version, verify downloaded script identity/content marker before execution.",
+      "rules": [
+        "R-18"
+      ]
+    },
+    {
+      "id": "SG-013",
+      "date": "2026-09-06",
+      "class": "EXPECTED_RECOVERY_STATE_REJECTED_AS_DIRTY_WORKTREE",
+      "root_cause": "A global clean-worktree precondition ignored exact expected recovery artifacts already materialized with verified bytes.",
+      "prevention": "Classify worktree entries as EXPECTED or UNEXPECTED before treating non-clean state as unsafe.",
+      "rules": [
+        "R-21"
+      ]
+    },
+    {
+      "id": "SG-014",
+      "date": "2026-09-06",
+      "class": "POWERSHELL_5_1_SOURCE_ENCODING_UNSAFE",
+      "root_cause": "Non-ASCII punctuation embedded in a Windows PowerShell 5.1 script was decoded incorrectly and caused a parser failure before execution.",
+      "prevention": "Use ASCII-only PowerShell 5.1 source by default; prohibit smart punctuation; use ASCII-safe markers or encoded payloads for Unicode document content; byte-check final script before issuance.",
+      "rules": [
+        "R-19",
+        "R-22"
+      ]
+    },
+    {
+      "id": "SG-015",
+      "date": "2026-09-06",
+      "class": "EXACT_MULTILINE_MATCH_EOL_SENSITIVE",
+      "root_cause": "Semantic content was matched using an exact multiline string whose newline representation differed between the document and Windows PowerShell source.",
+      "prevention": "Normalize EOL or use bounded semantic parsing/regex before multiline matching; assert exactly one intended match before mutation.",
+      "rules": [
+        "R-19",
+        "R-23"
+      ]
+    },
+    {
+      "id": "SG-016",
+      "date": "2026-09-06",
+      "class": "CONTROLLED_DOCUMENT_GOVERNANCE_STATE_DRIFT",
+      "root_cause": "Controlled-document self-status and registry lifecycle/authority metadata were allowed to evolve independently without a mechanical coherence gate; document mutation also requires explicit canonical register rebind verification.",
+      "prevention": "Normalize recognized lifecycle-bearing self-status values and compare them with document-register lifecycle state; fail closed on contradiction or ambiguity; verify source_commit:path and canonical SHA-256 binding after controlled-document mutation.",
+      "rules": [
+        "R-24",
+        "R-25"
+      ]
+    },
+    {
+      "id": "SG-017",
+      "date": "2026-09-06",
+      "class": "NATIVE_TOOL_AND_PREFLIGHT_CONTRACT_FAILURE",
+      "root_cause": "Three related script-generation failures violated native-tool and dependency-order contracts: CLI stdout and stderr were merged before JSON parsing; a Windows PowerShell automatic variable name was reused as a function parameter and altered gh invocation semantics; and a remote merge commit was used for local Git graph validation before the object had been materialized locally. A fourth failure showed that a Windows PowerShell 5.1 script was issued without a mechanical parser gate, allowing ambiguous expandable-string variable interpolation next to a colon to survive generation and fail at parse time before execution.",
+      "prevention": "Parse structured CLI JSON from stdout only while preserving stderr as diagnostics; treat PowerShell automatic/reserved runtime variable names as prohibited identifiers for script parameters and mutable state; distinguish remote ref visibility from local object availability and fetch/prove required objects before local graph validation; recovery remains discovery-first before repeating any authorized mutation. Require a zero-error Windows PowerShell 5.1 parser gate before issuance, and prohibit ambiguous expandable-string interpolation next to syntactically significant characters unless explicitly delimited or formatted.",
+      "rules": [
+        "R-26",
+        "R-27",
+        "R-28",
+        "R-29",
+        "R-30"
+      ]
+    },
+    {
+      "id": "SG-018",
+      "date": "2026-09-06",
+      "class": "REMOTE_REF_AND_RETURN_SHAPE_CLASSIFICATION_FAILURE",
+      "root_cause": "Two related failures occurred after SG-017 hardening: remote branch existence was treated as an error instead of state requiring classification, and simple git ls-remote output was wrapped in collection-return logic whose runtime shape was not proven, reintroducing scalar/array ambiguity.",
+      "prevention": "Classify remote ref state before deciding an action; prefer minimal parsing of native output; explicitly prove function and native-command return shape and cardinality before indexing or property access; keep the parser gate as a necessary but not sufficient control.",
+      "rules": [
+        "R-31",
+        "R-32"
+      ]
+    },
+    {
+      "id": "SG-019",
+      "date": "2026-09-07",
+      "class": "SCHEMA_VERSION_AND_IDENTIFIER_FIELD_ASSUMPTION_FAILURE",
+      "root_cause": "A coherence validator assumed generic claim_id and evidence_id fields instead of first binding to the observed governance schema. The active registers were schema_version 2.0.0 with canonical collections claims[] and evidence[] and canonical identifier field id. The assumption produced a false negative even though the governed claim and evidence objects existed.",
+      "prevention": "Discover and bind schema version, canonical container, and canonical identifier field before object resolution; never infer equivalence from similar or legacy field names without explicit schema mapping; validate cross-register references bidirectionally and with exact cardinality to reduce both false negatives and false positives.",
+      "rules": [
+        "R-33",
+        "R-34"
+      ]
+    }
+  ]
 }
