@@ -173,6 +173,20 @@
         "R-24",
         "R-25"
       ]
+    },
+    {
+      "id": "SG-017",
+      "date": "2026-09-06",
+      "class": "NATIVE_TOOL_AND_PREFLIGHT_CONTRACT_FAILURE",
+      "root_cause": "Three related script-generation failures violated native-tool and dependency-order contracts: CLI stdout and stderr were merged before JSON parsing; a Windows PowerShell automatic variable name was reused as a function parameter and altered gh invocation semantics; and a remote merge commit was used for local Git graph validation before the object had been materialized locally. A fourth failure showed that a Windows PowerShell 5.1 script was issued without a mechanical parser gate, allowing ambiguous expandable-string variable interpolation next to a colon to survive generation and fail at parse time before execution.",
+      "prevention": "Parse structured CLI JSON from stdout only while preserving stderr as diagnostics; treat PowerShell automatic/reserved runtime variable names as prohibited identifiers for script parameters and mutable state; distinguish remote ref visibility from local object availability and fetch/prove required objects before local graph validation; recovery remains discovery-first before repeating any authorized mutation. Require a zero-error Windows PowerShell 5.1 parser gate before issuance, and prohibit ambiguous expandable-string interpolation next to syntactically significant characters unless explicitly delimited or formatted.",
+      "rules": [
+        "R-26",
+        "R-27",
+        "R-28",
+        "R-29",
+        "R-30"
+      ]
     }
   ]
 }
