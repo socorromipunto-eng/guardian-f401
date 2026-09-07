@@ -101,6 +101,8 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-30 | Expandable PowerShell strings MUST NOT rely on ambiguous variable interpolation next to syntactically significant characters. Prefer the format operator, explicit concatenation, or delimited variable syntax. Ambiguous forms such as a variable immediately followed by a colon are prohibited unless parser-safe delimitation is proven. | SG-017 |
 | R-31 | Remote ref existence or absence SHALL be treated as state, not success or failure. The script SHALL classify the observed remote ref state against the expected operation before deciding whether to stop, reuse, update, create or escalate. | SG-018 |
 | R-32 | Native command output SHALL be parsed with the minimum structure required by the operation. Collection or wrapper abstraction for scalar or line-oriented output is prohibited unless expected cardinality and return shape are explicitly proven. | SG-018 |
+| R-33 | Validation logic SHALL resolve governance objects using the schema version, canonical container, and canonical identifier field actually observed in the artifact. Similar or legacy field names SHALL NOT be treated as equivalent without an explicit schema mapping. | SG-019 |
+| R-34 | Cross-register coherence SHALL be validated bidirectionally and with exact cardinality before a claim, evidence item, assessment, or transition is accepted as coherent. | SG-019 |
 
 ---
 
@@ -141,6 +143,8 @@ G2 PLAN
   C-18G Windows PowerShell 5.1 parser validation completed with exactly zero parser errors before script issuance
   C-18H remote refs required by the operation are classified as ABSENT / EXPECTED / STALE_EXPECTED / UNEXPECTED before mutation
   C-18I function and native-command return shapes are explicitly declared and cardinality-tested before indexing or property access
+  C-18J governance validation discovers and binds schema version, canonical container, and canonical identifier field before object resolution
+  C-18K cross-register references are validated bidirectionally with exact cardinality before coherence is accepted
 
 G3 APPLY
   C-19 script performs only the authorized mutation
