@@ -198,6 +198,17 @@
         "R-31",
         "R-32"
       ]
+    },
+    {
+      "id": "SG-019",
+      "date": "2026-09-07",
+      "class": "SCHEMA_VERSION_AND_IDENTIFIER_FIELD_ASSUMPTION_FAILURE",
+      "root_cause": "A coherence validator assumed generic claim_id and evidence_id fields instead of first binding to the observed governance schema. The active registers were schema_version 2.0.0 with canonical collections claims[] and evidence[] and canonical identifier field id. The assumption produced a false negative even though the governed claim and evidence objects existed.",
+      "prevention": "Discover and bind schema version, canonical container, and canonical identifier field before object resolution; never infer equivalence from similar or legacy field names without explicit schema mapping; validate cross-register references bidirectionally and with exact cardinality to reduce both false negatives and false positives.",
+      "rules": [
+        "R-33",
+        "R-34"
+      ]
     }
   ]
 }
