@@ -1,0 +1,16 @@
+EVIDENCE_TYPE=HOST_BUILD
+MILESTONE=M16
+BOUNDARY=M16-RR-04A
+SOURCE_COMMIT=50c34dd540ed9f9c658e6cb8c6d26e58594d4846
+BRANCH=feature/m16-evidence-claim-v2-materialization
+TOOLCHAIN_PATH=C:\Program Files\LLVM\bin\clang.exe
+TOOLCHAIN_VERSION=clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)
+Target: x86_64-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Program Files\LLVM\bin
+BUILD_COMMAND="C:\Program Files\LLVM\bin\clang.exe" -std=c11 -Wall -Wextra -Wpedantic -Werror -Ifirmware/NodeLink/Inc firmware/NodeLink/Src/guardian_node_link.c firmware/Tests/node_link_host_test.c -o "evidence\m16\rr04a\node_link_host_test.exe"
+BUILD_EXIT_CODE=0
+WARNINGS_POLICY=-Wall -Wextra -Wpedantic -Werror
+PHYSICAL_HARDWARE_EXECUTION=NOT_CLAIMED
+PHYSICAL_VALIDATION=NOT_DEMONSTRATED
+PERSISTENT_ANTI_REPLAY=NOT_DEMONSTRATED

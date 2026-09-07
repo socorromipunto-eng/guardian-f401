@@ -1,0 +1,15 @@
+{
+    "schema_version":  "1.0.0",
+    "rule_id":  "guardian:assessment-rule:m16-session-sequence-rejection",
+    "rule_version":  "1.0.0",
+    "required_evidence_classes":  [
+                                      "HOST_EXECUTION"
+                                  ],
+    "material_contradiction_classes":  [
+                                           "HOST_EXECUTION",
+                                           "UNIT_TEST",
+                                           "PROTOCOL_TEST",
+                                           "FUZZ"
+                                       ],
+    "contradiction_policy":  "MATERIAL_CONTRADICTION_YIELDS_CONTRADICTED"
+}

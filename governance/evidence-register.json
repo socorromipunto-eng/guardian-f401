@@ -1,4 +1,74 @@
 {
-  "schema_version": "1.0.0",
-  "evidence": []
+    "schema_version":  "2.0.0",
+    "evidence":  [
+                     {
+                         "id":  "guardian:evidence:m16-rr04a-session-sequence-host",
+                         "version":  "1.0.0",
+                         "evidence_class":  "HOST_EXECUTION",
+                         "validation_state":  "VALID",
+                         "role":  "SUPPORTING",
+                         "observed_at":  "2026-09-07T14:48:00.092Z",
+                         "eligible_claim_refs":  [
+                                                     "guardian:claim:m16-session-sequence-rejection"
+                                                 ],
+                         "applicability":  {
+                                               "source_commit":  {
+                                                                     "state":  "EXPLICIT_VALUE",
+                                                                     "value":  "50c34dd540ed9f9c658e6cb8c6d26e58594d4846"
+                                                                 },
+                                               "source_tree":  {
+                                                                   "state":  "EXPLICIT_VALUE",
+                                                                   "value":  "e5fe67e817b78b95b96d2c8f011de30b96173e92"
+                                                               },
+                                               "firmware_version":  {
+                                                                        "state":  "NOT_APPLICABLE"
+                                                                    },
+                                               "hardware_family":  {
+                                                                       "state":  "NOT_APPLICABLE"
+                                                                   },
+                                               "hardware_revision":  {
+                                                                         "state":  "NOT_APPLICABLE"
+                                                                     },
+                                               "configuration_id":  {
+                                                                        "state":  "EXPLICIT_VALUE",
+                                                                        "value":  "m16-rr04a-clang22-host"
+                                                                    },
+                                               "semantic_contract_id":  {
+                                                                            "state":  "NOT_APPLICABLE"
+                                                                        },
+                                               "semantic_contract_version":  {
+                                                                                 "state":  "NOT_APPLICABLE"
+                                                                             },
+                                               "protocol_id":  {
+                                                                   "state":  "EXPLICIT_VALUE",
+                                                                   "value":  "guardian:nodelink"
+                                                               },
+                                               "protocol_version":  {
+                                                                        "state":  "EXPLICIT_VALUE",
+                                                                        "value":  "0.1"
+                                                                    },
+                                               "toolchain_id":  {
+                                                                    "state":  "EXPLICIT_VALUE",
+                                                                    "value":  "llvm-clang-22.1.8-windows-x86-64"
+                                                                },
+                                               "environment_class":  {
+                                                                         "state":  "EXPLICIT_VALUE",
+                                                                         "value":  "windows-x86-64-host"
+                                                                     },
+                                               "execution_mode":  {
+                                                                      "state":  "EXPLICIT_VALUE",
+                                                                      "value":  "host-execution"
+                                                                  }
+                                           },
+                         "provenance":  {
+                                            "origin_type":  "TOOL",
+                                            "producer":  "guardian-node-link-host-test",
+                                            "producer_version":  "m16-rr04a",
+                                            "captured_at":  "2026-09-07T19:29:22.7607730Z",
+                                            "artifact_sha256":  "48FA31DB1D57C894FC24B5FBC71B9B2E9F8A0C784F501BCDF09B2095D61F49B8",
+                                            "source_uri":  "evidence/m16/rr04a/node-link-host-test.txt"
+                                        },
+                         "intake_ref":  "guardian:intake:m16-rr04a"
+                     }
+                 ]
 }
