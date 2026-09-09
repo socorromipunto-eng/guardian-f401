@@ -606,10 +606,14 @@ int guardian_crypto_constant_time_equal(
     /* Track the current byte. */
     size_t index = 0U;
 
-    /* Reject missing non-empty inputs. */
-    if (((left == NULL) ||
-         (right == NULL)) &&
-        (length != 0U))
+    /*
+     * Reject missing inputs and zero-width comparisons fail closed.
+     * A cryptographic equality decision requires two concrete,
+     * non-empty byte strings.
+     */
+    if ((left == NULL) ||
+        (right == NULL) ||
+        (length == 0U))
     {
         /* Report mismatch. */
         return 0;

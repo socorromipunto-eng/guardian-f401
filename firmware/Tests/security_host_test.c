@@ -394,6 +394,82 @@ static void test_crypto_vectors(void)
             digest,
             expected_hmac,
             sizeof(expected_hmac)) == 0);
+
+    /* Store deterministic bytes for constant-time equality contract tests. */
+    static const uint8_t equal_left[2] =
+    {
+        0xA5U,
+        0x5AU
+    };
+
+    /* Store an independently addressable equal value. */
+    static const uint8_t equal_right[2] =
+    {
+        0xA5U,
+        0x5AU
+    };
+
+    /* Store a distinct value with the same width. */
+    static const uint8_t different_right[2] =
+    {
+        0xA5U,
+        0x5BU
+    };
+
+    /*
+     * A cryptographic equality decision over no bytes must fail closed,
+     * including when either or both caller pointers are absent.
+     */
+    assert(
+        guardian_crypto_constant_time_equal(
+            NULL,
+            NULL,
+            0U) == 0);
+
+    assert(
+        guardian_crypto_constant_time_equal(
+            NULL,
+            equal_right,
+            0U) == 0);
+
+    assert(
+        guardian_crypto_constant_time_equal(
+            equal_left,
+            NULL,
+            0U) == 0);
+
+    assert(
+        guardian_crypto_constant_time_equal(
+            equal_left,
+            equal_right,
+            0U) == 0);
+
+    /* Missing non-empty inputs must continue to fail closed. */
+    assert(
+        guardian_crypto_constant_time_equal(
+            NULL,
+            equal_right,
+            sizeof(equal_right)) == 0);
+
+    assert(
+        guardian_crypto_constant_time_equal(
+            equal_left,
+            NULL,
+            sizeof(equal_left)) == 0);
+
+    /* Equal non-empty byte strings must still compare equal. */
+    assert(
+        guardian_crypto_constant_time_equal(
+            equal_left,
+            equal_right,
+            sizeof(equal_left)) == 1);
+
+    /* Different non-empty byte strings must still compare unequal. */
+    assert(
+        guardian_crypto_constant_time_equal(
+            equal_left,
+            different_right,
+            sizeof(equal_left)) == 0);
 }
 
 /* Establish one deterministic OPERATOR session for anti-replay tests. */
