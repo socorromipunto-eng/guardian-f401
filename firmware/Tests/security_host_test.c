@@ -656,7 +656,39 @@ static void test_authenticated_session_and_replay(void)
             inner.command) ==
         1);
 
-    /* Replay the exact same authenticated request. */
+    /*
+     * Capture diagnostics before hostile unauthenticated counter injection.
+     * The next expected authenticated counter remains two.
+     */
+    guardian_security_status_t before_unauthenticated_counter =
+        guardian_security_status(
+            &security,
+            103U);
+
+    assert(before_unauthenticated_counter.next_counter == 2ULL);
+
+    /*
+     * Build a request carrying the wrong counter with an otherwise correctly
+     * constructed transcript, then corrupt its authentication tag.
+     */
+    outer =
+        test_secure_request(
+            session_key,
+            0xA1B2C3D4UL,
+            999ULL,
+            78U,
+            (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND,
+            (const uint8_t *)"\x01\x01",
+            2U);
+
+    outer.payload[
+        outer.payload_length - 1U] ^=
+        0x01U;
+
+    /*
+     * Unauthenticated counter bytes must not be classified as replay
+     * evidence. Authentication fails and the counter remains unconsumed.
+     */
     assert(
         guardian_security_unwrap_request(
             &security,
@@ -664,25 +696,35 @@ static void test_authenticated_session_and_replay(void)
             103U,
             &inner,
             &verified_counter) ==
-        GUARDIAN_SECURITY_ERROR_REPLAY);
+        GUARDIAN_SECURITY_ERROR_UNAUTHORIZED);
 
-    /* Build valid counter-two request. */
+    guardian_security_status_t after_unauthenticated_counter =
+        guardian_security_status(
+            &security,
+            103U);
+
+    assert(
+        after_unauthenticated_counter.replay_rejections ==
+        before_unauthenticated_counter.replay_rejections);
+
+    assert(
+        after_unauthenticated_counter.auth_failures ==
+        (before_unauthenticated_counter.auth_failures + 1U));
+
+    assert(after_unauthenticated_counter.next_counter == 2ULL);
+
+    /* Rebuild and replay the authentic counter-one request. */
     outer =
         test_secure_request(
             session_key,
             0xA1B2C3D4UL,
-            2ULL,
-            78U,
-            (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND,
-            (const uint8_t *)"\x01\x01",
-            2U);
+            1ULL,
+            79U,
+            (uint8_t)GUARDIAN_COMMAND_BASELINE_CONTROL,
+            baseline_payload,
+            sizeof(baseline_payload));
 
-    /* Corrupt one transmitted tag byte. */
-    outer.payload[
-        outer.payload_length - 1U] ^=
-        0x01U;
-
-    /* Require tag failure without consuming counter two. */
+    /* A correctly authenticated duplicate is genuine replay evidence. */
     assert(
         guardian_security_unwrap_request(
             &security,
@@ -690,20 +732,22 @@ static void test_authenticated_session_and_replay(void)
             104U,
             &inner,
             &verified_counter) ==
-        GUARDIAN_SECURITY_ERROR_UNAUTHORIZED);
+        GUARDIAN_SECURITY_ERROR_REPLAY);
 
-    /* Rebuild the correct counter-two request. */
+    /*
+     * A correctly authenticated skipped/future counter is rejected by the
+     * strict monotonic policy without consuming the expected counter.
+     */
     outer =
         test_secure_request(
             session_key,
             0xA1B2C3D4UL,
-            2ULL,
-            79U,
+            9ULL,
+            80U,
             (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND,
             (const uint8_t *)"\x01\x01",
             2U);
 
-    /* Require valid counter two still succeeds. */
     assert(
         guardian_security_unwrap_request(
             &security,
@@ -711,25 +755,81 @@ static void test_authenticated_session_and_replay(void)
             105U,
             &inner,
             &verified_counter) ==
-        GUARDIAN_SECURITY_OK);
+        GUARDIAN_SECURITY_ERROR_REPLAY);
 
-    /* Read public diagnostics. */
-    guardian_security_status_t status =
+    guardian_security_status_t after_authenticated_counter_rejections =
         guardian_security_status(
             &security,
             105U);
 
-    /* Require active authenticated session. */
-    assert(status.active == 1U);
+    assert(
+        after_authenticated_counter_rejections.replay_rejections ==
+        (before_unauthenticated_counter.replay_rejections + 2U));
 
-    /* Require two valid secure requests consumed. */
+    assert(after_authenticated_counter_rejections.next_counter == 2ULL);
+
+    /* Build the expected counter-two request and corrupt its tag. */
+    outer =
+        test_secure_request(
+            session_key,
+            0xA1B2C3D4UL,
+            2ULL,
+            81U,
+            (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND,
+            (const uint8_t *)"\x01\x01",
+            2U);
+
+    outer.payload[
+        outer.payload_length - 1U] ^=
+        0x01U;
+
+    /* Invalid authentication must not consume the expected counter. */
+    assert(
+        guardian_security_unwrap_request(
+            &security,
+            &outer,
+            106U,
+            &inner,
+            &verified_counter) ==
+        GUARDIAN_SECURITY_ERROR_UNAUTHORIZED);
+
+    /* Rebuild the correct expected counter-two request. */
+    outer =
+        test_secure_request(
+            session_key,
+            0xA1B2C3D4UL,
+            2ULL,
+            82U,
+            (uint8_t)GUARDIAN_COMMAND_CONTROL_COMMAND,
+            (const uint8_t *)"\x01\x01",
+            2U);
+
+    /* Require valid authenticated counter two still succeeds. */
+    assert(
+        guardian_security_unwrap_request(
+            &security,
+            &outer,
+            107U,
+            &inner,
+            &verified_counter) ==
+        GUARDIAN_SECURITY_OK);
+
+    /* Read final public diagnostics. */
+    guardian_security_status_t status =
+        guardian_security_status(
+            &security,
+            107U);
+
+    assert(status.active == 1U);
     assert(status.next_counter == 3ULL);
 
-    /* Require one replay rejection. */
-    assert(status.replay_rejections == 1U);
+    assert(
+        status.replay_rejections ==
+        (before_unauthenticated_counter.replay_rejections + 2U));
 
-    /* Require at least one authentication/tag failure. */
-    assert(status.auth_failures >= 1U);
+    assert(
+        status.auth_failures >=
+        (before_unauthenticated_counter.auth_failures + 2U));
 }
 
 /* Execute every portable M10 security test. */

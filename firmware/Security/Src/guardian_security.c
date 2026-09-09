@@ -1178,17 +1178,6 @@ guardian_security_result_t guardian_security_unwrap_request(
         guardian_security_read_u64_be(
             &outer_request->payload[5]);
 
-    /* Reject both duplicates and skipped counters. */
-    if (request_counter !=
-        security->session.next_counter)
-    {
-        /* Count strict anti-replay rejection. */
-        guardian_security_increment_u32(
-            &security->replay_rejections);
-
-        /* Reject replay or out-of-order traffic. */
-        return GUARDIAN_SECURITY_ERROR_REPLAY;
-    }
 
     /* Decode inner privileged command. */
     uint8_t inner_command =
@@ -1273,6 +1262,21 @@ guardian_security_result_t guardian_security_unwrap_request(
     guardian_crypto_zero(
         expected_tag,
         sizeof(expected_tag));
+    /*
+     * Interpret the request counter only after message authenticity is
+     * established. Parsed counter bytes are not replay evidence until the
+     * authenticated transcript has been verified.
+     */
+    if (request_counter !=
+        security->session.next_counter)
+    {
+        /* Count only authenticated duplicate or out-of-order traffic. */
+        guardian_security_increment_u32(
+            &security->replay_rejections);
+
+        /* Reject authenticated replay or skipped-counter traffic. */
+        return GUARDIAN_SECURITY_ERROR_REPLAY;
+    }
 
     /* Build one ordinary inner Guardian request for existing command handlers. */
     (void)memset(
