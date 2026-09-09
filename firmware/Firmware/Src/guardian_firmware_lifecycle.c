@@ -181,6 +181,16 @@ guardian_firmware_result_t guardian_firmware_lifecycle_configure(
         return GUARDIAN_FIRMWARE_ERROR_UNCONFIGURED;
     }
 
+    /* Require one explicit supported signature policy. */
+    if ((config->required_signature_algorithm !=
+         GUARDIAN_FIRMWARE_SIGNATURE_ED25519) &&
+        (config->required_signature_algorithm !=
+         GUARDIAN_FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256))
+    {
+        /* Reject ambiguous or unsupported verification authority. */
+        return GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD;
+    }
+
     /* Require persisted rollback floor not to exceed the confirmed running version. */
     if (config->rollback_floor >
         config->active_version_counter)
@@ -547,6 +557,17 @@ guardian_firmware_result_t guardian_firmware_begin(
             manifest->signature_length) == 0)
     {
         /* Record invalid signed metadata. */
+        return guardian_firmware_fail(
+            lifecycle,
+            GUARDIAN_FIRMWARE_FAILURE_INVALID_PAYLOAD,
+            GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+    }
+
+    /* Require candidate algorithm to match configured authority policy. */
+    if (manifest->signature_algorithm !=
+        lifecycle->config.required_signature_algorithm)
+    {
+        /* Reject algorithm-policy mismatch fail closed. */
         return guardian_firmware_fail(
             lifecycle,
             GUARDIAN_FIRMWARE_FAILURE_INVALID_PAYLOAD,
