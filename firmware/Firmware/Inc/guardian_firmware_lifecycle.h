@@ -301,6 +301,9 @@ typedef struct
     /* Verify the candidate manifest signature using trusted key storage. */
     guardian_firmware_verify_signature_fn verify_signature;
 
+    /* Require one explicitly authorized signature algorithm. */
+    uint8_t required_signature_algorithm;
+
     /* Persist pending activation metadata. */
     guardian_firmware_mark_pending_fn mark_pending;
 

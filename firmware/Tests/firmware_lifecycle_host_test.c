@@ -406,6 +406,10 @@ static void test_configure(
     config.verify_signature =
         test_verify_signature;
 
+    /* Explicitly authorize only the simulator/test signature algorithm. */
+    config.required_signature_algorithm =
+        GUARDIAN_FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256;
+
     /* Connect fake pending metadata persistence. */
     config.mark_pending =
         test_mark_pending;
@@ -765,9 +769,107 @@ static void test_failed_boot_preserves_floor(void)
         0U);
 }
 
+/* Verify explicit signature policy rejects ambiguity and cross-policy manifests. */
+static void test_signature_algorithm_policy(void)
+{
+    guardian_firmware_lifecycle_t lifecycle = {0};
+    test_backend_t backend = {0};
+
+    static const uint8_t image[] =
+        "Guardian M12 signature policy test";
+
+    test_configure(
+        &lifecycle,
+        &backend,
+        11U);
+
+    guardian_firmware_config_t config =
+        lifecycle.config;
+
+    /* Zero policy must fail closed. */
+    config.required_signature_algorithm =
+        0U;
+
+    assert(
+        guardian_firmware_lifecycle_configure(
+            &lifecycle,
+            &config) ==
+        GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+
+    /* Unknown policy identifiers must fail closed. */
+    config.required_signature_algorithm =
+        0x7FU;
+
+    assert(
+        guardian_firmware_lifecycle_configure(
+            &lifecycle,
+            &config) ==
+        GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+
+    /* Configure an explicit production Ed25519 policy. */
+    config.required_signature_algorithm =
+        GUARDIAN_FIRMWARE_SIGNATURE_ED25519;
+
+    assert(
+        guardian_firmware_lifecycle_configure(
+            &lifecycle,
+            &config) ==
+        GUARDIAN_FIRMWARE_OK);
+
+    guardian_firmware_manifest_t manifest =
+        test_manifest(
+            &backend,
+            image,
+            sizeof(image),
+            12U);
+
+    /* Production policy must reject a demo manifest before staging. */
+    assert(
+        guardian_firmware_begin(
+            &lifecycle,
+            &manifest) ==
+        GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+
+    /* Restore explicit simulator/test policy. */
+    test_configure(
+        &lifecycle,
+        &backend,
+        11U);
+
+    /* Construct structurally valid Ed25519-width metadata. */
+    manifest.signature_algorithm =
+        GUARDIAN_FIRMWARE_SIGNATURE_ED25519;
+    manifest.signature_length =
+        64U;
+
+    /* Demo policy must reject an Ed25519 manifest before staging. */
+    assert(
+        guardian_firmware_begin(
+            &lifecycle,
+            &manifest) ==
+        GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+
+    /* Matching demo policy and demo manifest remain permitted. */
+    manifest =
+        test_manifest(
+            &backend,
+            image,
+            sizeof(image),
+            12U);
+
+    assert(
+        guardian_firmware_begin(
+            &lifecycle,
+            &manifest) ==
+        GUARDIAN_FIRMWARE_OK);
+}
+
 /* Execute every portable M12 lifecycle test. */
 int main(void)
 {
+    /* Verify explicit firmware signature-policy enforcement. */
+    test_signature_algorithm_policy();
+
     /* Verify confirmation and anti-rollback advancement. */
     test_confirmed_candidate();
 
