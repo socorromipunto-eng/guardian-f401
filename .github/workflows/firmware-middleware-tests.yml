@@ -315,3 +315,22 @@ jobs:
       # Run hostile authentication-boundary assertions.
       - name: Run C5-R1 NodeLink authentication tests
         run: ./build/node_link_auth_host_test
+      # Compile C5-R2 authenticated semantic-binding tests.
+      - name: Compile C5-R2 NodeLink semantic compatibility tests
+        run: >
+          gcc
+          -std=c11
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/NodeLink/Inc
+          firmware/NodeLink/Src/guardian_node_link.c
+          firmware/NodeLink/Src/guardian_node_link_auth.c
+          firmware/NodeLink/Src/guardian_node_link_semantic.c
+          firmware/Tests/node_link_semantic_host_test.c
+          -o build/node_link_semantic_host_test
+
+      # Run fail-closed semantic-binding and compatibility assertions.
+      - name: Run C5-R2 NodeLink semantic compatibility tests
+        run: ./build/node_link_semantic_host_test
