@@ -6,12 +6,15 @@
 #include <stdint.h>
 
 /*
- * C5-R3A runtime freshness state model.
+ * C5-R3A/R3B bounded freshness state and evaluation model.
  *
- * This module deliberately does not establish freshness.
+ * C5-R3A materializes the runtime freshness state model.
  *
- * It materializes the bounded state required by later C5-R3 phases while
- * preserving the following architectural separations:
+ * C5-R3B adds bounded session-local replay/freshness evaluation and permits
+ * same-epoch accepted-sequence advancement only when the current runtime is
+ * already ACTIVE and the current policy returns DECISION_ACCEPT.
+ *
+ * The module preserves the following architectural separations:
  *
  * AUTHENTICATED != FRESH
  * SIGNED_EPOCH != CURRENT_EPOCH
@@ -22,11 +25,18 @@
  * FRESH != AUTHORIZED
  * FRESH != ACTUATION_AUTHORIZED
  *
- * C5-R3A does not implement:
+ * C5-R3B bootstrap model B2:
  *
- * - epoch acceptance;
- * - replay evaluation;
- * - sequence acceptance;
+ * - UNINITIALIZED input is OBSERVE_ONLY;
+ * - no incoming message automatically promotes runtime to ACTIVE;
+ * - initial accepted-epoch establishment is deferred to a separately governed
+ *   transition boundary;
+ * - a changed authenticated epoch is not automatically accepted.
+ *
+ * This module does not implement:
+ *
+ * - initial epoch acceptance;
+ * - epoch replacement;
  * - persistent freshness;
  * - persistence-provider behavior;
  * - rollback detection;

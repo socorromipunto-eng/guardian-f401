@@ -165,6 +165,20 @@ guardian_node_link_freshness_runtime_validate(
      * If accepted sequence state is declared valid, zero may not be treated
      * as an accepted sequence.
      */
+    /*
+     * An accepted epoch is a security-relevant established generation.
+     *
+     * R1 does not authenticate sender_epoch zero. R3 therefore also rejects
+     * zero when runtime claims that an accepted epoch is valid, preventing a
+     * forged or manually constructed typed object from creating a weaker
+     * freshness boundary than the authenticated path.
+     */
+    if ((runtime->accepted_epoch_valid != 0U) &&
+        (runtime->accepted_epoch == 0U))
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
     if ((runtime->accepted_sequence_valid != 0U) &&
         (runtime->accepted_sequence == 0U))
     {
@@ -313,7 +327,8 @@ static int guardian_node_link_freshness_identity_from_message(
         (message->authenticated_message.key_id == 0U) ||
         (message->authenticated_message.signature_algorithm !=
             GUARDIAN_NODE_LINK_SIGNATURE_ED25519) ||
-        (message->authenticated_message.frame.sequence == 0U))
+        (message->authenticated_message.frame.sequence == 0U) ||
+        (message->authenticated_message.frame.sender_epoch == 0U))
     {
         return 0;
     }

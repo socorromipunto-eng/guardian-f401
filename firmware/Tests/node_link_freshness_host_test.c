@@ -1405,6 +1405,188 @@ static int test_r3b_malformed_runtime_invalidates_output(void)
 
     return 0;
 }
+static int test_r3b_zero_epoch_rejected(void)
+{
+    guardian_node_link_freshness_runtime_t runtime;
+    guardian_node_link_freshness_runtime_t before;
+    guardian_node_link_pre_freshness_compatible_message_t message;
+    guardian_node_link_freshness_policy_t policy;
+    guardian_node_link_freshness_evaluation_t evaluation;
+
+    runtime = make_valid_active();
+    before = runtime;
+    policy = make_valid_r3b_policy(4U);
+
+    message = make_valid_r3b_message(0U, 12U);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate(
+            &policy,
+            &runtime,
+            &message,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_MESSAGE);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    TEST_ASSERT(
+        memcmp(&runtime, &before, sizeof(runtime)) == 0);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate_and_apply(
+            &policy,
+            &runtime,
+            &message,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_MESSAGE);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    TEST_ASSERT(
+        memcmp(&runtime, &before, sizeof(runtime)) == 0);
+
+    runtime = make_valid_active();
+    runtime.accepted_epoch = 0U;
+    before = runtime;
+
+    message = make_valid_r3b_message(7U, 12U);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_runtime_validate(&runtime) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate(
+            &policy,
+            &runtime,
+            &message,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    TEST_ASSERT(
+        memcmp(&runtime, &before, sizeof(runtime)) == 0);
+
+    return 0;
+}
+
+static int test_r3b_null_argument_contract(void)
+{
+    guardian_node_link_freshness_runtime_t runtime;
+    guardian_node_link_freshness_runtime_t before;
+    guardian_node_link_pre_freshness_compatible_message_t message;
+    guardian_node_link_freshness_policy_t policy;
+    guardian_node_link_freshness_evaluation_t evaluation;
+
+    runtime = make_valid_active();
+    before = runtime;
+    policy = make_valid_r3b_policy(4U);
+    message = make_valid_r3b_message(7U, 12U);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate(
+            &policy,
+            NULL,
+            &message,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate(
+            &policy,
+            &runtime,
+            NULL,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate(
+            &policy,
+            &runtime,
+            &message,
+            NULL) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate_and_apply(
+            &policy,
+            NULL,
+            &message,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    (void)memset(&evaluation, 0xA5, sizeof(evaluation));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate_and_apply(
+            &policy,
+            &runtime,
+            NULL,
+            &evaluation) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        evaluation.decision ==
+        GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID);
+
+    TEST_ASSERT(evaluation.transition_applied == 0U);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_evaluate_and_apply(
+            &policy,
+            &runtime,
+            &message,
+            NULL) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        memcmp(&runtime, &before, sizeof(runtime)) == 0);
+
+    return 0;
+}
 int main(void)
 {
     TEST_ASSERT(test_init_zeroization() == 0);
@@ -1430,6 +1612,8 @@ int main(void)
     TEST_ASSERT(test_r3b_zero_gap_policy_rejected() == 0);
     TEST_ASSERT(test_r3b_lower_numeric_epoch_requires_transition() == 0);
     TEST_ASSERT(test_r3b_malformed_runtime_invalidates_output() == 0);
+    TEST_ASSERT(test_r3b_zero_epoch_rejected() == 0);
+    TEST_ASSERT(test_r3b_null_argument_contract() == 0);
 
     (void)printf("C5_R3A_FRESHNESS_STATE_HOST_TEST=PASS\n");
     (void)printf("C5_R3B_FRESHNESS_EVALUATOR_HOST_TEST=PASS\n");
