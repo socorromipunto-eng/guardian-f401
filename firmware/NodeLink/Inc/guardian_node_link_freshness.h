@@ -6,12 +6,15 @@
 #include <stdint.h>
 
 /*
- * C5-R3A runtime freshness state model.
+ * C5-R3A/R3B bounded freshness state and evaluation model.
  *
- * This module deliberately does not establish freshness.
+ * C5-R3A materializes the runtime freshness state model.
  *
- * It materializes the bounded state required by later C5-R3 phases while
- * preserving the following architectural separations:
+ * C5-R3B adds bounded session-local replay/freshness evaluation and permits
+ * same-epoch accepted-sequence advancement only when the current runtime is
+ * already ACTIVE and the current policy returns DECISION_ACCEPT.
+ *
+ * The module preserves the following architectural separations:
  *
  * AUTHENTICATED != FRESH
  * SIGNED_EPOCH != CURRENT_EPOCH
@@ -22,11 +25,18 @@
  * FRESH != AUTHORIZED
  * FRESH != ACTUATION_AUTHORIZED
  *
- * C5-R3A does not implement:
+ * C5-R3B bootstrap model B2:
  *
- * - epoch acceptance;
- * - replay evaluation;
- * - sequence acceptance;
+ * - UNINITIALIZED input is OBSERVE_ONLY;
+ * - no incoming message automatically promotes runtime to ACTIVE;
+ * - initial accepted-epoch establishment is deferred to a separately governed
+ *   transition boundary;
+ * - a changed authenticated epoch is not automatically accepted.
+ *
+ * This module does not implement:
+ *
+ * - initial epoch acceptance;
+ * - epoch replacement;
  * - persistent freshness;
  * - persistence-provider behavior;
  * - rollback detection;
@@ -90,7 +100,13 @@ typedef enum
 
     GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_CONDITION,
 
-    GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE
+    GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_POLICY,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_MESSAGE,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_EVALUATION
 } guardian_node_link_freshness_result_t;
 
 /*
@@ -163,6 +179,94 @@ typedef struct
 } guardian_node_link_freshness_runtime_t;
 
 /*
+ * C5-R3B bounded freshness decisions.
+ *
+ * INVALID is deliberately zero so that zero-initialized or invalidated
+ * evaluation output can never be interpreted as ACCEPT.
+ *
+ * These decisions classify session-local freshness only.
+ *
+ * FRESH != TRUTHFUL
+ * FRESH != AUTHORIZED
+ * FRESH != ACTUATION_AUTHORIZED
+ */
+typedef enum
+{
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_INVALID = 0,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_ACCEPT,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_OBSERVE_ONLY,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_REPLAY_DUPLICATE,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_REPLAY_REGRESSION,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_FORWARD_GAP_EXCEEDED,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_EPOCH_TRANSITION_REQUIRED,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_SESSION_REPLACEMENT_REQUIRED,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_IDENTITY_MISMATCH,
+
+    GUARDIAN_NODE_LINK_FRESHNESS_DECISION_STATE_BLOCKED
+} guardian_node_link_freshness_decision_t;
+
+/*
+ * Explicit bounded session-local forward progression policy.
+ *
+ * configured must equal exactly 1.
+ * max_forward_gap must be non-zero.
+ *
+ * R3B does not select a deployment-specific gap value.
+ */
+typedef struct
+{
+    uint32_t max_forward_gap;
+    uint8_t configured;
+} guardian_node_link_freshness_policy_t;
+
+/*
+ * R3B evaluation evidence.
+ *
+ * This object is output only.
+ *
+ * It is not an authorization token and cannot itself be supplied to a public
+ * state-mutation API.
+ */
+typedef struct
+{
+    guardian_node_link_freshness_decision_t decision;
+
+    guardian_node_link_freshness_identity_t identity;
+
+    uint32_t observed_epoch;
+    uint32_t observed_sequence;
+
+    guardian_node_link_freshness_condition_t prior_condition;
+
+    uint32_t prior_observed_epoch;
+    uint32_t prior_observed_sequence;
+
+    uint32_t prior_accepted_epoch;
+    uint32_t prior_accepted_sequence;
+
+    uint32_t evaluated_max_forward_gap;
+
+    uint8_t prior_observation_valid;
+    uint8_t prior_accepted_epoch_valid;
+    uint8_t prior_accepted_sequence_valid;
+
+    /*
+     * Set to 1 only when evaluate_and_apply() actually commits an ACCEPT
+     * transition to runtime.
+     *
+     * evaluate() always leaves this value at zero.
+     */
+    uint8_t transition_applied;
+} guardian_node_link_freshness_evaluation_t;
+/*
  * Initialize runtime state to a deterministic fail-closed baseline.
  *
  * After initialization:
@@ -188,4 +292,45 @@ guardian_node_link_freshness_result_t
 guardian_node_link_freshness_runtime_validate(
     const guardian_node_link_freshness_runtime_t *runtime);
 
+/*
+ * Evaluate one authenticated + pre-freshness-compatible message against the
+ * current runtime state.
+ *
+ * This function never mutates runtime.
+ *
+ * On any API/structural error, evaluation is deterministically invalidated
+ * when a non-NULL evaluation pointer is supplied.
+ */
+guardian_node_link_freshness_result_t
+guardian_node_link_freshness_evaluate(
+    const guardian_node_link_freshness_policy_t *policy,
+    const guardian_node_link_freshness_runtime_t *runtime,
+    const guardian_node_link_pre_freshness_compatible_message_t *message,
+    guardian_node_link_freshness_evaluation_t *evaluation);
+
+/*
+ * Evaluate against the CURRENT policy, CURRENT runtime, and original
+ * authenticated + pre-freshness-compatible message, then atomically commit
+ * only a same-epoch DECISION_ACCEPT transition.
+ *
+ * Caller-supplied evaluation objects are never consumed as mutation
+ * authorization.
+ *
+ * Non-ACCEPT security decisions leave runtime unchanged.
+ *
+ * This function does not establish:
+ * - initial epoch acceptance;
+ * - epoch replacement;
+ * - persistent anti-replay;
+ * - rollback detection;
+ * - rejoin;
+ * - authority;
+ * - actuation authority.
+ */
+guardian_node_link_freshness_result_t
+guardian_node_link_freshness_evaluate_and_apply(
+    const guardian_node_link_freshness_policy_t *policy,
+    guardian_node_link_freshness_runtime_t *runtime,
+    const guardian_node_link_pre_freshness_compatible_message_t *message,
+    guardian_node_link_freshness_evaluation_t *evaluation);
 #endif
