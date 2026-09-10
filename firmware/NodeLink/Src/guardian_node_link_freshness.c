@@ -151,6 +151,26 @@ guardian_node_link_freshness_runtime_validate(
     }
 
     /*
+     * A valid observation must represent a structurally valid NodeLink
+     * sequence. NodeLink sequence zero is already invalid at the wire layer
+     * and remains invalid here.
+     */
+    if ((runtime->observation_valid != 0U) &&
+        (runtime->observed_sequence == 0U))
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    /*
+     * If accepted sequence state is declared valid, zero may not be treated
+     * as an accepted sequence.
+     */
+    if ((runtime->accepted_sequence_valid != 0U) &&
+        (runtime->accepted_sequence == 0U))
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+    /*
      * UNINITIALIZED is a fail-closed baseline.
      *
      * It must not simultaneously claim accepted freshness state.
@@ -195,26 +215,7 @@ guardian_node_link_freshness_runtime_validate(
         }
     }
 
-    /*
-     * A valid observation must represent a structurally valid NodeLink
-     * sequence. NodeLink sequence zero is already invalid at the wire layer
-     * and remains invalid here.
-     */
-    if ((runtime->observation_valid != 0U) &&
-        (runtime->observed_sequence == 0U))
-    {
-        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
-    }
 
-    /*
-     * If accepted sequence state is declared valid, zero may not be treated
-     * as an accepted sequence.
-     */
-    if ((runtime->accepted_sequence_valid != 0U) &&
-        (runtime->accepted_sequence == 0U))
-    {
-        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
-    }
 
     return GUARDIAN_NODE_LINK_FRESHNESS_OK;
 }
