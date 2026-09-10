@@ -32,7 +32,7 @@
 *.json text eol=lf
 
 # Keep the built firmware image byte-exact; never apply text normalization.
-*.hex text eol=lf
+*.hex -text
 
 # Keep compiled and archive artifacts byte-exact.
 *.npz -text
@@ -43,3 +43,10 @@
 CITATION.cff text eol=lf
 VERSION text eol=lf
 .gitattributes text eol=lf
+
+# Keep PowerShell modules deterministic across Windows and Linux.
+*.psm1 text eol=lf
+
+# Keep governed repository dotfiles deterministic across platforms.
+.mailmap text eol=lf
+.gitkeep text eol=lf
