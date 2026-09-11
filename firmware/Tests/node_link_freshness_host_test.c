@@ -1,7 +1,50 @@
 #include "guardian_node_link_freshness.h"
+#include "guardian_node_link_freshness_persistence.h"
 
 #include <stdio.h>
 #include <string.h>
+/*
+ * C5-R3C-A compile-time persistence-contract assertions.
+ *
+ * These assertions validate only the declared schema and classification
+ * surface. They do not demonstrate persistent anti-replay, durable storage,
+ * integrity protection, rollback resistance, rejoin, authority, or actuation.
+ */
+_Static_assert(
+    GUARDIAN_NODE_LINK_FRESHNESS_PERSISTENCE_SCHEMA_VERSION == 1U,
+    "R3C-A persistence schema version must be 1");
+
+_Static_assert(
+    GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_INVALID == 0,
+    "R3C-A invalid persistence status must be zero");
+
+_Static_assert(
+    GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE !=
+        GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_NO_PERSISTED_STATE,
+    "valid persisted state must differ from no persisted state");
+
+_Static_assert(
+    GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_CORRUPTED_STATE !=
+        GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_ROLLBACK_SUSPECTED,
+    "corruption and rollback suspicion must remain distinct");
+
+_Static_assert(
+    sizeof(
+        ((guardian_node_link_freshness_persisted_record_t *)0)->
+            accepted_epoch) == sizeof(uint32_t),
+    "persisted accepted epoch must remain uint32_t");
+
+_Static_assert(
+    sizeof(
+        ((guardian_node_link_freshness_persisted_record_t *)0)->
+            accepted_sequence) == sizeof(uint32_t),
+    "persisted accepted sequence must remain uint32_t");
+
+_Static_assert(
+    sizeof(
+        ((guardian_node_link_freshness_persisted_record_t *)0)->
+            record_generation) == sizeof(uint32_t),
+    "persisted record generation must remain uint32_t");
 
 #define TEST_ASSERT(condition)                                      \
     do                                                              \

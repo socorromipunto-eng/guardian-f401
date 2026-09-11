@@ -37,13 +37,18 @@
  *
  * - initial epoch acceptance;
  * - epoch replacement;
- * - persistent freshness;
- * - persistence-provider behavior;
+ * - persistent freshness implementation;
+ * - persistence-provider I/O or physical storage;
  * - rollback detection;
  * - rejoin;
  * - NodeSupervisor consumption;
  * - authority;
  * - actuation.
+ *
+ * C5-R3C-A declares the persistence record/status contract separately in
+ * guardian_node_link_freshness_persistence.h. Declaration of that contract
+ * does not establish persistent anti-replay, storage integrity, durability,
+ * rollback protection, rejoin, authority, or actuation authority.
  */
 
 /*
