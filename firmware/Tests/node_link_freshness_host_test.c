@@ -1630,8 +1630,420 @@ static int test_r3b_null_argument_contract(void)
 
     return 0;
 }
+static guardian_node_link_freshness_persisted_record_t
+make_valid_r3c_b_persisted_record(void)
+{
+    guardian_node_link_freshness_runtime_t runtime;
+    guardian_node_link_freshness_persisted_record_t record;
+
+    runtime = make_valid_active();
+
+    (void)memset(&record, 0, sizeof(record));
+
+    record.schema_version =
+        GUARDIAN_NODE_LINK_FRESHNESS_PERSISTENCE_SCHEMA_VERSION;
+
+    record.identity = runtime.identity;
+    record.accepted_epoch = runtime.accepted_epoch;
+    record.accepted_sequence = runtime.accepted_sequence;
+    record.record_generation = 1U;
+
+    return record;
+}
+
+static int expect_r3c_b_invalid_record(
+    const guardian_node_link_freshness_persisted_record_t *record,
+    const guardian_node_link_freshness_identity_t *expected_identity)
+{
+    guardian_node_link_freshness_persistence_classification_t classification;
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            record,
+            expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    return 0;
+}
+
+static int test_r3c_b_persistence_classification(void)
+{
+    guardian_node_link_freshness_persisted_record_t record;
+    guardian_node_link_freshness_persisted_record_t poisoned_record;
+    guardian_node_link_freshness_identity_t expected_identity;
+    guardian_node_link_freshness_identity_t invalid_expected_identity;
+    guardian_node_link_freshness_persistence_classification_t classification;
+
+    record = make_valid_r3c_b_persisted_record();
+    expected_identity = record.identity;
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            &record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE);
+
+    /*
+     * record_generation zero remains legal ordering metadata.
+     * It is not a rollback decision and is not a trust anchor.
+     */
+    record.record_generation = 0U;
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            &record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE);
+
+    /*
+     * Schema mismatch fails closed without being mislabeled as proven
+     * corruption or rollback.
+     */
+    record = make_valid_r3c_b_persisted_record();
+    record.schema_version =
+        GUARDIAN_NODE_LINK_FRESHNESS_PERSISTENCE_SCHEMA_VERSION + 1U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+    record.accepted_epoch = 0U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+    record.accepted_sequence = 0U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    /*
+     * Every scalar field in the exact persistence identity is security
+     * relevant and mismatch must fail closed.
+     */
+    record = make_valid_r3c_b_persisted_record();
+    record.identity.sender_node_id += 1U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+    record.identity.producer_id += 1U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+    record.identity.key_id += 1U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+    record.identity.signature_algorithm = 0U;
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+
+    set_ref(
+        record.identity.producer_semantic_profile_id,
+        sizeof(record.identity.producer_semantic_profile_id),
+        "guardian:test:producer:other");
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+
+    set_ref(
+        record.identity.consumer_semantic_profile_id,
+        sizeof(record.identity.consumer_semantic_profile_id),
+        "guardian:test:consumer:other");
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    record = make_valid_r3c_b_persisted_record();
+
+    set_ref(
+        record.identity.compatibility_contract_id,
+        sizeof(record.identity.compatibility_contract_id),
+        "guardian:test:compat:other");
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    /*
+     * Unterminated semantic identity references are malformed rather than
+     * comparable strings.
+     */
+    record = make_valid_r3c_b_persisted_record();
+
+    (void)memset(
+        record.identity.producer_semantic_profile_id,
+        'A',
+        sizeof(record.identity.producer_semantic_profile_id));
+
+    TEST_ASSERT(
+        expect_r3c_b_invalid_record(
+            &record,
+            &expected_identity) == 0);
+
+    /*
+     * Non-VALID provider classifications do not consume record payload.
+     * A deliberately malformed payload cannot alter their bounded mapping.
+     */
+    poisoned_record = make_valid_r3c_b_persisted_record();
+    poisoned_record.schema_version = 0U;
+    poisoned_record.accepted_epoch = 0U;
+    poisoned_record.accepted_sequence = 0U;
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_NO_PERSISTED_STATE,
+            &poisoned_record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_NO_STATE_BOOTSTRAP);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_NO_PERSISTED_STATE,
+            NULL,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_NO_STATE_BOOTSTRAP);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_CORRUPTED_STATE,
+            &poisoned_record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_FRESHNESS_UNKNOWN);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_TORN_OR_INCOMPLETE_UPDATE,
+            NULL,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_FRESHNESS_UNKNOWN);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_ROLLBACK_SUSPECTED,
+            NULL,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_FRESHNESS_UNKNOWN);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_UNAVAILABLE_STATE,
+            NULL,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_OK);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_FRESHNESS_UNKNOWN);
+
+    /*
+     * Unknown and deliberately INVALID provider values fail closed.
+     */
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_INVALID,
+            &record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            (guardian_node_link_freshness_persistence_status_t)255,
+            &record,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    /*
+     * VALID_PERSISTED_STATE requires an actual record.
+     */
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            NULL,
+            &expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    /*
+     * Invalid expected identity fails closed even when provider says VALID.
+     */
+    invalid_expected_identity = expected_identity;
+    invalid_expected_identity.sender_node_id = 0U;
+
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            &record,
+            &invalid_expected_identity,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    /*
+     * Null argument behavior also invalidates caller-visible output whenever
+     * the output pointer itself exists.
+     */
+    classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            &record,
+            NULL,
+            &classification) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    TEST_ASSERT(
+        classification ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_classify(
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE,
+            &record,
+            &expected_identity,
+            NULL) ==
+        GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT);
+
+    return 0;
+}
+
 int main(void)
 {
+    TEST_ASSERT(test_r3c_b_persistence_classification() == 0);
+
     TEST_ASSERT(test_init_zeroization() == 0);
     TEST_ASSERT(test_null_and_invalid_condition() == 0);
     TEST_ASSERT(test_boolean_flag_bounds() == 0);
@@ -1657,6 +2069,18 @@ int main(void)
     TEST_ASSERT(test_r3b_malformed_runtime_invalidates_output() == 0);
     TEST_ASSERT(test_r3b_zero_epoch_rejected() == 0);
     TEST_ASSERT(test_r3b_null_argument_contract() == 0);
+
+    (void)printf(
+        "C5_R3C_B_PERSISTENCE_CLASSIFICATION_HOST_TEST=PASS\n");
+
+    (void)printf(
+        "R3C_B_VALIDATED_RECORD_CANDIDATE_ESTABLISHES_FRESHNESS=NO\n");
+
+    (void)printf(
+        "R3C_B_RECORD_GENERATION_IS_ROLLBACK_ANCHOR=NO\n");
+
+    (void)printf(
+        "R3C_B_RUNTIME_MUTATION=NO\n");
 
     (void)printf("C5_R3A_FRESHNESS_STATE_HOST_TEST=PASS\n");
     (void)printf("C5_R3B_FRESHNESS_EVALUATOR_HOST_TEST=PASS\n");
