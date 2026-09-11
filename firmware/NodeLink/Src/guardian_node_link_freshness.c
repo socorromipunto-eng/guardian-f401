@@ -1,4 +1,5 @@
 #include "guardian_node_link_freshness.h"
+#include "guardian_node_link_freshness_persistence.h"
 
 #include <string.h>
 
@@ -311,6 +312,142 @@ static int guardian_node_link_freshness_identity_equal(
     }
 
     return 1;
+}
+
+static int guardian_node_link_freshness_identity_structurally_valid(
+    const guardian_node_link_freshness_identity_t *identity)
+{
+    if (identity == NULL)
+    {
+        return 0;
+    }
+
+    if ((identity->sender_node_id == 0U) ||
+        (identity->producer_id == 0U) ||
+        (identity->key_id == 0U) ||
+        (identity->signature_algorithm !=
+            GUARDIAN_NODE_LINK_SIGNATURE_ED25519))
+    {
+        return 0;
+    }
+
+    if (guardian_node_link_freshness_ref_valid(
+            identity->producer_semantic_profile_id,
+            sizeof(identity->producer_semantic_profile_id)) == 0)
+    {
+        return 0;
+    }
+
+    if (guardian_node_link_freshness_ref_valid(
+            identity->consumer_semantic_profile_id,
+            sizeof(identity->consumer_semantic_profile_id)) == 0)
+    {
+        return 0;
+    }
+
+    if (guardian_node_link_freshness_ref_valid(
+            identity->compatibility_contract_id,
+            sizeof(identity->compatibility_contract_id)) == 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+guardian_node_link_freshness_result_t
+guardian_node_link_freshness_persistence_classify(
+    guardian_node_link_freshness_persistence_status_t provider_status,
+    const guardian_node_link_freshness_persisted_record_t *record,
+    const guardian_node_link_freshness_identity_t *expected_identity,
+    guardian_node_link_freshness_persistence_classification_t
+        *classification)
+{
+    if (classification != NULL)
+    {
+        *classification =
+            GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_INVALID;
+    }
+
+    if ((expected_identity == NULL) ||
+        (classification == NULL))
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT;
+    }
+
+    if (guardian_node_link_freshness_identity_structurally_valid(
+            expected_identity) == 0)
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    switch (provider_status)
+    {
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_NO_PERSISTED_STATE:
+            *classification =
+                GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_NO_STATE_BOOTSTRAP;
+
+            return GUARDIAN_NODE_LINK_FRESHNESS_OK;
+
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_CORRUPTED_STATE:
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_TORN_OR_INCOMPLETE_UPDATE:
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_ROLLBACK_SUSPECTED:
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_UNAVAILABLE_STATE:
+            *classification =
+                GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_FRESHNESS_UNKNOWN;
+
+            return GUARDIAN_NODE_LINK_FRESHNESS_OK;
+
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_VALID_PERSISTED_STATE:
+            break;
+
+        case GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_INVALID:
+        default:
+            return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    if (record == NULL)
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_NULL_ARGUMENT;
+    }
+
+    if (record->schema_version !=
+        GUARDIAN_NODE_LINK_FRESHNESS_PERSISTENCE_SCHEMA_VERSION)
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    if (guardian_node_link_freshness_identity_structurally_valid(
+            &record->identity) == 0)
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    if (guardian_node_link_freshness_identity_equal(
+            &record->identity,
+            expected_identity) == 0)
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    if ((record->accepted_epoch == 0U) ||
+        (record->accepted_sequence == 0U))
+    {
+        return GUARDIAN_NODE_LINK_FRESHNESS_ERROR_INVALID_STATE;
+    }
+
+    /*
+     * record_generation is deliberately not used as a trust decision.
+     *
+     * It remains ordering metadata only. Without a separately governed
+     * independent rollback anchor, a generation value cannot demonstrate
+     * rollback resistance or manufacture ROLLBACK_SUSPECTED.
+     */
+
+    *classification =
+        GUARDIAN_NODE_LINK_PERSISTENCE_CLASSIFICATION_VALIDATED_RECORD_CANDIDATE;
+
+    return GUARDIAN_NODE_LINK_FRESHNESS_OK;
 }
 
 static int guardian_node_link_freshness_identity_from_message(
