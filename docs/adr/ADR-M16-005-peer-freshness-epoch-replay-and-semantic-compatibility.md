@@ -211,10 +211,17 @@ The persistence provider must have explicit crash-consistency and integrity
 semantics. A reader must be able to distinguish at least:
 
 - VALID_PERSISTED_STATE;
+- NO_PERSISTED_STATE;
 - CORRUPTED_STATE;
 - TORN_OR_INCOMPLETE_UPDATE;
 - ROLLBACK_SUSPECTED;
 - UNAVAILABLE_STATE.
+
+NO_PERSISTED_STATE means that no valid persisted freshness record has yet been
+established for the exact governed freshness identity.
+
+NO_PERSISTED_STATE is a legitimate bootstrap classification. It does not imply
+that previously established freshness state was lost.
 
 Any state other than VALID_PERSISTED_STATE is not silently accepted as a valid
 freshness anchor.
@@ -229,8 +236,27 @@ governed freshness anchor.
 
 ## 5. Persistent state loss
 
+NO_PERSISTED_STATE and persistent-state loss are distinct conditions.
+
+For an exact governed freshness identity with no previously established valid
+persisted freshness record:
+
+NO_PERSISTED_STATE
+-> UNINITIALIZED
+-> OBSERVE_ONLY
+
+NO_PERSISTED_STATE MUST NOT automatically accept an epoch, automatically accept
+a sequence, establish freshness, establish authority, or establish actuation
+authority.
+
+NO_PERSISTED_STATE MUST NOT require REJOIN_REQUIRED solely because no prior
+persisted freshness record exists.
+
+PERSISTENT_STATE_LOSS_AFTER_ESTABLISHMENT != NO_PERSISTED_STATE
+
 Loss, corruption, rollback, deletion, torn update, incomplete update, or
-unavailability of required freshness state must not silently reset trust.
+unavailability of required freshness state after establishment must not silently
+reset trust.
 
 The following are freshness/security conditions, not additions to the
 operational state vocabulary defined by ADR-M16-001:
