@@ -86,10 +86,14 @@ required state must survive that boundary.
 The persistence provider must explicitly distinguish:
 
 - VALID_PERSISTED_STATE;
+- NO_PERSISTED_STATE;
 - CORRUPTED_STATE;
 - TORN_OR_INCOMPLETE_UPDATE;
 - ROLLBACK_SUSPECTED;
 - UNAVAILABLE_STATE.
+
+NO_PERSISTED_STATE means that no valid persisted freshness record has yet been
+established for the exact governed freshness identity.
 
 Only VALID_PERSISTED_STATE is eligible for normal freshness continuation.
 
@@ -101,8 +105,28 @@ governed freshness anchor.
 
 ## 6. Freshness-state loss
 
+NO_PERSISTED_STATE and persistent-state loss are distinct conditions.
+
+For an exact governed freshness identity with no previously established valid
+persisted freshness record:
+
+NO_PERSISTED_STATE
+-> UNINITIALIZED
+-> OBSERVE_ONLY
+
+OBSERVE_ONLY != ACCEPT
+
+NO_PERSISTED_STATE MUST NOT automatically accept an epoch, automatically accept
+a sequence, establish freshness, establish authority, or establish actuation
+authority.
+
+NO_PERSISTED_STATE MUST NOT require REJOIN_REQUIRED solely because no prior
+persisted freshness record exists.
+
+PERSISTENT_STATE_LOSS_AFTER_ESTABLISHMENT != NO_PERSISTED_STATE
+
 If required persistent freshness state is lost, corrupted, rolled back,
-unavailable, torn, incomplete, or otherwise not trustworthy:
+unavailable, torn, incomplete, or otherwise not trustworthy after establishment:
 
 FRESHNESS_STATE = FRESHNESS_UNKNOWN
 
