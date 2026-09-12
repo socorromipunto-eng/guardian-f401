@@ -355,3 +355,92 @@ jobs:
       # Run fail-closed R3A/R3B/R3C freshness and canonical-codec assertions.
       - name: Run C5-R3A/R3B/R3C NodeLink freshness tests
         run: ./build/node_link_freshness_host_test
+      # C5-R3C-E physical persistence backend verification.
+      #
+      # Security semantics:
+      # - host persistence validation does not demonstrate target durability;
+      # - dual-slot recovery does not establish rollback resistance;
+      # - persistence does not establish freshness, authority, or actuation authority;
+      # - HAL simulation does not constitute hardware flash validation.
+      #
+      # Compile the portable R3C-E physical backend without optimization.
+      - name: Compile C5-R3C-E physical persistence backend tests O0
+        run: >
+          gcc
+          -std=c11
+          -O0
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/NodeLink/Inc
+          -Ifirmware/Security/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/NodeLink/Src/guardian_node_link_freshness.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence_codec.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence_backend.c
+          firmware/Tests/node_link_freshness_persistence_backend_host_test.c
+          -o build/node_link_freshness_persistence_backend_host_test_o0
+
+      # Run power-loss, torn-write, corruption, recovery, and NOR-semantics assertions.
+      - name: Run C5-R3C-E physical persistence backend tests O0
+        run: ./build/node_link_freshness_persistence_backend_host_test_o0
+
+      # Repeat the exact portable backend suite with optimization enabled.
+      - name: Compile C5-R3C-E physical persistence backend tests O2
+        run: >
+          gcc
+          -std=c11
+          -O2
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ifirmware/NodeLink/Inc
+          -Ifirmware/Security/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/NodeLink/Src/guardian_node_link_freshness.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence_codec.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence_backend.c
+          firmware/Tests/node_link_freshness_persistence_backend_host_test.c
+          -o build/node_link_freshness_persistence_backend_host_test_o2
+
+      # Verify optimized execution preserves the tested backend contract.
+      - name: Run C5-R3C-E physical persistence backend tests O2
+        run: ./build/node_link_freshness_persistence_backend_host_test_o2
+
+      # Build isolated host-only HAL include stubs.
+      #
+      # The C3C test defines the controlled HAL API surface and injects HAL failures.
+      # These empty headers satisfy production include names without pretending to
+      # provide STM32 hardware behavior.
+      - name: Prepare C5-R3C-E HAL adapter host-test boundary
+        run: |
+          mkdir -p build/r3ce-hal-stubs
+          printf '%s\n' '/* R3C-E CI host-only HAL include stub. */' > build/r3ce-hal-stubs/stm32f4xx_hal.h
+          printf '%s\n' '/* R3C-E CI host-only HAL include stub. */' > build/r3ce-hal-stubs/stm32f4xx_hal_flash.h
+          printf '%s\n' '/* R3C-E CI host-only HAL include stub. */' > build/r3ce-hal-stubs/stm32f4xx_hal_flash_ex.h
+
+      # Compile the STM32F401 HAL adapter hostile contract harness.
+      #
+      # This is a host contract test only. It does not demonstrate real STM32 flash
+      # programming, linker reservation, endurance, or power-loss behavior.
+      - name: Compile C5-R3C-E STM32F401 HAL adapter contract tests
+        run: >
+          gcc
+          -std=c11
+          -O2
+          -Wall
+          -Wextra
+          -Wpedantic
+          -Werror
+          -Ibuild/r3ce-hal-stubs
+          -Ifirmware/NodeLink/Inc
+          firmware/Tests/node_link_freshness_persistence_stm32f401_adapter_host_test.c
+          -o build/node_link_freshness_persistence_stm32f401_adapter_host_test
+
+      # Run HAL boundary, geometry, error propagation, bounds, and byte-program tests.
+      - name: Run C5-R3C-E STM32F401 HAL adapter contract tests
+        run: ./build/node_link_freshness_persistence_stm32f401_adapter_host_test
