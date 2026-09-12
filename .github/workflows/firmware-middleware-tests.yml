@@ -334,8 +334,8 @@ jobs:
       # Run fail-closed semantic-binding and compatibility assertions.
       - name: Run C5-R2 NodeLink semantic compatibility tests
         run: ./build/node_link_semantic_host_test
-      # Compile C5-R3A/R3B freshness state and evaluator hostile tests.
-      - name: Compile C5-R3A/R3B NodeLink freshness tests
+      # Compile C5-R3A/R3B/R3C freshness, persistence, and codec hostile tests.
+      - name: Compile C5-R3A/R3B/R3C NodeLink freshness tests
         run: >
           gcc
           -std=c11
@@ -344,11 +344,14 @@ jobs:
           -Wpedantic
           -Werror
           -Ifirmware/NodeLink/Inc
+          -Ifirmware/Security/Inc
+          firmware/Security/Src/guardian_crypto.c
           firmware/NodeLink/Src/guardian_node_link_freshness.c
           firmware/NodeLink/Src/guardian_node_link_freshness_persistence.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence_codec.c
           firmware/Tests/node_link_freshness_host_test.c
           -o build/node_link_freshness_host_test
 
-      # Run fail-closed R3A state-model and R3B evaluator assertions.
-      - name: Run C5-R3A/R3B NodeLink freshness tests
+      # Run fail-closed R3A/R3B/R3C freshness and canonical-codec assertions.
+      - name: Run C5-R3A/R3B/R3C NodeLink freshness tests
         run: ./build/node_link_freshness_host_test

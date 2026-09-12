@@ -1,5 +1,7 @@
 #include "guardian_node_link_freshness.h"
 #include "guardian_node_link_freshness_persistence.h"
+#include "guardian_node_link_freshness_persistence_codec.h"
+#include "guardian_crypto.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -2757,8 +2759,802 @@ static int test_r3c_c_td_014_td_016_regressions(void)
 
     return 0;
 }
+static unsigned int r3c_d_td_pass_count = 0U;
+
+static int r3c_d_record_equal(
+    const guardian_node_link_freshness_persisted_record_t *left,
+    const guardian_node_link_freshness_persisted_record_t *right)
+{
+    if ((left == NULL) || (right == NULL))
+    {
+        return 0;
+    }
+
+    return
+        (left->schema_version == right->schema_version) &&
+        (left->identity.sender_node_id == right->identity.sender_node_id) &&
+        (left->identity.producer_id == right->identity.producer_id) &&
+        (left->identity.key_id == right->identity.key_id) &&
+        (left->identity.signature_algorithm ==
+         right->identity.signature_algorithm) &&
+        (strcmp(
+             left->identity.producer_semantic_profile_id,
+             right->identity.producer_semantic_profile_id) == 0) &&
+        (strcmp(
+             left->identity.consumer_semantic_profile_id,
+             right->identity.consumer_semantic_profile_id) == 0) &&
+        (strcmp(
+             left->identity.compatibility_contract_id,
+             right->identity.compatibility_contract_id) == 0) &&
+        (left->accepted_epoch == right->accepted_epoch) &&
+        (left->accepted_sequence == right->accepted_sequence) &&
+        (left->record_generation == right->record_generation);
+}
+
+static int r3c_d_record_is_zero(
+    const guardian_node_link_freshness_persisted_record_t *record)
+{
+    const uint8_t *bytes;
+    size_t index;
+
+    if (record == NULL)
+    {
+        return 0;
+    }
+
+    bytes = (const uint8_t *)record;
+
+    for (index = 0U; index < sizeof(*record); index += 1U)
+    {
+        if (bytes[index] != 0U)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int r3c_d_ref_tail_is_zero(
+    const uint8_t *serialized_ref,
+    const char *expected)
+{
+    size_t expected_length;
+    size_t index;
+
+    if ((serialized_ref == NULL) || (expected == NULL))
+    {
+        return 0;
+    }
+
+    expected_length = strlen(expected);
+
+    if ((expected_length == 0U) ||
+        (expected_length >= GUARDIAN_NODE_LINK_SEMANTIC_REF_CAPACITY))
+    {
+        return 0;
+    }
+
+    if (memcmp(
+            serialized_ref,
+            expected,
+            expected_length) != 0)
+    {
+        return 0;
+    }
+
+    for (index = expected_length;
+         index < GUARDIAN_NODE_LINK_SEMANTIC_REF_CAPACITY;
+         index += 1U)
+    {
+        if (serialized_ref[index] != 0U)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static void r3c_d_rehash(
+    uint8_t serialized[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE])
+{
+    uint8_t digest[GUARDIAN_SHA256_SIZE];
+
+    guardian_sha256(
+        serialized,
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_OFFSET,
+        digest);
+
+    (void)memcpy(
+        &serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_OFFSET],
+        digest,
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_SIZE);
+}
+
+static int test_r3c_d_persistence_codec(void)
+{
+    static const uint8_t expected_prefix[28] =
+    {
+        0x47U, 0x46U, 0x52U, 0x31U,
+        0x00U, 0x01U,
+        0x00U, 0x1CU,
+        0x00U, 0x00U, 0x00U, 0x01U,
+        0x00U, 0x00U, 0x10U, 0x01U,
+        0x00U, 0x00U, 0x20U, 0x01U,
+        0x00U, 0x00U, 0x30U, 0x01U,
+        0x01U,
+        0x00U, 0x00U, 0x00U
+    };
+
+    static const uint8_t expected_digest[32] =
+    {
+        0x9EU, 0x4CU, 0x75U, 0x79U,
+        0xBBU, 0xB4U, 0xB8U, 0x81U,
+        0xD6U, 0x5EU, 0x68U, 0xA0U,
+        0xF7U, 0xC5U, 0xA9U, 0x18U,
+        0xCBU, 0x52U, 0x5DU, 0x78U,
+        0x3FU, 0xFAU, 0xB4U, 0xF5U,
+        0xB6U, 0x18U, 0x08U, 0x52U,
+        0x3AU, 0xBDU, 0x99U, 0x04U
+    };
+
+    guardian_node_link_freshness_persisted_record_t record;
+    guardian_node_link_freshness_persisted_record_t decoded;
+    guardian_node_link_freshness_persisted_record_t alternate;
+    uint8_t serialized[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE];
+    uint8_t second[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE];
+    uint8_t mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE + 1U];
+    size_t written;
+    size_t second_written;
+    size_t copy_size;
+    unsigned int td_pass_count;
+
+    record = make_valid_r3c_b_persisted_record();
+
+    (void)memset(serialized, 0xA5, sizeof(serialized));
+    written = 0U;
+    td_pass_count = 0U;
+
+    /*
+     * TD-D-001 — Canonical encode succeeds.
+     */
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &record,
+            serialized,
+            sizeof(serialized),
+            &written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-002 — Exact serialized length is fixed at 364 bytes.
+     */
+    TEST_ASSERT(
+        written ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE);
+
+    TEST_ASSERT(
+        written == 364U);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-003 — Golden vector prefix proves magic, versions, big-endian
+     * scalar encoding, signature algorithm, and zero reserved bytes.
+     */
+    TEST_ASSERT(
+        memcmp(
+            serialized,
+            expected_prefix,
+            sizeof(expected_prefix)) == 0);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-004 — Producer semantic reference canonicalization.
+     */
+    TEST_ASSERT(
+        r3c_d_ref_tail_is_zero(
+            &serialized[
+                GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_PRODUCER_PROFILE_OFFSET],
+            "guardian:test:producer:v1"));
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-005 — Consumer semantic reference canonicalization.
+     */
+    TEST_ASSERT(
+        r3c_d_ref_tail_is_zero(
+            &serialized[
+                GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_CONSUMER_PROFILE_OFFSET],
+            "guardian:test:consumer:v1"));
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-006 — Compatibility-contract canonicalization.
+     */
+    TEST_ASSERT(
+        r3c_d_ref_tail_is_zero(
+            &serialized[
+                GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_COMPATIBILITY_CONTRACT_OFFSET],
+            "guardian:test:compat:v1"));
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-007 — Accepted epoch, sequence, and generation are big-endian.
+     */
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_EPOCH_OFFSET + 0U]
+        == 0x00U);
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_EPOCH_OFFSET + 3U]
+        == 0x07U);
+
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_SEQUENCE_OFFSET + 3U]
+        == 0x0BU);
+
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_RECORD_GENERATION_OFFSET + 3U]
+        == 0x01U);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-008 — Integrity material length is explicitly encoded as 332.
+     */
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MATERIAL_LENGTH_OFFSET + 0U]
+        == 0x00U);
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MATERIAL_LENGTH_OFFSET + 1U]
+        == 0x00U);
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MATERIAL_LENGTH_OFFSET + 2U]
+        == 0x01U);
+    TEST_ASSERT(
+        serialized[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MATERIAL_LENGTH_OFFSET + 3U]
+        == 0x4CU);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-009 — Independent golden SHA-256 vector is exact.
+     */
+    TEST_ASSERT(
+        memcmp(
+            &serialized[
+                GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_OFFSET],
+            expected_digest,
+            sizeof(expected_digest)) == 0);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-010 — Encoding is deterministic.
+     */
+    (void)memset(second, 0x5A, sizeof(second));
+    second_written = 0U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &record,
+            second,
+            sizeof(second),
+            &second_written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(second_written == written);
+
+    TEST_ASSERT(
+        memcmp(
+            serialized,
+            second,
+            written) == 0);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-011 — Exact canonical decode succeeds.
+     */
+    (void)memset(&decoded, 0xA5, sizeof(decoded));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            serialized,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-012 — Logical round-trip is exact without raw-struct comparison.
+     */
+    TEST_ASSERT(
+        r3c_d_record_equal(
+            &record,
+            &decoded));
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-013 — record_generation zero remains legal ordering metadata.
+     */
+    alternate = record;
+    alternate.record_generation = 0U;
+    written = 0U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &alternate,
+            serialized,
+            sizeof(serialized),
+            &written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            serialized,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(decoded.record_generation == 0U);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-014 — UINT32_MAX fields serialize without wrap.
+     */
+    alternate = record;
+    alternate.accepted_epoch = UINT32_MAX;
+    alternate.accepted_sequence = UINT32_MAX;
+    alternate.record_generation = UINT32_MAX;
+    written = 0U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &alternate,
+            serialized,
+            sizeof(serialized),
+            &written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            serialized,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(decoded.accepted_epoch == UINT32_MAX);
+    TEST_ASSERT(decoded.accepted_sequence == UINT32_MAX);
+    TEST_ASSERT(decoded.record_generation == UINT32_MAX);
+
+    td_pass_count += 1U;
+
+    /*
+     * Restore baseline vector for hostile decode tests.
+     */
+    record = make_valid_r3c_b_persisted_record();
+    written = 0U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &record,
+            serialized,
+            sizeof(serialized),
+            &written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    /*
+     * TD-D-015 — Too-small output buffer fails without success length.
+     */
+    (void)memset(second, 0xA5, sizeof(second));
+    second_written = 999U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &record,
+            second,
+            sizeof(second) - 1U,
+            &second_written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BUFFER_TOO_SMALL);
+
+    TEST_ASSERT(second_written == 0U);
+    TEST_ASSERT(second[0] == 0xA5U);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-016 — Bad magic is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MAGIC_OFFSET] ^= 0x01U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BAD_MAGIC);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-017 — Unsupported serialization version is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZATION_VERSION_OFFSET] =
+        0x00U;
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZATION_VERSION_OFFSET + 1U] =
+        0x02U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_UNSUPPORTED_VERSION);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-018 — Header-length confusion is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_HEADER_LENGTH_OFFSET + 1U] =
+        0x1DU;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BAD_LENGTH);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-019 — Reserved-byte smuggling is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_RESERVED_OFFSET] =
+        0x01U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_RESERVED_NONZERO);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-020 — Truncation is rejected.
+     */
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            serialized,
+            written - 1U,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BAD_LENGTH);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-021 — Extension/trailing-data smuggling is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[written] = 0x00U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written + 1U,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_TRAILING_DATA);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-022 — Integrity field mutation is detected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_OFFSET] ^= 0x01U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_FAILURE);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-023 — Integrity-protected payload mutation is detected.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_SEQUENCE_OFFSET + 3U]
+        ^= 0x01U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INTEGRITY_FAILURE);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-024 — Non-canonical non-zero bytes after reference terminator are
+     * rejected even when an attacker recomputes the non-secret integrity
+     * digest.
+     */
+    (void)memcpy(mutated, serialized, written);
+
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_PRODUCER_PROFILE_OFFSET +
+        strlen("guardian:test:producer:v1") +
+        1U] = (uint8_t)'X';
+
+    r3c_d_rehash(mutated);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-025 — Zero accepted epoch fails logical validation even with a
+     * recomputed digest.
+     */
+    (void)memcpy(mutated, serialized, written);
+
+    (void)memset(
+        &mutated[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_EPOCH_OFFSET],
+        0,
+        sizeof(uint32_t));
+
+    r3c_d_rehash(mutated);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-026 — Zero accepted sequence fails logical validation.
+     */
+    (void)memcpy(mutated, serialized, written);
+
+    (void)memset(
+        &mutated[
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_ACCEPTED_SEQUENCE_OFFSET],
+        0,
+        sizeof(uint32_t));
+
+    r3c_d_rehash(mutated);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-027 — Logical schema downgrade/substitution is rejected.
+     */
+    (void)memcpy(mutated, serialized, written);
+
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_LOGICAL_SCHEMA_OFFSET + 3U] =
+        0x02U;
+
+    r3c_d_rehash(mutated);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-028 — Unsupported signature algorithm is rejected after integrity
+     * is recomputed.
+     */
+    (void)memcpy(mutated, serialized, written);
+
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SIGNATURE_ALGORITHM_OFFSET] =
+        0x7FU;
+
+    r3c_d_rehash(mutated);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-029 — Failed decode leaves no partially trusted destination state.
+     */
+    (void)memcpy(mutated, serialized, written);
+    mutated[
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_MAGIC_OFFSET] ^= 0x01U;
+
+    (void)memset(&decoded, 0xA5, sizeof(decoded));
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BAD_MAGIC);
+
+    TEST_ASSERT(
+        r3c_d_record_is_zero(&decoded));
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-030 — Unterminated in-memory semantic references cannot be
+     * serialized.
+     */
+    alternate = record;
+
+    (void)memset(
+        alternate.identity.producer_semantic_profile_id,
+        'Q',
+        sizeof(alternate.identity.producer_semantic_profile_id));
+
+    second_written = 777U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &alternate,
+            second,
+            sizeof(second),
+            &second_written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_INVALID_FIELD);
+
+    TEST_ASSERT(second_written == 0U);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-031 — A raw native struct image is not accepted as canonical
+     * persistence merely because it occupies bytes.
+     */
+    (void)memset(mutated, 0, sizeof(mutated));
+
+    copy_size = sizeof(record);
+
+    if (copy_size >
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE)
+    {
+        copy_size =
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE;
+    }
+
+    (void)memcpy(
+        mutated,
+        &record,
+        copy_size);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            mutated,
+            GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_SERIALIZED_SIZE,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_BAD_MAGIC);
+
+    td_pass_count += 1U;
+
+    /*
+     * TD-D-032 — Maximum valid bounded semantic references round-trip
+     * canonically without allowing an unterminated 96-byte value.
+     */
+    alternate = record;
+
+    fill_max_valid_ref(
+        alternate.identity.producer_semantic_profile_id,
+        sizeof(alternate.identity.producer_semantic_profile_id),
+        'P');
+
+    fill_max_valid_ref(
+        alternate.identity.consumer_semantic_profile_id,
+        sizeof(alternate.identity.consumer_semantic_profile_id),
+        'C');
+
+    fill_max_valid_ref(
+        alternate.identity.compatibility_contract_id,
+        sizeof(alternate.identity.compatibility_contract_id),
+        'K');
+
+    second_written = 0U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_encode(
+            &alternate,
+            second,
+            sizeof(second),
+            &second_written) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_decode(
+            second,
+            second_written,
+            &decoded) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_CODEC_OK);
+
+    TEST_ASSERT(
+        r3c_d_record_equal(
+            &alternate,
+            &decoded));
+
+    td_pass_count += 1U;
+
+    TEST_ASSERT(td_pass_count == 32U);
+
+    r3c_d_td_pass_count =
+        td_pass_count;
+
+    return 0;
+}
 int main(void)
 {
+    TEST_ASSERT(test_r3c_d_persistence_codec() == 0);
     TEST_ASSERT(test_r3c_c_td_014_td_016_regressions() == 0);
     TEST_ASSERT(test_r3c_c_persistence_transaction() == 0);
     TEST_ASSERT(test_r3c_b_persistence_classification() == 0);
@@ -2816,6 +3612,49 @@ int main(void)
     (void)printf(
         "STRUCTURAL_VALIDITY_ESTABLISHES_FRESHNESS=NO\n");
 
+    (void)printf(
+        "C5_R3C_D_PERSISTENCE_CODEC_HOST_TEST=PASS\n");
+
+    (void)printf(
+        "R3C_D_TD_TOTAL=%u\n",
+        r3c_d_td_pass_count);
+
+    (void)printf(
+        "R3C_D_TD_PASS_COUNT=%u\n",
+        r3c_d_td_pass_count);
+
+    (void)printf(
+        "R3C_D_TD_CONFIRMED_COUNT=0\n");
+
+    (void)printf(
+        "R3C_D_TD_REVIEW_COUNT=0\n");
+
+    (void)printf(
+        "CANONICAL_SERIALIZATION_HOST_VALIDATED=YES\n");
+
+    (void)printf(
+        "INTEGRITY_CORRUPTION_DETECTION_HOST_VALIDATED=YES\n");
+
+    (void)printf(
+        "INTEGRITY_OK_ESTABLISHES_ROLLBACK_RESISTANCE=NO\n");
+
+    (void)printf(
+        "CODEC_OK_ESTABLISHES_FRESHNESS=NO\n");
+
+    (void)printf(
+        "CODEC_OK_ESTABLISHES_AUTHORITY=NO\n");
+
+    (void)printf(
+        "CODEC_OK_ESTABLISHES_ACTUATION_AUTHORITY=NO\n");
+
+    (void)printf(
+        "PHYSICAL_STORAGE_IMPLEMENTED=NO\n");
+
+    (void)printf(
+        "PHYSICAL_DURABILITY_DEMONSTRATED=NO\n");
+
+    (void)printf(
+        "ROLLBACK_ANCHOR_DEMONSTRATED=NO\n");
     (void)printf(
         "PERSISTENT_ANTI_REPLAY_DEMONSTRATED=NO\n");
 
