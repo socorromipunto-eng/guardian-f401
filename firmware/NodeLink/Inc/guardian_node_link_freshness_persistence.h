@@ -188,13 +188,155 @@ guardian_node_link_freshness_persistence_classify(
         *classification);
 
 /*
- * R3C-A does not declare storage callbacks.
+ * C5-R3C-C logical persistence provider-operation contract.
  *
- * Transactional provider operations belong to C5-R3C-C after the record
- * validation/restoration classification work of C5-R3C-B.
+ * These declarations define a platform-independent transactional operation
+ * surface only.
  *
- * This prevents a generic read/write callback from being mistaken for
- * demonstrated atomicity, durability, integrity, or rollback protection.
+ * They do not define canonical serialization, physical storage encoding,
+ * flash behavior, durability proof, integrity protection, rollback-resistant
+ * anchoring, rejoin, freshness establishment, authority, or actuation.
+ *
+ * WRITE_SUCCESS != COMMIT_SUCCESS
+ * COMMIT_SUCCESS != FRESHNESS
+ * PROVIDER_RESULT != SECURITY_TRUTH
+ * CANDIDATE_RECORD != COMMITTED_RECORD
+ * RECORD_GENERATION != STRONG_ROLLBACK_ANCHOR
+ * TRANSACTIONAL_ORDERING != DURABILITY_PROOF
+ * PERSISTENCE_PROVIDER != AUTHORITY_PROVIDER
  */
+
+/*
+ * Bounded result vocabulary for one provider operation.
+ *
+ * INVALID is zero deliberately so zero-initialized and unknown results fail
+ * closed.
+ */
+typedef enum
+{
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID = 0,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_UNAVAILABLE,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_IO_FAILURE,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_VERIFY_FAILURE,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_COMMIT_FAILURE,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_STATE_UNCERTAIN,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_GENERATION_EXHAUSTED
+} guardian_node_link_freshness_persistence_operation_result_t;
+
+/*
+ * Bounded logical transaction outcome.
+ *
+ * COMMITTED means only that the provider contract completed the logical
+ * write -> verify -> commit operation sequence.
+ *
+ * It does not prove physical atomicity or durability and does not establish
+ * freshness, authority, or actuation authority.
+ */
+typedef enum
+{
+    GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_INVALID = 0,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_STATE_UNCERTAIN,
+
+    GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_GENERATION_EXHAUSTED
+} guardian_node_link_freshness_persistence_transaction_outcome_t;
+
+/*
+ * Provider callbacks.
+ *
+ * context is opaque and may be NULL for a stateless provider.
+ *
+ * The callback surface does not receive Guardian freshness runtime state and
+ * therefore cannot directly promote freshness, authority, or actuation.
+ *
+ * load is declared as part of the complete R3C-C provider contract even
+ * though the bounded commit transaction below does not invoke it.
+ */
+typedef guardian_node_link_freshness_persistence_operation_result_t
+(*guardian_node_link_freshness_persistence_load_fn)(
+    void *context,
+    guardian_node_link_freshness_persistence_status_t *provider_status,
+    guardian_node_link_freshness_persisted_record_t *record);
+
+typedef guardian_node_link_freshness_persistence_operation_result_t
+(*guardian_node_link_freshness_persistence_write_candidate_fn)(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate);
+
+typedef guardian_node_link_freshness_persistence_operation_result_t
+(*guardian_node_link_freshness_persistence_verify_candidate_fn)(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate);
+
+typedef guardian_node_link_freshness_persistence_operation_result_t
+(*guardian_node_link_freshness_persistence_commit_candidate_fn)(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate);
+
+typedef struct
+{
+    void *context;
+
+    guardian_node_link_freshness_persistence_load_fn load;
+
+    guardian_node_link_freshness_persistence_write_candidate_fn
+        write_candidate;
+
+    guardian_node_link_freshness_persistence_verify_candidate_fn
+        verify_candidate;
+
+    guardian_node_link_freshness_persistence_commit_candidate_fn
+        commit_candidate;
+} guardian_node_link_freshness_persistence_provider_t;
+
+/*
+ * Execute one bounded logical persistence commit transaction.
+ *
+ * previous_record may be NULL only for the legitimate no-prior-state
+ * bootstrap case.
+ *
+ * Generation semantics:
+ *
+ * - no previous record -> candidate generation must be 0;
+ * - previous generation N -> candidate generation must be N + 1;
+ * - UINT32_MAX never wraps and fails closed.
+ *
+ * Both previous_record, when present, and candidate must independently pass
+ * the existing C5-R3C-B logical record validation against expected_identity.
+ *
+ * The sequence is:
+ *
+ * validate previous/candidate
+ * -> write candidate
+ * -> provider verify candidate
+ * -> commit candidate
+ *
+ * Any failure before successful commit prevents this function from reporting
+ * COMMITTED.
+ *
+ * A provider result outside the bounded vocabulary fails closed as
+ * OPERATION_INVALID with transaction STATE_UNCERTAIN.
+ *
+ * This function does not mutate Guardian freshness runtime state.
+ */
+guardian_node_link_freshness_persistence_operation_result_t
+guardian_node_link_freshness_persistence_transact_commit(
+    const guardian_node_link_freshness_persistence_provider_t *provider,
+    const guardian_node_link_freshness_persisted_record_t *previous_record,
+    const guardian_node_link_freshness_identity_t *expected_identity,
+    const guardian_node_link_freshness_persisted_record_t *candidate,
+    guardian_node_link_freshness_persistence_transaction_outcome_t *outcome);
 
 #endif

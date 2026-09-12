@@ -2040,8 +2040,727 @@ static int test_r3c_b_persistence_classification(void)
     return 0;
 }
 
+typedef struct
+{
+    guardian_node_link_freshness_persistence_operation_result_t
+        load_result;
+
+    guardian_node_link_freshness_persistence_operation_result_t
+        write_result;
+
+    guardian_node_link_freshness_persistence_operation_result_t
+        verify_result;
+
+    guardian_node_link_freshness_persistence_operation_result_t
+        commit_result;
+
+    unsigned int load_calls;
+    unsigned int write_calls;
+    unsigned int verify_calls;
+    unsigned int commit_calls;
+} r3c_c_fake_provider_context_t;
+
+static guardian_node_link_freshness_persistence_operation_result_t
+r3c_c_fake_load(
+    void *context,
+    guardian_node_link_freshness_persistence_status_t *provider_status,
+    guardian_node_link_freshness_persisted_record_t *record)
+{
+    r3c_c_fake_provider_context_t *provider_context;
+
+    provider_context =
+        (r3c_c_fake_provider_context_t *)context;
+
+    if (provider_context == NULL)
+    {
+        return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID;
+    }
+
+    provider_context->load_calls += 1U;
+
+    if (provider_status != NULL)
+    {
+        *provider_status =
+            GUARDIAN_NODE_LINK_PERSISTENCE_STATUS_NO_PERSISTED_STATE;
+    }
+
+    if (record != NULL)
+    {
+        (void)memset(record, 0, sizeof(*record));
+    }
+
+    return provider_context->load_result;
+}
+
+static guardian_node_link_freshness_persistence_operation_result_t
+r3c_c_fake_write(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate)
+{
+    r3c_c_fake_provider_context_t *provider_context;
+
+    provider_context =
+        (r3c_c_fake_provider_context_t *)context;
+
+    if ((provider_context == NULL) ||
+        (candidate == NULL))
+    {
+        return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID;
+    }
+
+    provider_context->write_calls += 1U;
+
+    return provider_context->write_result;
+}
+
+static guardian_node_link_freshness_persistence_operation_result_t
+r3c_c_fake_verify(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate)
+{
+    r3c_c_fake_provider_context_t *provider_context;
+
+    provider_context =
+        (r3c_c_fake_provider_context_t *)context;
+
+    if ((provider_context == NULL) ||
+        (candidate == NULL))
+    {
+        return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID;
+    }
+
+    provider_context->verify_calls += 1U;
+
+    return provider_context->verify_result;
+}
+
+static guardian_node_link_freshness_persistence_operation_result_t
+r3c_c_fake_commit(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate)
+{
+    r3c_c_fake_provider_context_t *provider_context;
+
+    provider_context =
+        (r3c_c_fake_provider_context_t *)context;
+
+    if ((provider_context == NULL) ||
+        (candidate == NULL))
+    {
+        return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID;
+    }
+
+    provider_context->commit_calls += 1U;
+
+    return provider_context->commit_result;
+}
+
+static void r3c_c_fake_provider_init(
+    r3c_c_fake_provider_context_t *context,
+    guardian_node_link_freshness_persistence_provider_t *provider)
+{
+    (void)memset(context, 0, sizeof(*context));
+    (void)memset(provider, 0, sizeof(*provider));
+
+    context->load_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK;
+
+    context->write_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK;
+
+    context->verify_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK;
+
+    context->commit_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK;
+
+    provider->context = context;
+    provider->load = r3c_c_fake_load;
+    provider->write_candidate = r3c_c_fake_write;
+    provider->verify_candidate = r3c_c_fake_verify;
+    provider->commit_candidate = r3c_c_fake_commit;
+}
+
+static int test_r3c_c_persistence_transaction(void)
+{
+    r3c_c_fake_provider_context_t context;
+    guardian_node_link_freshness_persistence_provider_t provider;
+    guardian_node_link_freshness_persisted_record_t previous;
+    guardian_node_link_freshness_persisted_record_t candidate;
+    guardian_node_link_freshness_identity_t expected_identity;
+    guardian_node_link_freshness_persistence_transaction_outcome_t outcome;
+
+    previous = make_valid_r3c_b_persisted_record();
+    expected_identity = previous.identity;
+
+    r3c_c_fake_provider_init(&context, &provider);
+
+    candidate = previous;
+    candidate.record_generation =
+        previous.record_generation + 1U;
+    candidate.accepted_sequence += 1U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &expected_identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 1U);
+    TEST_ASSERT(context.commit_calls == 1U);
+    TEST_ASSERT(context.load_calls == 0U);
+
+    /*
+     * Legitimate no-prior-state bootstrap begins at generation zero.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    candidate = make_valid_r3c_b_persisted_record();
+    candidate.record_generation = 0U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_INVALID;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            NULL,
+            &candidate.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 1U);
+    TEST_ASSERT(context.commit_calls == 1U);
+
+    /*
+     * Candidate generation must be exactly previous + 1.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    candidate = previous;
+    candidate.record_generation =
+        previous.record_generation + 2U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Generation exhaustion is explicit and never wraps.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    previous.record_generation = UINT32_MAX;
+
+    candidate = previous;
+    candidate.record_generation = 0U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_GENERATION_EXHAUSTED);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_GENERATION_EXHAUSTED);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Write failure prevents verify and commit.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    candidate = previous;
+    candidate.accepted_sequence += 1U;
+    candidate.record_generation += 1U;
+
+    context.write_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_IO_FAILURE;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_IO_FAILURE);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Verify failure prevents commit.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    context.verify_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_VERIFY_FAILURE;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_VERIFY_FAILURE);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 1U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Commit failure cannot be reported as committed.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    context.commit_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_COMMIT_FAILURE;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_COMMIT_FAILURE);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 1U);
+    TEST_ASSERT(context.commit_calls == 1U);
+
+    /*
+     * Unknown commit outcome is explicitly uncertain.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    context.commit_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_STATE_UNCERTAIN;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_STATE_UNCERTAIN);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_STATE_UNCERTAIN);
+
+    /*
+     * An out-of-vocabulary provider result fails closed.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    context.write_result =
+        (guardian_node_link_freshness_persistence_operation_result_t)255;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_STATE_UNCERTAIN);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * A valid result from the wrong transaction phase also fails closed.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    context.write_result =
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_COMMIT_FAILURE;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_STATE_UNCERTAIN);
+
+    /*
+     * Malformed candidate is rejected before provider callbacks.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    candidate = previous;
+    candidate.record_generation += 1U;
+    candidate.accepted_sequence = 0U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Malformed previous committed state also blocks the transaction.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    previous.schema_version = 0U;
+
+    candidate = make_valid_r3c_b_persisted_record();
+    candidate.record_generation = 2U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &candidate.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Missing provider callback is rejected before any storage operation.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    candidate = previous;
+    candidate.record_generation += 1U;
+
+    provider.verify_candidate = NULL;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_INVALID);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * Null public arguments fail closed.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            NULL,
+            NULL,
+            &candidate.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_INVALID);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            NULL,
+            NULL,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            NULL,
+            &candidate.identity,
+            NULL,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            NULL,
+            &candidate.identity,
+            &candidate,
+            NULL) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    return 0;
+}
+static guardian_node_link_freshness_persistence_operation_result_t
+r3c_c_hostile_mutating_write(
+    void *context,
+    const guardian_node_link_freshness_persisted_record_t *candidate)
+{
+    r3c_c_fake_provider_context_t *provider_context;
+    guardian_node_link_freshness_persisted_record_t *mutable_candidate;
+
+    provider_context =
+        (r3c_c_fake_provider_context_t *)context;
+
+    if ((provider_context == NULL) ||
+        (candidate == NULL))
+    {
+        return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID;
+    }
+
+    provider_context->write_calls += 1U;
+
+    mutable_candidate =
+        (guardian_node_link_freshness_persisted_record_t *)candidate;
+
+    mutable_candidate->accepted_sequence = 1U;
+    mutable_candidate->record_generation = 0U;
+
+    return GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_OK;
+}
+
+static int test_r3c_c_td_014_td_016_regressions(void)
+{
+    r3c_c_fake_provider_context_t context;
+    guardian_node_link_freshness_persistence_provider_t provider;
+    guardian_node_link_freshness_persisted_record_t previous;
+    guardian_node_link_freshness_persisted_record_t candidate;
+    guardian_node_link_freshness_persisted_record_t caller_before;
+    guardian_node_link_freshness_persistence_transaction_outcome_t outcome;
+
+    /*
+     * TD-014: a newer record_generation must not carry a lower accepted
+     * sequence within the same accepted epoch.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    previous = make_valid_r3c_b_persisted_record();
+    previous.accepted_epoch = 7U;
+    previous.accepted_sequence = 100U;
+    previous.record_generation = 10U;
+
+    candidate = previous;
+    candidate.accepted_sequence = 99U;
+    candidate.record_generation = 11U;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_ABORTED);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * R3C-C must not silently authorize a different accepted epoch.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    candidate = previous;
+    candidate.accepted_epoch = previous.accepted_epoch + 1U;
+    candidate.accepted_sequence = 1U;
+    candidate.record_generation = 11U;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(context.write_calls == 0U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    /*
+     * TD-016: a hostile provider that casts away const and mutates the
+     * transaction object must be detected before COMMITTED can be reported.
+     *
+     * The caller-owned candidate must remain unchanged because callbacks
+     * operate only on the core-owned transaction copy.
+     */
+    r3c_c_fake_provider_init(&context, &provider);
+
+    candidate = previous;
+    candidate.accepted_sequence = 101U;
+    candidate.record_generation = 11U;
+
+    caller_before = candidate;
+
+    provider.write_candidate =
+        r3c_c_hostile_mutating_write;
+
+    outcome =
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_COMMITTED;
+
+    TEST_ASSERT(
+        guardian_node_link_freshness_persistence_transact_commit(
+            &provider,
+            &previous,
+            &previous.identity,
+            &candidate,
+            &outcome) ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_OPERATION_INVALID);
+
+    TEST_ASSERT(
+        outcome ==
+        GUARDIAN_NODE_LINK_PERSISTENCE_TRANSACTION_STATE_UNCERTAIN);
+
+    TEST_ASSERT(
+        memcmp(
+            &candidate,
+            &caller_before,
+            sizeof(candidate)) == 0);
+
+    TEST_ASSERT(context.write_calls == 1U);
+    TEST_ASSERT(context.verify_calls == 0U);
+    TEST_ASSERT(context.commit_calls == 0U);
+
+    return 0;
+}
 int main(void)
 {
+    TEST_ASSERT(test_r3c_c_td_014_td_016_regressions() == 0);
+    TEST_ASSERT(test_r3c_c_persistence_transaction() == 0);
     TEST_ASSERT(test_r3c_b_persistence_classification() == 0);
 
     TEST_ASSERT(test_init_zeroization() == 0);
