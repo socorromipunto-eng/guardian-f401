@@ -345,6 +345,7 @@ jobs:
           -Werror
           -Ifirmware/NodeLink/Inc
           firmware/NodeLink/Src/guardian_node_link_freshness.c
+          firmware/NodeLink/Src/guardian_node_link_freshness_persistence.c
           firmware/Tests/node_link_freshness_host_test.c
           -o build/node_link_freshness_host_test
 
