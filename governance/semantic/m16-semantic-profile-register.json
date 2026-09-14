@@ -241,6 +241,19 @@
       }
     }
   ],
-  "compatibility_contracts": [],
+  "compatibility_contracts": [
+    {
+      "compatibility_contract_id": "guardian:compatibility-contract:f401-mcxn947-supervisory:v1",
+      "contract_version": "1.0.0",
+      "producer_profile_id": "guardian:semantic-profile:stm32f401:control:v1",
+      "consumer_profile_id": "guardian:semantic-profile:mcxn947:supervisory:v1",
+      "protocol_id": "guardian:nodelink",
+      "protocol_version": "0.1",
+      "pre_freshness_compatibility": "UNKNOWN",
+      "full_message_semantic_compatibility": "UNKNOWN",
+      "authority_effect": "NONE",
+      "actuation_effect": "NONE"
+    }
+  ],
   "semantic_change_boundaries": []
 }
