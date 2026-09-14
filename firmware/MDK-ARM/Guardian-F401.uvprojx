@@ -1,10 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml version="1.0" encoding="utf-16" standalone="no"?>
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
-
   <SchemaVersion>2.1</SchemaVersion>
-
   <Header>### uVision Project, (C) Keil Software</Header>
-
   <Targets>
     <Target>
       <TargetName>Guardian-F401-Structural-Review</TargetName>
@@ -338,9 +335,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F401xE</Define>
+              <Define>STM32F401xE,USE_HAL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>GuardianF401\Drivers\CMSIS\Device\ST\STM32F4xx\Include;GuardianF401\Drivers\CMSIS\Include;..\Acquisition\Inc;..\App\Inc;..\Control\Inc;..\DSP\Inc;..\Firmware\Inc;..\Health\Inc;..\NodeLink\Inc;..\Platform\Inc;..\Platform\STM32F401\Inc;..\Protocol\Inc;..\Security\Inc;..\Telemetry\Inc</IncludePath>
+              <IncludePath>GuardianF401\Drivers\CMSIS\Device\ST\STM32F4xx\Include;GuardianF401\Drivers\CMSIS\Include;..\Acquisition\Inc;..\App\Inc;..\Control\Inc;..\DSP\Inc;..\Firmware\Inc;..\Health\Inc;..\NodeLink\Inc;..\Platform\Inc;..\Platform\STM32F401\Inc;..\Protocol\Inc;..\Security\Inc;..\Telemetry\Inc;GuardianF401\Inc;GuardianF401\Drivers\STM32F4xx_HAL_Driver\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -510,7 +507,8 @@
               <FilePath>..\App\Src\guardian_f401_nodelink_adapter.c</FilePath>
             </File>
           </Files>
-        </Group>        <Group>
+        </Group>
+        <Group>
           <GroupName>Guardian Protocol</GroupName>
           <Files>
             <File>
@@ -550,14 +548,67 @@
             </File>
           </Files>
         </Group>
+        <Group>
+          <GroupName>NodeLink Persistence R3C-E</GroupName>
+          <Files>
+            <File>
+              <FileName>guardian_node_link_freshness.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_freshness.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_freshness_persistence.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_freshness_persistence.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_freshness_persistence_backend.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_freshness_persistence_backend.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_freshness_persistence_codec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_freshness_persistence_codec.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_freshness_persistence_stm32f401.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_freshness_persistence_stm32f401.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>STM32 HAL Flash R3C-E</GroupName>
+          <Files>
+            <File>
+              <FileName>stm32f4xx_hal_cortex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>GuardianF401\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_cortex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>GuardianF401\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>GuardianF401\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_flash_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>GuardianF401\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_flash_ex.c</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>
-
   <RTE>
-    <apis/>
-    <components/>
-    <files/>
+    <apis />
+    <components />
+    <files />
   </RTE>
-
 </Project>
