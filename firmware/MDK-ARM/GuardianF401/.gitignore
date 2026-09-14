@@ -64,3 +64,7 @@
 !/Src/
 !/Src/system_stm32f4xx.c
 # END GUARDIAN R11 REPRODUCIBILITY ALLOWLIST V0.16
+
+!Drivers/CMSIS/Include/cmsis_version.h
+!Drivers/CMSIS/Include/cmsis_compiler.h
+!Drivers/CMSIS/Include/cmsis_armclang.h
