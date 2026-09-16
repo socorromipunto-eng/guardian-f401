@@ -170,7 +170,7 @@ guardian_stm32f401_flash_erase(
     void *opaque_context,
     guardian_node_link_persistence_slot_t slot)
 {
-    guardian_node_link_stm32f401_flash_context_t *context;
+    const guardian_node_link_stm32f401_flash_context_t *context;
 
     FLASH_EraseInitTypeDef erase;
     uint32_t sector_error;

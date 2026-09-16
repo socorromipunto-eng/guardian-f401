@@ -82,9 +82,6 @@ guardian_parser_result_t guardian_parser_push_byte(
     uint8_t byte,
     guardian_frame_t *frame)
 {
-    /* Store the payload length as soon as the complete fixed header exists. */
-    uint16_t payload_length = 0U;
-
     /* Store the complete-frame decoder result for the finished candidate. */
     guardian_protocol_result_t decode_result = GUARDIAN_PROTOCOL_OK;
 
@@ -175,7 +172,7 @@ guardian_parser_result_t guardian_parser_push_byte(
             if (parser->index == GUARDIAN_HEADER_SIZE)
             {
                 /* Decode the declared payload length directly from its fixed header offset. */
-                payload_length =
+                uint16_t payload_length =
                     guardian_parser_read_u16_be(
                         &parser->buffer[GUARDIAN_OFFSET_PAYLOAD_LENGTH]);
 

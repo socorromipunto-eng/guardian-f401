@@ -526,9 +526,6 @@ r3e_recover_internal(
     guardian_node_link_freshness_persistence_operation_result_t op_b;
 
     const r3e_slot_observation_t *valid;
-    const r3e_slot_observation_t *peer;
-
-    guardian_node_link_persistence_slot_t valid_slot;
 
     if ((backend == NULL) ||
         (provider_status == NULL) ||
@@ -670,6 +667,9 @@ r3e_recover_internal(
     if ((a.state == R3E_SLOT_VALID) ||
         (b.state == R3E_SLOT_VALID))
     {
+        const r3e_slot_observation_t *peer;
+        guardian_node_link_persistence_slot_t valid_slot;
+
         if (a.state == R3E_SLOT_VALID)
         {
             valid = &a;

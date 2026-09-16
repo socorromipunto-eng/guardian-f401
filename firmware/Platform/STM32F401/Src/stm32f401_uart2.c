@@ -457,12 +457,6 @@ void guardian_stm32f401_uart2_irq_handler(void)
     /* Snapshot status before DR reads clear receive/error flags. */
     uint32_t status = USART2->SR;
 
-    /* Store the data-register value when receive/error service requires a read. */
-    uint8_t received = 0U;
-
-    /* Store the next RX producer index when one valid byte is available. */
-    uint16_t next = 0U;
-
     /* Handle receive or line-error conditions. */
     if ((status &
          (USART_SR_RXNE |
@@ -472,7 +466,7 @@ void guardian_stm32f401_uart2_irq_handler(void)
           USART_SR_ORE)) != 0U)
     {
         /* Read DR exactly once. */
-        received = (uint8_t)(USART2->DR & 0xFFU);
+        uint8_t received = (uint8_t)(USART2->DR & 0xFFU);
 
         /* Count parity errors. */
         if ((status & USART_SR_PE) != 0U)
@@ -515,7 +509,7 @@ void guardian_stm32f401_uart2_irq_handler(void)
                USART_SR_ORE)) == 0U))
         {
             /* Calculate next producer index. */
-            next =
+            uint16_t next =
                 guardian_rx_next(guardian_rx_head);
 
             /* Check for one free queue slot. */

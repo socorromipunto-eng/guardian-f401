@@ -1059,10 +1059,6 @@ void guardian_embedded_link_poll(
     /* Store one coherent runtime snapshot for a request. */
     guardian_device_runtime_t runtime = {0};
 
-    /* Store the stream parser outcome for one received byte. */
-    guardian_parser_result_t parser_result =
-        GUARDIAN_PARSER_NO_FRAME;
-
     /* Store command-handler outcomes. */
     guardian_protocol_result_t protocol_result =
         GUARDIAN_PROTOCOL_OK;
@@ -1100,7 +1096,7 @@ void guardian_embedded_link_poll(
         processed += 1U;
 
         /* Feed the byte into the transport-independent parser. */
-        parser_result =
+        guardian_parser_result_t parser_result =
             guardian_parser_push_byte(
                 &link->parser,
                 byte,
