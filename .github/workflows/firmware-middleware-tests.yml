@@ -444,3 +444,62 @@ jobs:
       # Run HAL boundary, geometry, error propagation, bounds, and byte-program tests.
       - name: Run C5-R3C-E STM32F401 HAL adapter contract tests
         run: ./build/node_link_freshness_persistence_stm32f401_adapter_host_test
+
+  r3d-b-rollback-anchor-host-contract:
+    name: R3D-B rollback anchor host contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # R3D-B validates the software rollback-anchor contract on the host.
+      # It does not demonstrate a physical rollback anchor, persistent
+      # anti-replay completion, recovery orchestration, production
+      # readiness, certification, or actuator/AI authority.
+      - name: Compile R3D-B rollback anchor host contract
+        run: |
+          set -eu
+          mkdir -p build/r3d_b_ci
+          gcc \
+            -std=c11 \
+            -Wall \
+            -Wextra \
+            -Wpedantic \
+            -Werror \
+            -Ifirmware/NodeLink/Inc \
+            -Ifirmware/Security/Inc \
+            firmware/Security/Src/guardian_crypto.c \
+            firmware/NodeLink/Src/guardian_node_link_freshness.c \
+            firmware/NodeLink/Src/guardian_node_link_freshness_persistence_codec.c \
+            firmware/NodeLink/Src/guardian_node_link_rollback_anchor.c \
+            firmware/Tests/node_link_rollback_anchor_host_test.c \
+            -o build/r3d_b_ci/node_link_rollback_anchor_host_test
+
+      - name: Execute and verify R3D-B rollback anchor host contract
+        run: |
+          set -u
+          stderr_file="build/r3d_b_ci/stderr.txt"
+          set +e
+          output="$(build/r3d_b_ci/node_link_rollback_anchor_host_test 2>"${stderr_file}")"
+          status=$?
+          set -e
+          printf '%s\n' "${output}"
+          test "${status}" -eq 0
+          test ! -s "${stderr_file}"
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'R3D_B_POSITIVE_TESTS_PASS_COUNT=12')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'R3D_B_NEGATIVE_HOSTILE_TESTS_PASS_COUNT=12')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Ec '^PASS: PT[0-9]{2}_')" -eq 12
+          test "$(printf '%s\n' "${output}" | grep -Ec '^PASS: NT[0-9]{2}_')" -eq 12
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT01_COMMITMENT_NULL_RECORD_REJECTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT02_COMMITMENT_NULL_OUTPUT_REJECTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT03_COMPARE_NULL_ARGUMENT_REJECTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT04_COMPARE_IDENTITY_MISMATCH_REPORTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT05_COMPARE_BEHIND_REPORTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT06_COMPARE_AHEAD_REPORTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT07_COMPARE_SAME_GENERATION_STATE_MISMATCH_REPORTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT08_NEXT_GENERATION_NULL_OUTPUT_REJECTED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT09_NEXT_GENERATION_UINT32_MAX_MINUS_ONE_EXHAUSTED_NO_WRAP')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT10_NEXT_GENERATION_UINT32_MAX_EXHAUSTED_NO_WRAP')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT11_PROVIDER_WRAPPERS_MISSING_CALLBACK_FAIL_CLOSED')" -eq 1
+          test "$(printf '%s\n' "${output}" | grep -Fxc 'PASS: NT12_ADVANCE_WRONG_NEXT_GENERATION_REJECTED_BEFORE_PROVIDER_CALL')" -eq 1
