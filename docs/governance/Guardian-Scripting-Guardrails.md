@@ -313,6 +313,54 @@ No implementation, staging, commit, push, PR, merge, tag, release, publication o
 
 ---
 
+### E037 - Revision-qualified Git paths must be normalized before repository-relative membership comparison
+
+**Trigger/context:** A read-only target-membership adjudicator consumed `git grep` output generated against `HEAD`.
+
+**Observed symptom:** Paths shaped as `HEAD:firmware/...` were compared directly with target-member paths shaped as `firmware/...`, producing false `TARGET_MEMBER=False` results.
+
+**Root cause:** The Git revision qualifier was retained as though it were part of the repository-relative path.
+
+**Classification:** Runner path-normalization and target-membership defect.
+
+**Mutation status:** Read-only adjudication only. No repository mutation occurred.
+
+**Safe handling:** Preserve repository state, strip the revision qualifier, normalize path separators, and repeat the read-only target-membership adjudication.
+
+**Prohibited automatic recovery:** Do not modify project membership, source files, project files, index state, commits, or remote state based on unnormalized membership results.
+
+**Rule:**
+
+`REVISION_QUALIFIED_GIT_PATH != REPOSITORY_RELATIVE_PATH`
+
+`HEAD:firmware/foo.c -> firmware/foo.c before target-membership comparison`
+
+`NORMALIZE_REVISION_PREFIX + NORMALIZE_SEPARATORS -> TARGET_MEMBERSHIP`
+
+### E038 - Broad provider-candidate heuristics must not be promoted into concrete-provider evidence
+
+**Trigger/context:** Initial B02 discovery classified `B02_CONCRETE_TARGET_PROVIDER_CANDIDATE=True` from broad entropy/token and assignment-pattern hits.
+
+**Observed symptom:** Focused adjudication later demonstrated `RANDOM_ASSIGNMENT_TARGET_HIT_COUNT=0` and no concrete target random callback assignment.
+
+**Root cause:** The broad heuristic treated correlated textual evidence as though it proved an exact `guardian_security_config.random` assignment to a concrete entropy provider.
+
+**Classification:** Runner heuristic false-positive provider-classification defect.
+
+**Mutation status:** Read-only adjudication only. No repository mutation occurred.
+
+**Safe handling:** Treat broad searches as candidate generation only. Require exact assignment resolution, symbol definition, target membership, concrete entropy source, and runtime wiring before provider classification.
+
+**Prohibited automatic recovery:** Do not enable HAL RNG, modify project membership, implement provider code, or promote release state solely because a broad heuristic returned `candidate=True`.
+
+**Rules:**
+
+`BROAD_TOKEN_HITS != CONCRETE_PROVIDER`
+
+`CALLBACK_SURFACE != PROVIDER`
+
+`PROVIDER_EVIDENCE_REQUIRES_EXACT_ASSIGNMENT + SYMBOL_RESOLUTION + TARGET_MEMBERSHIP + CONCRETE_SOURCE + RUNTIME_WIRING`
+
 ## 10. Maintenance
 
 For every new failure class:
