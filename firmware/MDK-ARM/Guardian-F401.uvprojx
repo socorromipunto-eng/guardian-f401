@@ -576,6 +576,11 @@
               <FileType>1</FileType>
               <FilePath>..\NodeLink\Src\guardian_node_link_freshness_persistence_stm32f401.c</FilePath>
             </File>
+            <File>
+              <FileName>guardian_node_link_rollback_anchor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_rollback_anchor.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
