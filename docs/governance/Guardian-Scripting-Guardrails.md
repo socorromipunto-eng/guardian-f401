@@ -361,6 +361,45 @@ No implementation, staging, commit, push, PR, merge, tag, release, publication o
 
 `PROVIDER_EVIDENCE_REQUIRES_EXACT_ASSIGNMENT + SYMBOL_RESOLUTION + TARGET_MEMBERSHIP + CONCRETE_SOURCE + RUNTIME_WIRING`
 
+### E039 - Git grep extended-regex patterns must not use .NET/PCRE inline case flags
+
+**Trigger/context:** A governed read-only B01/B02 provider adjudication invoked `git grep -E` with a pattern containing the inline case-insensitive token `(?i)`.
+
+**Symptom:** `git grep` rejected the pattern and the adjudication controlled-stopped at the first Ed25519 discovery query.
+
+**Root cause:** The runner mixed .NET/PCRE inline regular-expression syntax with Git extended regular-expression mode. `git grep -E` does not accept `(?i)` as a portable ERE case-control construct.
+
+**Classification:** Runner regex-dialect / native-tool-contract defect; no Guardian source, project, provider, or release defect demonstrated.
+
+**Mutation status:** No repository mutation occurred.
+
+**Safe handling:** Preserve repository state. Use `git grep -i` for case-insensitive matching, keep `-E` patterns free of inline .NET/PCRE case flags, and repeat the same read-only adjudication from Phase 0.
+
+**Prohibited automatic recovery:** Do not modify source, project membership, index, commit history, or remote refs because a read-only grep pattern was rejected. Do not interpret grep syntax failure as zero matches or as absence of provider evidence.
+
+**Rule:** A governed runner using `git grep -E` SHALL use Git-supported ERE syntax only. Case-insensitive matching SHALL be requested with `-i`, not with inline .NET/PCRE case-control tokens.
+
+`GIT_GREP_ERE_PATTERN != DOTNET_PCRE_PATTERN`
+
+`CASE_INSENSITIVE_GIT_GREP = git grep -i -E`
+
+`GREP_SYNTAX_FAILURE != ZERO_MATCHES`
+
+`READ_ONLY_QUERY_RUNNER_DEFECT = CORRECT_RUNNER + REPEAT_READ_ONLY_GATE`
+
+**Reusable example:**
+
+Bad:
+
+```text
+git grep -E '(?i)ed25519'
+```
+
+Good:
+
+```text
+git grep -i -E 'ed25519'
+```
 ## 10. Maintenance
 
 For every new failure class:
