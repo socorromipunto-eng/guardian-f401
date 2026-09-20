@@ -209,6 +209,97 @@
         "R-33",
         "R-34"
       ]
+    },
+    {
+      "id": "SG-020",
+      "date": "2026-09-20",
+      "class": "POWERSHELL_CONTROL_FLOW_EXPRESSION_FAILURE",
+      "root_cause": "A read-only runner used a PowerShell control-flow keyword in a value-expression position. The generated script was syntactically invalid for Windows PowerShell 5.1 and stopped before its intended adjudication.",
+      "prevention": "Require the Windows PowerShell 5.1 mechanical parser gate before runner issuance; treat parser success as necessary but not sufficient; stop issuance when any parser error is present; preserve fail-closed anti-regression handling for documented failure classes.",
+      "rules": [
+        "R-29",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-021",
+      "date": "2026-09-20",
+      "class": "ASYNC_EXCEPTION_WRAPPER_ROOT_CAUSE_FAILURE",
+      "root_cause": "A TLS diagnostic runner waited on an asynchronous task through a wrapper that surfaced MethodInvocationException or AggregateException state instead of the underlying task fault. The wrapper state obscured the concrete transport exception and risked over-classifying the TLS root cause.",
+      "prevention": "Distinguish timeout, cancellation, fault, and successful completion; unwrap wrapper or aggregate exception state to the underlying exception before assigning protocol or transport cause; preserve wrapper state only as diagnostic context.",
+      "rules": [
+        "R-36",
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-022",
+      "date": "2026-09-20",
+      "class": "SAFETY_LIMIT_EXIT_CODE_SEMANTIC_MISCLASSIFICATION",
+      "root_cause": "A minimal curl range probe treated curl exit code 63 from the configured max-filesize safety guard as proof that the resource request failed, even though the observed transaction included HTTP 200 and application/pdf metadata. Client safety-limit termination was conflated with server and resource response semantics.",
+      "prevention": "Classify native exit status, HTTP response state, content metadata, persistence state, and safety-guard activation independently; never infer resource failure solely from a nonzero client exit code when stronger response evidence exists.",
+      "rules": [
+        "R-12",
+        "R-17",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-023",
+      "date": "2026-09-20",
+      "class": "NATIVE_ARGUMENT_BOUNDARY_RECONSTRUCTION_FAILURE",
+      "root_cause": "A native-process helper reconstructed ProcessStartInfo.Arguments by joining an argument array with spaces. A logical git grep pattern containing whitespace was split into multiple native arguments, causing Git to interpret part of the intended pattern as another token.",
+      "prevention": "Preserve native argument boundaries mechanically; do not rebuild an argument vector by naive whitespace joining when arguments can contain whitespace or escaping-sensitive content; use a proven quoting and escaping design or a verified argument-boundary mechanism.",
+      "rules": [
+        "R-35",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-024",
+      "date": "2026-09-20",
+      "class": "UNINITIALIZED_STRICTMODE_VARIABLE_REFERENCE_FAILURE",
+      "root_cause": "A read-only adjudicator referenced the ordinary variable ExactIncidentRegisterPresent under StrictMode even though no reachable initialization established that variable. The script parsed successfully but failed at runtime when the undefined variable was evaluated.",
+      "prevention": "Initialize or mechanically prove every consumed variable on all reachable paths before use; retain StrictMode; do not treat parser success as proof of runtime variable validity; classify undefined-variable failures as runner defects unless independent project evidence demonstrates otherwise.",
+      "rules": [
+        "R-37",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-025",
+      "date": "2026-09-20",
+      "class": "STRICTMODE_PROPERTY_EXISTENCE_ASSUMPTION_FAILURE",
+      "root_cause": "A governed PowerShell runner attempted to defend optional property access with a null comparison performed after direct dereference. Under StrictMode, a missing property throws PropertyNotFoundException before the comparison can evaluate. The same design also directly dereferenced required properties without first mechanically proving schema presence.",
+      "prevention": "Prove property existence through PSObject.Properties before dereference whenever presence is not already established by an exact validated schema. Treat direct property access followed by a null comparison as insufficient under StrictMode.",
+      "rules": [
+        "R-38",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-026",
+      "date": "2026-09-20",
+      "class": "NATIVE_ARGUMENT_GUARD_INCOMPLETE",
+      "root_cause": "A native-process helper continued constructing ProcessStartInfo.Arguments by joining argument strings while its guard rejected only space and tab. The guard therefore demonstrated only a restricted whitespace subset and did not prove preservation for quotes, backslashes, CR, LF, or other escaping-sensitive argument forms.",
+      "prevention": "Do not describe a restricted argument guard as general boundary preservation. Either use a mechanically proven Windows quoting implementation or constrain the helper to an explicit safe-token alphabet that excludes every quoting and escaping-sensitive form used outside the proven subset.",
+      "rules": [
+        "R-35",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-027",
+      "date": "2026-09-20",
+      "class": "PORCELAIN_STATUS_TRIM_SEMANTIC_LOSS",
+      "root_cause": "A line-normalization helper applied Trim() to git status --porcelain=v1 output even though the first two fixed columns encode index and worktree state. Trimming leading whitespace can collapse the semantic distinction between worktree-only and index-only modifications.",
+      "prevention": "Preserve fixed-column native output exactly until its grammar has been parsed. Do not apply generic trimming to porcelain status records before interpreting the XY state columns.",
+      "rules": [
+        "R-39",
+        "R-12",
+        "R-19"
+      ]
     }
   ]
 }
