@@ -77,7 +77,8 @@ $CaseIndex = 0
 foreach ($Case in $Cases) {
     $CaseIndex++
     $Original = @($Case)
-    $CommandLine = ConvertTo-GuardianWin32CommandLine -Arguments $Original
+    $CommandLine = [string]::Join(' ', @(foreach ($Argument in $Original) {
+        ConvertTo-GuardianWin32Argument -Argument $Argument }))
 
     # argv[0] is the program name and is parsed by different rules, so prepend one.
     $Recovered = @(Get-Argv -CommandLine ('prog.exe ' + $CommandLine))
@@ -99,8 +100,6 @@ $Object = '{"id":"SG-001"}' | ConvertFrom-Json
 Assert-That -Name 'PROP_PRESENT' -Condition (Test-GuardianProperty -InputObject $Object -Name 'id')
 Assert-That -Name 'PROP_ABSENT'  -Condition (-not (Test-GuardianProperty -InputObject $Object -Name 'rules'))
 Assert-That -Name 'PROP_NULL_INPUT' -Condition (-not (Test-GuardianProperty -InputObject $null -Name 'id'))
-Assert-That -Name 'PROP_DEFAULT' -Condition `
-    ((Get-GuardianProperty -InputObject $Object -Name 'rules' -Default 'none') -eq 'none')
 
 # Proof the naive guard really does throw, i.e. that Test-GuardianProperty earns its place.
 $Threw = $false

@@ -25,7 +25,7 @@ Import-Module (Join-Path $PSScriptRoot 'GuardianRunner/GuardianRunner.psm1') -Fo
 $RegisterPath   = Join-Path $RepoRoot 'governance/scripting-incident-register.json'
 $GuardrailsPath = Join-Path $RepoRoot 'docs/governance/Guardian-Scripting-Guardrails.md'
 
-$Result   = New-GuardianResult -Command 'verify-incident-register' -Repository $RepoRoot
+$Checks   = New-Object 'System.Collections.Generic.List[object]'
 $Problems = New-Object 'System.Collections.Generic.List[string]'
 
 foreach ($Path in @($RegisterPath, $GuardrailsPath)) {
@@ -38,16 +38,16 @@ foreach ($Path in @($RegisterPath, $GuardrailsPath)) {
 # --- register must be pure ASCII, so byte index equals char index -----------
 $Bytes    = [System.IO.File]::ReadAllBytes($RegisterPath)
 $NonAscii = @($Bytes | Where-Object { $_ -gt 127 }).Count
-Add-GuardianCheck -Result $Result -Name 'REGISTER_ASCII' -Passed ($NonAscii -eq 0) `
-    -Detail ('nonAsciiBytes=' + $NonAscii)
+[void]$Checks.Add(@{ Name = 'REGISTER_ASCII'; Passed = ($NonAscii -eq 0)
+                     Detail = 'nonAsciiBytes=' + $NonAscii })
 
 $Register = [System.Text.Encoding]::ASCII.GetString($Bytes) | ConvertFrom-Json
 
 $ExpectedTopLevel = @('schema_version', 'project', 'status', 'policy', 'incidents')
 $ObservedTopLevel = @($Register.PSObject.Properties.Name)
-Add-GuardianCheck -Result $Result -Name 'TOP_LEVEL_CONTRACT' `
-    -Passed (($ObservedTopLevel -join '|') -eq ($ExpectedTopLevel -join '|')) `
-    -Detail ('observed=' + ($ObservedTopLevel -join ','))
+[void]$Checks.Add(@{ Name = 'TOP_LEVEL_CONTRACT'
+                     Passed = (($ObservedTopLevel -join '|') -eq ($ExpectedTopLevel -join '|'))
+                     Detail = 'observed=' + ($ObservedTopLevel -join ',') })
 
 # --- guardrail rule ids ------------------------------------------------------
 $GuardrailText = [System.IO.File]::ReadAllText($GuardrailsPath)
@@ -57,8 +57,8 @@ foreach ($Match in [regex]::Matches($GuardrailText, '(?m)^\|\s*(R-\d{2})\s*\|'))
         [void]$Problems.Add('Duplicate guardrail row: ' + $Match.Groups[1].Value)
     }
 }
-Add-GuardianCheck -Result $Result -Name 'GUARDRAILS_PARSED' -Passed ($RuleIds.Count -gt 0) `
-    -Detail ('rules=' + $RuleIds.Count)
+[void]$Checks.Add(@{ Name = 'GUARDRAILS_PARSED'; Passed = ($RuleIds.Count -gt 0)
+                     Detail = 'rules=' + $RuleIds.Count })
 
 # --- incidents ---------------------------------------------------------------
 $ExpectedKeys = @('id', 'date', 'class', 'root_cause', 'prevention', 'rules')
@@ -104,9 +104,9 @@ foreach ($Incident in $Register.incidents) {
     }
 }
 
-Add-GuardianCheck -Result $Result -Name 'INCIDENT_INTEGRITY' -Passed ($Problems.Count -eq 0) `
-    -Detail ('incidents=' + $Ordinal + ' problems=' + $Problems.Count)
+[void]$Checks.Add(@{ Name = 'INCIDENT_INTEGRITY'; Passed = ($Problems.Count -eq 0)
+                     Detail = 'incidents=' + $Ordinal + ' problems=' + $Problems.Count })
 
 foreach ($Problem in $Problems) { Write-Host ('PROBLEM=' + $Problem) }
 
-exit (Write-GuardianResult -Result $Result)
+exit (Write-GuardianResult -Command 'verify-incident-register' -Repository $RepoRoot -Checks $Checks)
