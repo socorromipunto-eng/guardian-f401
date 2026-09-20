@@ -1,17 +1,19 @@
 <#
     GuardianRunner - primitives for governed Windows PowerShell 5.1 runners.
 
-    One function per recorded failure class. Nothing speculative: a helper is
-    added here when a runner needs it, not before.
+    Each exported function is the reference implementation of a guardrail rule.
+    A runner SHALL use these rather than reimplementing the behaviour, because
+    every rule below was written after a recorded failure.
 
-      R-35  ConvertTo-GuardianWin32Argument  SG-023, SG-026
-      R-38  Test-GuardianProperty            SG-025
-      R-01  Invoke-GuardianNative            exit code decides, not STDERR
-      R-26  Invoke-GuardianNative            STDOUT and STDERR stay separate
-      R-39  Invoke-GuardianNative            output returned verbatim
-      R-29  Test-GuardianScript              SG-020
+      R-01  Invoke-GuardianNative            exit code determines failure
+      R-03  Invoke-GuardianNative            git text identity under EOL rules
       R-17  Write-GuardianResult             explicit labels, never bare SUCCESS
-      R-22  this module is ASCII-only
+      R-22  applies to this module           ASCII-only source
+      R-26  Invoke-GuardianNative            STDOUT and STDERR remain separate
+      R-29  Test-GuardianScript              mechanical parser gate     SG-020
+      R-35  ConvertTo-GuardianWin32Argument  argument boundary          SG-023, SG-026
+      R-38  Test-GuardianProperty            property existence proof   SG-025
+      R-39  Invoke-GuardianNative            output returned verbatim   SG-027
 #>
 
 Set-StrictMode -Version 2.0
@@ -126,8 +128,10 @@ function Invoke-GuardianNative {
 }
 
 # ---------------------------------------------------------------------------
-# R-29 / R-22: mechanical parser and ASCII gate over a runner before issuance.
+# R-29 / R-22: mechanical parser and encoding gate over a runner before issuance.
 # Parser success is necessary, never sufficient (SG-020).
+# .gitattributes pins .ps1 and .psm1 to eol=lf, so any CR byte is a defect: a
+# parser accepts a CR inside a string literal, which conceals the divergence.
 # ---------------------------------------------------------------------------
 function Test-GuardianScript {
     [CmdletBinding()]
@@ -137,6 +141,7 @@ function Test-GuardianScript {
 
     $Bytes    = [System.IO.File]::ReadAllBytes($Path)
     $NonAscii = @($Bytes | Where-Object { $_ -gt 127 }).Count
+    $CarriageReturns = @($Bytes | Where-Object { $_ -eq 13 }).Count
 
     $Tokens = $null
     $Errors = $null
@@ -146,10 +151,12 @@ function Test-GuardianScript {
     return [pscustomobject]@{
         Path          = $Path
         NonAsciiBytes = [int]$NonAscii
+        CarriageReturns = [int]$CarriageReturns
         ParseErrors   = [int]$ParseErrors.Count
         Messages      = @($ParseErrors | ForEach-Object {
                               [string]$_.Extent.StartLineNumber + ': ' + [string]$_.Message })
-        Passed        = ([int]$NonAscii -eq 0 -and $ParseErrors.Count -eq 0)
+        Passed        = ([int]$NonAscii -eq 0 -and [int]$CarriageReturns -eq 0 -and
+                         $ParseErrors.Count -eq 0)
     }
 }
 

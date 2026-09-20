@@ -1,10 +1,10 @@
 <#
-    Self-check for GuardianRunner. No test framework: plain assertions.
+    Self-check for GuardianRunner. Plain assertions, no test framework.
 
-    The argument quoting is verified against CommandLineToArgvW itself, which is
-    the function every child process uses to rebuild its argument vector. Testing
-    against our own expectation would only prove we are consistently wrong, which
-    is how SG-023 survived review.
+    R-35 argument quoting is verified against CommandLineToArgvW, the function
+    every child process uses to rebuild its argument vector. Verification against
+    an expectation restated by the test would establish internal consistency only,
+    which is the condition under which SG-023 passed review.
 
     Run:  powershell -NoProfile -ExecutionPolicy Bypass -File GuardianRunner.Tests.ps1
 #>
@@ -101,7 +101,8 @@ Assert-That -Name 'PROP_PRESENT' -Condition (Test-GuardianProperty -InputObject 
 Assert-That -Name 'PROP_ABSENT'  -Condition (-not (Test-GuardianProperty -InputObject $Object -Name 'rules'))
 Assert-That -Name 'PROP_NULL_INPUT' -Condition (-not (Test-GuardianProperty -InputObject $null -Name 'id'))
 
-# Proof the naive guard really does throw, i.e. that Test-GuardianProperty earns its place.
+# R-38 evidence: the naive guard throws before its comparison is evaluated,
+# which is the condition Test-GuardianProperty exists to remove.
 $Threw = $false
 try { if ($null -ne $Object.rules) { } } catch { $Threw = $true }
 Assert-That -Name 'NAIVE_GUARD_THROWS' -Condition $Threw `
@@ -159,7 +160,8 @@ Assert-That -Name 'SG023_NAIVE_JOIN_STILL_BROKEN' -Condition ($NaiveExit -ne $Gr
              ' stderr=' + $NaiveStderr.Trim())
 
 # --- R-29 / R-22: every PowerShell file in the repository, not just this one.
-# A gate that only inspects itself proves nothing about the next runner.
+# R-29 applies to every runner, so a gate restricted to its own source
+# establishes nothing about the next one issued.
 $ToolsRoot = Split-Path -Parent $PSScriptRoot
 # -Include is silently ignored alongside -LiteralPath, so filter explicitly.
 $Scripts = @(Get-ChildItem -LiteralPath $ToolsRoot -Recurse -File |
@@ -171,7 +173,8 @@ Assert-That -Name 'SCRIPTS_DISCOVERED' -Condition ($Scripts.Count -gt 0) `
 foreach ($Script in $Scripts) {
     $Gate = Test-GuardianScript -Path $Script.FullName
     Assert-That -Name ('GATE_' + $Script.Name.Replace('.', '_')) -Condition $Gate.Passed `
-        -Detail ('nonAscii=' + $Gate.NonAsciiBytes + ' parseErrors=' + $Gate.ParseErrors +
+        -Detail ('nonAscii=' + $Gate.NonAsciiBytes + ' cr=' + $Gate.CarriageReturns +
+                 ' parseErrors=' + $Gate.ParseErrors +
                  ' ' + ($Gate.Messages -join '; '))
 }
 

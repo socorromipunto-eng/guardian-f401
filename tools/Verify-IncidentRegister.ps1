@@ -6,6 +6,9 @@
 
     Built on tools/GuardianRunner, so the failure classes recorded in the
     register cannot be reintroduced here by hand.
+
+    Establishes: R-03 git text identity, R-22 ASCII source, R-33 canonical
+    container and identifier fields, R-34 rule coherence with exact cardinality.
 #>
 [CmdletBinding()]
 param(
@@ -106,6 +109,29 @@ foreach ($Incident in $Register.incidents) {
 
 [void]$Checks.Add(@{ Name = 'INCIDENT_INTEGRITY'; Passed = ($Problems.Count -eq 0)
                      Detail = 'incidents=' + $Ordinal + ' problems=' + $Problems.Count })
+
+# --- R-03: git text identity under EOL normalization ------------------------
+# A raw worktree SHA-256 is not a git object id. Identity is established with
+# git hash-object --path against the index object id, so a worktree copy
+# normalized to a different line ending is detected rather than assumed equal.
+$RegisterRelative = 'governance/scripting-incident-register.json'
+
+$HashObject = Invoke-GuardianNative -FilePath 'git.exe' -WorkingDirectory $RepoRoot `
+    -Arguments @('hash-object', '--path', $RegisterRelative, $RegisterRelative)
+$IndexEntry = Invoke-GuardianNative -FilePath 'git.exe' -WorkingDirectory $RepoRoot `
+    -Arguments @('ls-files', '-s', '--', $RegisterRelative)
+
+# R-39: the trailing newline git appends is the only character removed.
+$WorktreeOid = $HashObject.Stdout.TrimEnd([char]10, [char]13)
+$IndexOid    = ''
+if ($IndexEntry.ExitCode -eq 0 -and $IndexEntry.Stdout -match '^[^ ]+ ([0-9a-f]{40}) ') {
+    $IndexOid = $Matches[1]
+}
+
+[void]$Checks.Add(@{ Name = 'REGISTER_GIT_IDENTITY'
+                     Passed = ($HashObject.ExitCode -eq 0 -and $IndexOid.Length -eq 40 -and
+                               $WorktreeOid -eq $IndexOid)
+                     Detail = 'worktree=' + $WorktreeOid + ' index=' + $IndexOid })
 
 foreach ($Problem in $Problems) { Write-Host ('PROBLEM=' + $Problem) }
 
