@@ -2,11 +2,10 @@
     Guardian F401 - incident register verifier.
 
     Re-runnable gate over governance/scripting-incident-register.json.
-    No mutation, no network, no git writes. Exit 1 on any failure.
+    Read-only: no mutation, no network, no git writes. Exit 1 on any failure.
 
-    R-38: every property read is existence-checked first. Under
-    StrictMode 2.0 a missing property throws PropertyNotFoundException,
-    so `$null -ne $o.prop` is not a guard (SG-025).
+    Built on tools/GuardianRunner, so the failure classes recorded in the
+    register cannot be reintroduced here by hand.
 #>
 [CmdletBinding()]
 param(
@@ -21,88 +20,93 @@ if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
     $RepoRoot = Split-Path -Parent $PSScriptRoot
 }
 
+Import-Module (Join-Path $PSScriptRoot 'GuardianRunner/GuardianRunner.psm1') -Force
+
 $RegisterPath   = Join-Path $RepoRoot 'governance/scripting-incident-register.json'
 $GuardrailsPath = Join-Path $RepoRoot 'docs/governance/Guardian-Scripting-Guardrails.md'
 
-$Failures = New-Object 'System.Collections.Generic.List[string]'
-function Add-Failure { param([string]$Message) [void]$Failures.Add($Message) }
+$Result   = New-GuardianResult -Command 'verify-incident-register' -Repository $RepoRoot
+$Problems = New-Object 'System.Collections.Generic.List[string]'
 
 foreach ($Path in @($RegisterPath, $GuardrailsPath)) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        Write-Error "Missing required file: $Path"
+        Write-Host ('MISSING_FILE=' + $Path)
         exit 1
     }
 }
 
-# --- register must be pure ASCII: byte index == char index downstream ---
-$Bytes = [System.IO.File]::ReadAllBytes($RegisterPath)
+# --- register must be pure ASCII, so byte index equals char index -----------
+$Bytes    = [System.IO.File]::ReadAllBytes($RegisterPath)
 $NonAscii = @($Bytes | Where-Object { $_ -gt 127 }).Count
-if ($NonAscii -ne 0) { Add-Failure "Register contains $NonAscii non-ASCII byte(s)." }
+Add-GuardianCheck -Result $Result -Name 'REGISTER_ASCII' -Passed ($NonAscii -eq 0) `
+    -Detail ('nonAsciiBytes=' + $NonAscii)
 
 $Register = [System.Text.Encoding]::ASCII.GetString($Bytes) | ConvertFrom-Json
 
-$ExpectedTopLevel = @('schema_version','project','status','policy','incidents')
+$ExpectedTopLevel = @('schema_version', 'project', 'status', 'policy', 'incidents')
 $ObservedTopLevel = @($Register.PSObject.Properties.Name)
-if ("$ObservedTopLevel" -ne "$ExpectedTopLevel") {
-    Add-Failure "Top-level keys drift. Expected [$ExpectedTopLevel]; observed [$ObservedTopLevel]."
-}
+Add-GuardianCheck -Result $Result -Name 'TOP_LEVEL_CONTRACT' `
+    -Passed (($ObservedTopLevel -join '|') -eq ($ExpectedTopLevel -join '|')) `
+    -Detail ('observed=' + ($ObservedTopLevel -join ','))
 
-# --- guardrail rule ids ---
+# --- guardrail rule ids ------------------------------------------------------
 $GuardrailText = [System.IO.File]::ReadAllText($GuardrailsPath)
 $RuleIds = New-Object 'System.Collections.Generic.HashSet[string]'
-foreach ($M in [regex]::Matches($GuardrailText, '(?m)^\|\s*(R-\d{2})\s*\|')) {
-    if (-not $RuleIds.Add($M.Groups[1].Value)) {
-        Add-Failure "Duplicate guardrail row: $($M.Groups[1].Value)"
+foreach ($Match in [regex]::Matches($GuardrailText, '(?m)^\|\s*(R-\d{2})\s*\|')) {
+    if (-not $RuleIds.Add($Match.Groups[1].Value)) {
+        [void]$Problems.Add('Duplicate guardrail row: ' + $Match.Groups[1].Value)
     }
 }
-if ($RuleIds.Count -eq 0) { Add-Failure 'No guardrail rules parsed.' }
+Add-GuardianCheck -Result $Result -Name 'GUARDRAILS_PARSED' -Passed ($RuleIds.Count -gt 0) `
+    -Detail ('rules=' + $RuleIds.Count)
 
-# --- incidents ---
-$ExpectedKeys = @('id','date','class','root_cause','prevention','rules')
+# --- incidents ---------------------------------------------------------------
+$ExpectedKeys = @('id', 'date', 'class', 'root_cause', 'prevention', 'rules')
 $SeenIds = New-Object 'System.Collections.Generic.HashSet[string]'
 $Ordinal = 0
 
 foreach ($Incident in $Register.incidents) {
     $Ordinal++
-    $Label = "incident #$Ordinal"
 
+    # R-38: prove the key contract before dereferencing any field.
     $Keys = @($Incident.PSObject.Properties.Name)
-    if ("$Keys" -ne "$ExpectedKeys") {
-        Add-Failure "$Label key contract drift: [$Keys]"
+    if (($Keys -join '|') -ne ($ExpectedKeys -join '|')) {
+        [void]$Problems.Add('incident #' + $Ordinal + ' key contract drift: ' + ($Keys -join ','))
         continue
     }
 
     $Id = [string]$Incident.id
-    $Label = $Id
-    if (-not $SeenIds.Add($Id)) { Add-Failure "$Label duplicated." }
+    if (-not $SeenIds.Add($Id)) { [void]$Problems.Add($Id + ' duplicated.') }
 
     $Expected = 'SG-{0:000}' -f $Ordinal
-    if ($Id -ne $Expected) { Add-Failure "Sequence break: expected $Expected, got $Id." }
+    if ($Id -ne $Expected) {
+        [void]$Problems.Add('Sequence break: expected ' + $Expected + ', got ' + $Id)
+    }
 
-    # SG-001..SG-004 predate day-precision dating; month precision is allowed
+    # SG-001..SG-004 predate day-precision dating. Month precision is allowed
     # rather than fabricating a day into an audit record.
     if ([string]$Incident.date -notmatch '^\d{4}-\d{2}(-\d{2})?$') {
-        Add-Failure "$Label date is not ISO-8601: $($Incident.date)"
+        [void]$Problems.Add($Id + ' date is not ISO-8601: ' + [string]$Incident.date)
     }
-    foreach ($Field in @('class','root_cause','prevention')) {
+
+    foreach ($Field in @('class', 'root_cause', 'prevention')) {
         if ([string]::IsNullOrWhiteSpace([string]$Incident.$Field)) {
-            Add-Failure "$Label has empty $Field."
+            [void]$Problems.Add($Id + ' has empty ' + $Field)
         }
     }
 
     $Rules = @($Incident.rules)
-    if ($Rules.Count -eq 0) { Add-Failure "$Label references no rule." }
+    if ($Rules.Count -eq 0) { [void]$Problems.Add($Id + ' references no rule.') }
     foreach ($Rule in $Rules) {
         if (-not $RuleIds.Contains([string]$Rule)) {
-            Add-Failure "$Label references unknown rule $Rule."
+            [void]$Problems.Add($Id + ' references unknown rule ' + [string]$Rule)
         }
     }
 }
 
-Write-Host "incidents=$Ordinal rules=$($RuleIds.Count) failures=$($Failures.Count)"
-if ($Failures.Count -gt 0) {
-    $Failures | ForEach-Object { Write-Host "FAIL: $_" }
-    exit 1
-}
-Write-Host 'PASS'
-exit 0
+Add-GuardianCheck -Result $Result -Name 'INCIDENT_INTEGRITY' -Passed ($Problems.Count -eq 0) `
+    -Detail ('incidents=' + $Ordinal + ' problems=' + $Problems.Count)
+
+foreach ($Problem in $Problems) { Write-Host ('PROBLEM=' + $Problem) }
+
+exit (Write-GuardianResult -Result $Result)
