@@ -18,7 +18,8 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-# $PSScriptRoot is not populated inside a param default under -File.
+# $PSScriptRoot is unavailable inside a param default block under -File and is
+# resolved in the body instead.
 if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
     $RepoRoot = Split-Path -Parent $PSScriptRoot
 }
@@ -86,8 +87,8 @@ foreach ($Incident in $Register.incidents) {
         [void]$Problems.Add('Sequence break: expected ' + $Expected + ', got ' + $Id)
     }
 
-    # SG-001..SG-004 predate day-precision dating. Month precision is allowed
-    # rather than fabricating a day into an audit record.
+    # SG-001..SG-004 carry month precision. An audit record states the precision
+    # it holds, so both forms are accepted and no day is synthesised.
     if ([string]$Incident.date -notmatch '^\d{4}-\d{2}(-\d{2})?$') {
         [void]$Problems.Add($Id + ' date is not ISO-8601: ' + [string]$Incident.date)
     }

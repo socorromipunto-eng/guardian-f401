@@ -163,7 +163,8 @@ Assert-That -Name 'SG023_NAIVE_JOIN_STILL_BROKEN' -Condition ($NaiveExit -ne $Gr
 # R-29 applies to every runner, so a gate restricted to its own source
 # establishes nothing about the next one issued.
 $ToolsRoot = Split-Path -Parent $PSScriptRoot
-# -Include is silently ignored alongside -LiteralPath, so filter explicitly.
+# -Include has no effect when combined with -LiteralPath. Extension selection
+# is explicit so the gate cannot silently widen to other file types.
 $Scripts = @(Get-ChildItem -LiteralPath $ToolsRoot -Recurse -File |
              Where-Object { $_.Extension -match '^\.psm?1$' })
 
