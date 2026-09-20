@@ -158,11 +158,22 @@ Assert-That -Name 'SG023_NAIVE_JOIN_STILL_BROKEN' -Condition ($NaiveExit -ne $Gr
     -Detail ('naive exit=' + $NaiveExit + ' vs correct exit=' + $Grep.ExitCode +
              ' stderr=' + $NaiveStderr.Trim())
 
-# --- R-29 / R-22: the gate flags itself as clean ----------------------------
-$Gate = Test-GuardianScript -Path (Join-Path $PSScriptRoot 'GuardianRunner.psm1')
-Assert-That -Name 'MODULE_PARSES' -Condition $Gate.Passed `
-    -Detail ('nonAscii=' + $Gate.NonAsciiBytes + ' parseErrors=' + $Gate.ParseErrors +
-             ' ' + ($Gate.Messages -join '; '))
+# --- R-29 / R-22: every PowerShell file in the repository, not just this one.
+# A gate that only inspects itself proves nothing about the next runner.
+$ToolsRoot = Split-Path -Parent $PSScriptRoot
+# -Include is silently ignored alongside -LiteralPath, so filter explicitly.
+$Scripts = @(Get-ChildItem -LiteralPath $ToolsRoot -Recurse -File |
+             Where-Object { $_.Extension -match '^\.psm?1$' })
+
+Assert-That -Name 'SCRIPTS_DISCOVERED' -Condition ($Scripts.Count -gt 0) `
+    -Detail ('count=' + $Scripts.Count)
+
+foreach ($Script in $Scripts) {
+    $Gate = Test-GuardianScript -Path $Script.FullName
+    Assert-That -Name ('GATE_' + $Script.Name.Replace('.', '_')) -Condition $Gate.Passed `
+        -Detail ('nonAscii=' + $Gate.NonAsciiBytes + ' parseErrors=' + $Gate.ParseErrors +
+                 ' ' + ($Gate.Messages -join '; '))
+}
 
 Write-Host ''
 Write-Host ('FAILED_CHECK_COUNT=' + $Failures.Count)
