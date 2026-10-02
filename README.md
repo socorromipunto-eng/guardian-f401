@@ -139,16 +139,21 @@ See `docs/m13-hardware-validation.md`.
 ## Release and citation
 
 Project release: v0.16.0
-Publication state: PREPUBLICATION_CANDIDATE
-Last published release: v0.15.0
+Publication state: POST-PUBLICATION EVIDENCE RECORD
+Last published release: v0.16.0
 Guardian Protocol: v0.1
 Firmware semantic version: 0.16.0
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
 
+Release-signing fingerprint: `E5D6D18B609971D36B96898185C13CE4778382E1`.
+Release-integrity contact: socorromipunto@gmail.com. See `SECURITY.md` for
+author-key verification limits and signing-key transition requirements.
+
 Current GitHub-integrated Zenodo releases:
 
+- v0.16.0: https://doi.org/10.5281/zenodo.23111025
 - v0.15.0: https://doi.org/10.5281/zenodo.22218923
 - v0.14.2: https://doi.org/10.5281/zenodo.22075322
 - v0.14.1: https://doi.org/10.5281/zenodo.22062543
@@ -161,11 +166,12 @@ Historical manually prepared Zenodo releases:
 - v0.13.0: https://doi.org/10.5281/zenodo.21923859
 - Historical concept DOI: https://doi.org/10.5281/zenodo.21923858
 
-Planned GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.16.0
+GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.16.0
 
-The v0.16.0 candidate contains bounded software and board-bringup corrections.
-The planned link is not evidence of publication. Its version DOI and publication
-date are pending; the historical v0.15.0 DOI must not identify this candidate.
+The v0.16.0 bounded software and board-bringup release was published on
+2026-10-02 and archived by Zenodo as 10.5281/zenodo.23111025. The signed tag
+retains its prepublication metadata snapshot; this main-branch evidence update
+records observed publication without rewriting that tag or historical deposits.
 Backup-chip deployment, physical stack sufficiency, target geometry, persistent
 storage ownership, production security provisioning and safety qualification
 remain unproven. This version does not close those roadmap milestones.
@@ -181,7 +187,7 @@ as v0.14.1. Published tags and deposits were not rewritten.
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
 open-source license. Physical board qualification and safety certification are
-not claimed. See docs/release-evidence-v0.16.0.md for candidate scope and publication gates.
+not claimed. See docs/release-evidence-v0.16.0.md for published scope, identities and open qualification gates.
 The historical archive remains documented in docs/release-evidence-v0.15.0.md.
 
 ## Reproducible software validation

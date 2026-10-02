@@ -2,9 +2,9 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
-## [0.16.0] - Unreleased
+## [0.16.0] - 2026-10-02
 
-### Bounded software candidate
+### Bounded software release
 
 - Configure the F401 startup stack to 4096 bytes and enable the measured Keil
   optimization setting; runtime stack sufficiency remains unproven.
@@ -22,7 +22,19 @@ All notable changes to Guardian F401 are documented in this file.
 
 No physical-board qualification, deployed backup chip, full security wiring,
 regulatory compliance, certification, or endorsement is claimed. Publication
-date and version DOI will be recorded only from observed publication evidence.
+date and version DOI are recorded from observed publication evidence.
+
+### Published
+
+- GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.16.0
+- Signed tag object: `4c3a5940629bd9b3c36e979f378204608a0f976e`.
+- Source merge commit: `51beb5f208d8f32ff7cf21928edc02defd74f1d3`.
+- Zenodo version DOI: `10.5281/zenodo.23111025`.
+- Publication UTC: `2026-10-02T20:56:39Z`.
+- Seven GitHub release assets were downloaded and verified against their
+  local SHA256 values by the Windows publication runner.
+- The signed tag retains the candidate metadata snapshot. This subsequent
+  evidence update does not rewrite published tags or archived deposits.
 
 ## [0.15.0] - 2026-09-01
 

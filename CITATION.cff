@@ -1,9 +1,14 @@
 cff-version: 1.2.0
-message: "This is a v0.16.0 prepublication candidate. Cite an identified published archive; its version DOI is pending."
+message: "Please cite the identified Guardian F401 v0.16.0 software archive. Physical hardware qualification is not claimed."
 title: "Guardian F401: Deterministic Embedded Decision Assurance for Machine Health, Cybersecurity, and Supervisory Control"
 version: "0.16.0"
+date-released: "2026-10-02"
 type: software
+doi: "10.5281/zenodo.23111025"
 identifiers:
+  - type: doi
+    value: "10.5281/zenodo.23111025"
+    description: "Guardian F401 v0.16.0 GitHub-integrated version DOI"
   - type: doi
     value: "10.5281/zenodo.21981233"
     description: "Guardian F401 GitHub-integrated concept DOI"

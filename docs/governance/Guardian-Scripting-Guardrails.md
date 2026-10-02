@@ -756,3 +756,102 @@ The local parser and observed corrected-run output remain required evidence.
 Prohibited automatic recovery: do not repeat 04ZI, infer an old Python from
 the generic stop, install dependencies automatically, bypass validation or
 retry a partial metadata commit/push. Preserve any later stopped state.
+
+---
+
+## RUNNER-04ZL-ARCHIVE-BYTE-001
+
+## Evidence and classification
+
+The Windows 04ZL publication runner generated and verified a manifest of 498
+canonical Git blobs for commit 51beb5f208d8f32ff7cf21928edc02defd74f1d3.
+Its independently checked ZIP differed from the manifest at COPYRIGHT.
+Tag creation, tag push and release creation were not attempted. The exact
+merge object was acquired; source, index and branch state were preserved.
+Preserve the original evidence folder and ZIP without rewriting them.
+
+This is a publication runner design defect: git archive was assumed to preserve
+raw Git blob bytes. Git v2.55.0 archive.c calls convert_to_working_tree for
+regular files. The repository gives COPYRIGHT text=auto without an explicit
+LF rule. Checkout conversion can therefore affect it. The specific local
+conversion and byte delta have not yet been measured; CRLF conversion is a
+hypothesis, not a demonstrated property of the user's failed ZIP.
+
+## Corrected executable constraint
+
+Generate the new ZIP directly from binary git cat-file blob results. Check the
+complete tree against the independently verified manifest, verify blob object
+IDs, byte counts and SHA256 before inserting each entry, and verify the finished
+ZIP independently against the manifest. Never fix a mismatch by changing source
+files, normalizing ZIP bytes after generation or relaxing the verifier.
+
+The corrected runner must use a fresh external evidence directory, retain all
+prior evidence, recheck clean local state, exact CI and tag/release absence,
+and record this incident before any publication mutation. No automatic retry,
+reset, restore, retag, force push or release overwrite is permitted.
+
+## Scope and follow-up
+
+This external record does not change the repository incident ledger. Carry it
+into a separately reviewed post-publication governance update. It does not
+close hardware, runtime stack, target geometry, storage or security findings.
+
+Primary implementation source:
+https://github.com/git/git/blob/v2.55.0/archive.c
+
+---
+
+## RUNNER-04ZN-ZENODO-DEPENDENCY-001
+
+Trigger: post-publication document preparation at the preserved feature HEAD.
+Observed stop: ZENODO_PUBLICATION_REVALIDATION_FAILED at the external-fixture
+stage. The supplied excerpt lacks the Python exception, so the underlying
+network, TLS, service-response or field-validation cause remains unknown.
+The gate precedes repository branch creation and file/stage/commit/push calls;
+the corrected runner must nevertheless recheck the exact local state.
+
+Design defect: already captured authoritative publication metadata was made
+conditional on a second live query from a different execution environment.
+A transient query failure must not be called damage to published software or
+proof of DOI absence. Preserve the stopped fixture and collect native stderr
+before diagnosing its specific cause. Never automatically retry mutation.
+
+Correction: carry a hash-locked authoritative API metadata snapshot with its
+URL, capture time and limits, validate its identities before any mutation and
+retain it outside the repository as evidence. Continue live authenticated
+GitHub release/tag identity checks. Snapshot replay is not a new live Zenodo
+query or independent archive-byte verification. No tag, release or DOI may be
+rewritten to make a document gate pass. Preserve the observed underlying
+cause as unresolved until the original stderr is supplied.
+
+---
+
+## RUNNER-04ZO-PS51-CASEFOLD-HELPER-001
+
+Trigger: external post-publication candidate validation before any repository
+mutation. Observed symptom: verify-zenodo.py contained its own Windows path as
+line 1, causing Python SyntaxError. The branch/file/stage/commit/push/PR
+mutation-attempt flags were all False and the original HEAD remained intact.
+
+Root cause: the PowerShell source-content variable ZenodoHelper and path
+variable zenodoHelper differ only in case. PowerShell variable names are
+case-insensitive; assignment of the helper path overwrote the source content.
+Classification: runner variable-identity defect, not repository corruption,
+Zenodo failure, DOI absence or Python installation failure.
+
+Correction: use distinct semantic identifiers GuardianZenodoHelperSource and
+GuardianZenodoHelperPath. After writing the external helper, verify its bytes
+against the independently computed SHA256 of the embedded source before
+execution. Retain the fixture containing the failed path-only file. The
+corrected runner must recheck the entire original clean state before mutation.
+
+Regression evidence: reproduce the original alias collision using a
+case-insensitive variable model; reject it, verify the corrected source/path
+identities remain distinct, compile the exact embedded Python source and
+accept the real metadata snapshot while rejecting an altered snapshot hash.
+Linux review does not establish PowerShell 5.1 runtime validation. The local
+parser and observed corrected-run result remain required.
+
+Prohibited automatic recovery: no reset, restore, cleanup, modification of
+old evidence, repeated 04ZO execution or replay of partial mutation. Do not
+call this error target damage or change execution policy to suppress it.
