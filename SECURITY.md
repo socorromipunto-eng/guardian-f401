@@ -43,3 +43,24 @@ Published releases should be tagged, archived, hashed and linked to their
 evidence record. A release must not be described as hardware validated until a
 physical qualification report exists for the exact hardware, firmware and test
 configuration.
+
+## Release signing identity
+
+Release-signing primary-key fingerprint:
+`E5D6D18B609971D36B96898185C13CE4778382E1`
+
+Author: Antonio Jose Socorro Marin (AJSM).
+Release-integrity contact: socorromipunto@gmail.com.
+Repository owner: https://github.com/socorromipunto-eng.
+Do not send private keys, passwords, credentials or sensitive exploit data
+through ordinary email. This contact publishes the author's existing public
+identity; it does not promise a private disclosure service or response time.
+
+The v0.16.0 signed tag and detached checksum signature were checked against
+this fingerprint. The release public-key asset is a verification input, not
+an independent trust anchor. A fingerprint in this repository improves
+consistency checking but is not an independent, out-of-band identity proof.
+Verify author-key trust through a separately authenticated channel before
+accepting a release. A signing-key change requires a documented transition
+and independent confirmation; never automatically trust a replacement key
+because it accompanies a release.
