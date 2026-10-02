@@ -4,6 +4,9 @@
 /* Include official ST CMSIS core/device declarations from the Keil Device Pack. */
 #include "stm32f4xx.h"
 
+/* Include the HAL time-base initialization and tick API. */
+#include "stm32f4xx_hal.h"
+
 /* Define the physical Guardian UART baud used by the reference hardware target. */
 #define GUARDIAN_TARGET_UART_BAUD ((uint32_t)115200UL)
 
@@ -27,6 +30,9 @@ static void guardian_target_fail_stop(void)
 /* Forward the existing one-millisecond Cortex-M SysTick into Guardian timekeeping. */
 void SysTick_Handler(void)
 {
+    /* Advance the HAL millisecond time base used by flash timeout handling. */
+    HAL_IncTick();
+
     /* Advance Guardian uptime, RPM freshness and telemetry scheduling. */
     guardian_firmware_app_tick_1ms();
 }
@@ -41,6 +47,13 @@ int main(void)
     if (SystemCoreClock < 1000U)
     {
         /* Preserve the failed target state for debugger inspection. */
+        guardian_target_fail_stop();
+    }
+
+    /* Initialize HAL before application code can use HAL services. */
+    if (HAL_Init() != HAL_OK)
+    {
+        /* Preserve the failed HAL startup state for debugger inspection. */
         guardian_target_fail_stop();
     }
 

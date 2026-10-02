@@ -311,7 +311,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>6</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -505,6 +505,16 @@
               <FileName>guardian_f401_nodelink_adapter.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\Src\guardian_f401_nodelink_adapter.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_auth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_auth.c</FilePath>
+            </File>
+            <File>
+              <FileName>guardian_node_link_semantic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\NodeLink\Src\guardian_node_link_semantic.c</FilePath>
             </File>
           </Files>
         </Group>
