@@ -683,3 +683,17 @@ Safe handling: preserve the stopped state. A distinct continuation locks that ex
 Design rule: validate the complete candidate bytes and diff before repository writes or index changes; preserve all unrelated work and verify signed commit scope, parent and signer.
 Prohibited automatic recovery: no repeat of 04ZD, reset, restore, clean, amend, blanket staging or automatic retry after a partial mutation.
 Validation limit: static checks of a generated continuation do not establish successful Windows execution or release readiness.
+
+---
+
+## E052 - HAL dependency added to production main was omitted from its host compile contract
+
+Trigger/context: the authorized HAL timebase correction added stm32f4xx_hal.h, HAL_Init and HAL_IncTick to main_guardian.c. Its host-only hardware-contract workflow still supplied only the CMSIS-shaped test header.
+Observed symptom: PR 76 target-contract job 111003443254, run 37056819361, failed compiling main_guardian.c with stm32f4xx_hal.h: No such file or directory. Eleven other check runs succeeded for PR head 954443891b8f1850c7e2fb34b8082d6eec5a6582. Actions checked out the synthetic PR merge 76ce11e5052daf18baf71f8ffaa4837dd0c4aa16.
+Root cause: the source-to-test dependency surface was not advanced when the production translation unit began consuming HAL declarations. The isolated Keil build used the actual vendor HAL and did not expose the missing host-test declaration file.
+Classification: CI integration/dependency-contract defect. This log does not demonstrate a production HAL execution failure or hardware qualification.
+Mutation status: the preceding source correction and commits were authorized and preserved. Diagnosis used read-only GitHub queries; no workflow rerun, merge, tag or release was performed during diagnosis.
+Safe handling: retain the production HAL calls. Add a declarations-only host header and opt into it explicitly in the main translation-unit compile command; keep the real HAL dependency and hardware qualification separate.
+Design rule: after a production dependency change, execute the exact affected CI compile command and reconcile all of its test include/declaration inputs. A test stub SHALL require explicit host opt-in, provide no runtime implementation, and SHALL NOT become hardware evidence.
+Validation: all seven revised workflow C compile commands passed in an isolated Linux fixture with strict warnings. Omitting the host opt-in flag was rejected, and the main object retained unresolved HAL_Init and HAL_IncTick symbols. These observations do not establish a successful subsequent GitHub run; the new PR head requires fresh CI adjudication.
+Prohibited automatic recovery: do not remove HAL calls to satisfy CI, suppress errors, skip the compile step, weaken warning policy, fabricate target evidence, or automatically retry a partial commit/push.
