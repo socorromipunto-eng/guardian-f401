@@ -887,6 +887,22 @@ ACTUATION_AUTHORITY_GRANTED = NO
 
 AI_AUTHORITY_GRANTED = NO
 
+### S3 flash read/program/erase implementation evidence and limits
+
+EXACT_S3_FLASH_READ_PROGRAM_ERASE_GRANULARITY_BINDING
+
+The controlled `guardian_node_link_freshness_persistence_stm32f401` header and source map persistence slot A to sector 3 at `0x0800C000`, capacity `0x4000` bytes, and slot B to sector 4 at `0x08010000`, capacity `0x10000` bytes. These are implementation observations, not proof of physical target identity or exclusive region ownership.
+
+`guardian_stm32f401_flash_read` resolves a slot to its configured base/capacity and rejects offsets or lengths outside that slot. Successful reads do not grant write, erase, authentication, acceptance or actuation authority.
+
+`guardian_stm32f401_flash_program` uses `HAL_FLASH_Program` with `FLASH_TYPEPROGRAM_BYTE`. Partial programming can occur before a reported failure; higher layers SHALL NOT infer atomic completion.
+
+`guardian_stm32f401_flash_erase` selects the resolved slot sector and sets `NbSectors = 1U`. Source inspection demonstrates the requested erase scope, not electrical success, deployment voltage suitability or durable hardware behavior.
+
+The previous pending wording identified S3 as boot-control storage while binding it to this dual-slot freshness adapter. Exclusive ownership and coexistence with boot-control storage are NOT_DEMONSTRATED by this adapter. The exact target memory-layout decision and linker reservations SHALL be adjudicated before deployment; no overlapping owners may be assumed safe.
+
+CMSIS/HAL code and software constants remain implementation evidence. They SHALL NOT substitute for verified MCU ordering code, physical capacity, linker reservations, power-loss testing or normative authority.
+
 RELEASE_READY = NO
 
 ## 30. Next governance boundary
@@ -896,3 +912,41 @@ After document creation, the next boundary is:
 HUMAN_R3D_ARCHITECTURE_DOCUMENT_REVIEW
 
 No staging is permitted before that review is complete.
+## Guardian v0.16 selector binding review - B04/B06
+
+GUARDIAN_V0_16_EXACT_CONTEXT_B04_B06_MATERIALIZATION_V1
+
+This review supersedes only the pending B04/B06 additions. Earlier R3D claim-state entries remain historical architecture statements; they are not a current release validation summary.
+
+### B04 - configured SRAM range; physical identity pending
+
+The captured software configuration combines the CMSIS SRAM base `0x20000000` with `GUARDIAN_STM32F401_SRAM_BYTES = 96 * 1024`. The configured range is:
+
+| Property | Configured value |
+| --- | --- |
+| START | `0x20000000` |
+| END_EXCLUSIVE | `0x20018000` |
+| END_INCLUSIVE | `0x20017FFF` |
+| SIZE | `96 KiB` |
+
+The Keil project declares `STM32F401CDUx`, uses `STM32F401xE`, and selects `startup_stm32f401xe.s`. The target contract names `STM32F401CDU6`, requires `STM32F401xE`, and declares 384 KiB flash and 96 KiB SRAM. These identifiers and capacities require a controlled target decision; source constants and a successful link do not establish the physical device.
+
+`B04_PHYSICAL_TARGET_GEOMETRY = NOT_DEMONSTRATED`
+
+This configured range SHALL NOT be promoted to physical SRAM authority until the exact MCU identity, authoritative capacity and linker configuration agree. No authority is granted to AI, advisory, transport or peer subsystems.
+
+### B06 - proposed S6 metadata region; production read binding pending
+
+The pending design proposed S6 at `0x08040000` through `0x08060000` exclusive, size 128 KiB. Those addresses are retained as a design proposal, not as demonstrated access on a physical target.
+
+The captured persistence adapter binds `media->read` to `guardian_stm32f401_flash_read`, but that function obtains addresses only through `guardian_stm32f401_slot_geometry`. The accepted slots map to sectors 3 and 4. No S6 slot mapping is present in that implementation.
+
+`S6_METADATA_REGION -> guardian_stm32f401_flash_read` is therefore NOT_DEMONSTRATED. Reusing the function name or callback binding is insufficient to establish S6 access. This finding concerns this exact adapter; it does not assert that every possible S6 implementation is absent from the repository.
+
+`B06_S6_PRODUCTION_READ_BINDING = NOT_DEMONSTRATED`
+
+Any future S6 access SHALL have explicit region ownership, verified target geometry, bounded offset/length handling and integration evidence. Valid storage access never implies trusted, authorized, accepted or actuation-authorized state.
+
+### Release evidence boundary
+
+The configuration corrections and host tests may support a bounded software release. This document does not authorize publication or close target qualification. Release evidence SHALL state the unresolved target-identity, storage-binding, linker-reservation, runtime-stack and physical execution limits without claiming hardware qualification or safety certification.
