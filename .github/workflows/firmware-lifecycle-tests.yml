@@ -74,3 +74,42 @@ jobs:
       # Run signed-image, anti-rollback, confirmation and safe-rollback assertions.
       - name: Run M12 firmware lifecycle host tests
         run: ./firmware_lifecycle_host_test
+
+      # B03 validates provider/adapter dispatch using host test doubles.
+      # These tests do not establish real Ed25519 verification or target qualification.
+      - name: Compile B03 trusted-key provider host tests
+        run: >
+          gcc -std=c11 -Wall -Wextra -Wpedantic -Werror
+          -Ifirmware/Firmware/Inc
+          firmware/Firmware/Src/guardian_firmware_trusted_key_provider.c
+          firmware/Tests/firmware_trusted_key_provider_host_test.c
+          -o firmware_trusted_key_provider_host_test
+
+      - name: Run B03 trusted-key provider host tests
+        run: ./firmware_trusted_key_provider_host_test
+
+      - name: Compile B03 trusted-signature adapter host tests
+        run: >
+          gcc -std=c11 -Wall -Wextra -Wpedantic -Werror
+          -Ifirmware/Protocol/Inc -Ifirmware/Security/Inc -Ifirmware/Firmware/Inc
+          firmware/Firmware/Src/guardian_firmware_trusted_key_provider.c
+          firmware/Firmware/Src/guardian_firmware_trusted_signature_adapter.c
+          firmware/Tests/firmware_trusted_signature_adapter_host_test.c
+          -o firmware_trusted_signature_adapter_host_test
+
+      - name: Run B03 trusted-signature adapter host tests
+        run: ./firmware_trusted_signature_adapter_host_test
+
+      - name: Compile B03 lifecycle adapter integration host tests
+        run: >
+          gcc -std=c11 -Wall -Wextra -Wpedantic -Werror
+          -Ifirmware/Protocol/Inc -Ifirmware/Security/Inc -Ifirmware/Firmware/Inc
+          firmware/Security/Src/guardian_crypto.c
+          firmware/Firmware/Src/guardian_firmware_lifecycle.c
+          firmware/Firmware/Src/guardian_firmware_trusted_key_provider.c
+          firmware/Firmware/Src/guardian_firmware_trusted_signature_adapter.c
+          firmware/Tests/firmware_lifecycle_trusted_signature_integration_host_test.c
+          -o firmware_lifecycle_trusted_signature_integration_host_test
+
+      - name: Run B03 lifecycle adapter integration host tests
+        run: ./firmware_lifecycle_trusted_signature_integration_host_test

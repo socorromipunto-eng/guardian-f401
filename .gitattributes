@@ -50,3 +50,10 @@ VERSION text eol=lf
 # Keep governed repository dotfiles deterministic across platforms.
 .mailmap text eol=lf
 .gitkeep text eol=lf
+
+# Keep PowerShell runners deterministic; R-22 requires ASCII-only source and
+# byte-exact reasoning depends on a stable line ending.
+*.ps1 text eol=lf
+
+# Keep PowerShell modules deterministic for the same reason as runners.
+*.psm1 text eol=lf

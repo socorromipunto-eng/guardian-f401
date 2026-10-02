@@ -138,9 +138,11 @@ See `docs/m13-hardware-validation.md`.
 
 ## Release and citation
 
-Project release: v0.15.0
+Project release: v0.16.0
+Publication state: PREPUBLICATION_CANDIDATE
+Last published release: v0.15.0
 Guardian Protocol: v0.1
-Firmware semantic version: 0.15.0
+Firmware semantic version: 0.16.0
 
 Author: Antonio José Socorro Marín
 ORCID: https://orcid.org/0009-0007-9089-9222
@@ -159,7 +161,14 @@ Historical manually prepared Zenodo releases:
 - v0.13.0: https://doi.org/10.5281/zenodo.21923859
 - Historical concept DOI: https://doi.org/10.5281/zenodo.21923858
 
-GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.15.0
+Planned GitHub release: https://github.com/socorromipunto-eng/guardian-f401/releases/tag/v0.16.0
+
+The v0.16.0 candidate contains bounded software and board-bringup corrections.
+The planned link is not evidence of publication. Its version DOI and publication
+date are pending; the historical v0.15.0 DOI must not identify this candidate.
+Backup-chip deployment, physical stack sufficiency, target geometry, persistent
+storage ownership, production security provisioning and safety qualification
+remain unproven. This version does not close those roadmap milestones.
 
 Version v0.14.0 exists in both Zenodo families because it was deposited
 manually and subsequently archived through the GitHub integration. These
@@ -172,7 +181,8 @@ as v0.14.1. Published tags and deposits were not rewritten.
 Citation metadata is provided in `CITATION.cff`. This release is governed by
 the proprietary terms in `LICENSE`; public visibility does not create an
 open-source license. Physical board qualification and safety certification are
-not claimed. See `docs/release-evidence-v0.15.0.md`.
+not claimed. See docs/release-evidence-v0.16.0.md for candidate scope and publication gates.
+The historical archive remains documented in docs/release-evidence-v0.15.0.md.
 
 ## Reproducible software validation
 

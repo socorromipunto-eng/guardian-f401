@@ -103,6 +103,11 @@ HUMAN_APPROVAL = MUTATION_AUTHORITY
 | R-32 | Native command output SHALL be parsed with the minimum structure required by the operation. Collection or wrapper abstraction for scalar or line-oriented output is prohibited unless expected cardinality and return shape are explicitly proven. | SG-018 |
 | R-33 | Validation logic SHALL resolve governance objects using the schema version, canonical container, and canonical identifier field actually observed in the artifact. Similar or legacy field names SHALL NOT be treated as equivalent without an explicit schema mapping. | SG-019 |
 | R-34 | Cross-register coherence SHALL be validated bidirectionally and with exact cardinality before a claim, evidence item, assessment, or transition is accepted as coherent. | SG-019 |
+| R-35 | Native process invocation SHALL preserve each logical argument as an independent argument boundary. A governed runner SHALL NOT reconstruct an argument vector by naive whitespace joining when any argument can contain whitespace, quoting, metacharacters, or escaping-sensitive content. Invocation design SHALL use a mechanically proven quoting and escaping function or an argument-boundary mechanism whose semantics are verified for the target runtime. | governance |
+| R-36 | Asynchronous task completion state SHALL NOT be promoted directly into a protocol or transport root-cause classification. Timeout, cancellation, fault, and successful completion SHALL be distinguished explicitly. Wrapper or aggregate exception state SHALL be unwrapped to the underlying exception before assigning a lower-layer cause. | governance |
+| R-37 | Every variable consumed by a governed Windows PowerShell 5.1 runner SHALL be initialized or mechanically proven to exist on every reachable execution path before use. Parser success alone does not prove runtime variable validity. StrictMode variable-reference failures SHALL be classified as runner defects unless independent project evidence demonstrates otherwise. | governance |
+| R-38 | A governed Windows PowerShell 5.1 runner SHALL prove that an object property exists through PSObject.Properties before dereferencing it when property presence is not already mechanically guaranteed by an exact validated schema. A null comparison performed after direct property dereference is not a valid existence guard under StrictMode. | governance |
+| R-39 | Native output whose leading or trailing characters encode state SHALL be preserved character-for-character until its grammar has been parsed. Generic Trim(), TrimStart(), or TrimEnd() SHALL NOT be applied to fixed-column formats such as git status --porcelain before semantic interpretation. | governance |
 
 ---
 
@@ -313,6 +318,93 @@ No implementation, staging, commit, push, PR, merge, tag, release, publication o
 
 ---
 
+### E037 - Revision-qualified Git paths must be normalized before repository-relative membership comparison
+
+**Trigger/context:** A read-only target-membership adjudicator consumed `git grep` output generated against `HEAD`.
+
+**Observed symptom:** Paths shaped as `HEAD:firmware/...` were compared directly with target-member paths shaped as `firmware/...`, producing false `TARGET_MEMBER=False` results.
+
+**Root cause:** The Git revision qualifier was retained as though it were part of the repository-relative path.
+
+**Classification:** Runner path-normalization and target-membership defect.
+
+**Mutation status:** Read-only adjudication only. No repository mutation occurred.
+
+**Safe handling:** Preserve repository state, strip the revision qualifier, normalize path separators, and repeat the read-only target-membership adjudication.
+
+**Prohibited automatic recovery:** Do not modify project membership, source files, project files, index state, commits, or remote state based on unnormalized membership results.
+
+**Rule:**
+
+`REVISION_QUALIFIED_GIT_PATH != REPOSITORY_RELATIVE_PATH`
+
+`HEAD:firmware/foo.c -> firmware/foo.c before target-membership comparison`
+
+`NORMALIZE_REVISION_PREFIX + NORMALIZE_SEPARATORS -> TARGET_MEMBERSHIP`
+
+### E038 - Broad provider-candidate heuristics must not be promoted into concrete-provider evidence
+
+**Trigger/context:** Initial B02 discovery classified `B02_CONCRETE_TARGET_PROVIDER_CANDIDATE=True` from broad entropy/token and assignment-pattern hits.
+
+**Observed symptom:** Focused adjudication later demonstrated `RANDOM_ASSIGNMENT_TARGET_HIT_COUNT=0` and no concrete target random callback assignment.
+
+**Root cause:** The broad heuristic treated correlated textual evidence as though it proved an exact `guardian_security_config.random` assignment to a concrete entropy provider.
+
+**Classification:** Runner heuristic false-positive provider-classification defect.
+
+**Mutation status:** Read-only adjudication only. No repository mutation occurred.
+
+**Safe handling:** Treat broad searches as candidate generation only. Require exact assignment resolution, symbol definition, target membership, concrete entropy source, and runtime wiring before provider classification.
+
+**Prohibited automatic recovery:** Do not enable HAL RNG, modify project membership, implement provider code, or promote release state solely because a broad heuristic returned `candidate=True`.
+
+**Rules:**
+
+`BROAD_TOKEN_HITS != CONCRETE_PROVIDER`
+
+`CALLBACK_SURFACE != PROVIDER`
+
+`PROVIDER_EVIDENCE_REQUIRES_EXACT_ASSIGNMENT + SYMBOL_RESOLUTION + TARGET_MEMBERSHIP + CONCRETE_SOURCE + RUNTIME_WIRING`
+
+### E039 - Git grep extended-regex patterns must not use .NET/PCRE inline case flags
+
+**Trigger/context:** A governed read-only B01/B02 provider adjudication invoked `git grep -E` with a pattern containing the inline case-insensitive token `(?i)`.
+
+**Symptom:** `git grep` rejected the pattern and the adjudication controlled-stopped at the first Ed25519 discovery query.
+
+**Root cause:** The runner mixed .NET/PCRE inline regular-expression syntax with Git extended regular-expression mode. `git grep -E` does not accept `(?i)` as a portable ERE case-control construct.
+
+**Classification:** Runner regex-dialect / native-tool-contract defect; no Guardian source, project, provider, or release defect demonstrated.
+
+**Mutation status:** No repository mutation occurred.
+
+**Safe handling:** Preserve repository state. Use `git grep -i` for case-insensitive matching, keep `-E` patterns free of inline .NET/PCRE case flags, and repeat the same read-only adjudication from Phase 0.
+
+**Prohibited automatic recovery:** Do not modify source, project membership, index, commit history, or remote refs because a read-only grep pattern was rejected. Do not interpret grep syntax failure as zero matches or as absence of provider evidence.
+
+**Rule:** A governed runner using `git grep -E` SHALL use Git-supported ERE syntax only. Case-insensitive matching SHALL be requested with `-i`, not with inline .NET/PCRE case-control tokens.
+
+`GIT_GREP_ERE_PATTERN != DOTNET_PCRE_PATTERN`
+
+`CASE_INSENSITIVE_GIT_GREP = git grep -i -E`
+
+`GREP_SYNTAX_FAILURE != ZERO_MATCHES`
+
+`READ_ONLY_QUERY_RUNNER_DEFECT = CORRECT_RUNNER + REPEAT_READ_ONLY_GATE`
+
+**Reusable example:**
+
+Bad:
+
+```text
+git grep -E '(?i)ed25519'
+```
+
+Good:
+
+```text
+git grep -i -E 'ed25519'
+```
 ## 10. Maintenance
 
 For every new failure class:
@@ -330,3 +422,337 @@ OBSERVE
 
 Promotion from `NORMATIVE CANDIDATE` to `NORMATIVE` requires a complete governed cycle under these rules with no reintroduced incident class.
 
+
+---
+
+## E040 - Helper symbol was invoked without a valid function definition/call contract
+
+**Trigger/context:** During governed defect-ledger adjudication, the master attempted to use a boolean-formatting helper while no callable helper with that exact name was available in the executing scope.
+
+**Observed symptom:** Windows PowerShell raised CommandNotFoundException for the missing helper before any repository mutation or network activity.
+
+**Root cause:** Runner generation referenced a formatting/helper symbol without mechanically proving that the helper was defined and callable in the emitted script. The source parser can accept an unresolved command name, so parser success alone did not prove runtime helper resolution.
+
+**Classification:** Runner helper-resolution/runtime-contract defect; no Guardian project failure.
+
+**Mutation status:** Read-only execution only. No repository mutation occurred.
+
+**Safe handling:** Prefer direct deterministic expressions for trivial boolean formatting. If a helper is necessary, define it before first use and include a source-quality assertion that the required helper definition exists exactly once.
+
+**Prohibited automatic recovery:** Do not create aliases dynamically, import unrelated modules, weaken StrictMode, mutate project files, or retry a mutation boundary merely to resolve a missing runner-local helper.
+
+**Corrected design rule:** Every non-built-in helper referenced by a governed runner SHALL be defined in the emitted runner before first use and SHALL be covered by source-quality/static checks appropriate to that helper contract. Parser success is not proof of runtime symbol resolution.
+
+PARSER_PASS != HELPER_RESOLUTION_PROVEN
+
+HELPER_REFERENCE -> DEFINITION_PRESENT + CALL_CONTRACT_VALID
+---
+
+## E041 - No-op branch retained mutation-path postconditions
+
+**Trigger/context:** After adjudication showed that prior defect records were already represented in the governance ledger, a corrected master changed to a no-write path but still retained postconditions from the earlier write design.
+
+**Observed symptom:** Static review demonstrated that the no-op branch would have expected two worktree paths and referenced a mutation-specific expected ledger postimage even though no ledger write should occur. The defect was found before those postconditions executed.
+
+**Root cause:** Mutation and no-op branches shared stale state expectations instead of deriving postconditions from the actual branch outcome (write performed versus no write).
+
+**Classification:** Runner branch-state/postcondition design defect; no Guardian project failure.
+
+**Mutation status:** No repository mutation occurred as a result of this defect.
+
+**Safe handling:** Define expected path counts, expected postimage identity, and final-state assertions from explicit mutation outcome flags. In a no-op branch, require the ledger bytes to equal the preimage and preserve the original worktree cardinality.
+
+**Prohibited automatic recovery:** Do not fabricate a write to satisfy a two-path expectation, do not invent an expected postimage for an unchanged file, and do not clean/reset/restore valid pre-existing worktree state.
+
+**Corrected design rule:** Branch-specific postconditions SHALL be selected from mechanically demonstrated mutation outcome. A no-op branch SHALL assert no-write semantics; a write branch SHALL assert the exact authorized mutation semantics.
+
+NO_WRITE_BRANCH -> POSTIMAGE_EQ_PREIMAGE + PATH_COUNT_UNCHANGED
+
+WRITE_BRANCH -> EXACT_AUTHORIZED_PATH_DELTA + POSTIMAGE_VERIFIED
+---
+
+## E042 - Pending adjudication was conflated with demonstrated engineering gap
+
+**Trigger/context:** A selector-binding reconvergence runner summarized one demonstrated engineering gap while also selecting an earlier binding that merely required focused adjudication as the first true blocker.
+
+**Observed symptom:** The same result reported ENGINEERING_GAP_COUNT=1 for the trusted-key resolver/storage lifecycle gap, yet printed FIRST_TRUE_BINDING_BLOCKER=B01 because B01 was the earliest unresolved adjudication.
+
+**Root cause:** The runner used one priority field for two different semantic classes: unresolved evidence/adjudication and mechanically demonstrated implementation absence.
+
+**Classification:** Runner decision-classification defect; no Guardian implementation regression was demonstrated by the inconsistent priority label.
+
+**Mutation status:** The defect was discovered during read-only adjudication. No repository mutation occurred in the defective run.
+
+**Safe handling:** Preserve both dimensions independently. Report the first pending adjudication separately from the first demonstrated engineering gap and keep each binding status unchanged until its own evidence supports promotion.
+
+**Prohibited automatic recovery:** Do not implement code, rewrite a binding, or promote an unresolved adjudication to an engineering defect solely because it appears earlier in binding order.
+
+**Rule:** Governed binding summaries SHALL maintain separate ordered fields for pending adjudication and demonstrated engineering gaps.
+
+`PENDING_ADJUDICATION != ENGINEERING_GAP`
+
+`FIRST_PENDING_ADJUDICATION != FIRST_DEMONSTRATED_ENGINEERING_GAP`
+
+`UNRESOLVED_EVIDENCE != IMPLEMENTATION_ABSENCE`
+---
+
+## E043 - PowerShell automatic variable `$Args` shadowed governed native argument parameter
+
+**Trigger/context:** The v0.16 single-file release orchestrator declared native Git wrapper parameters as `[string[]]$Args` and then invoked the wrapper with concrete Git tokens.
+
+**Symptom:** Read-only `Status`, B04/B06 materialization preflight, and B03 preflight all stopped before useful work with `git failed:  | exit=1 | stderr=`. The emitted Git command text was empty.
+
+**Root cause:** `$Args` is an automatic PowerShell variable. Reusing that name as the governed wrapper parameter caused the native argument vector to be lost/empty at runtime under Windows PowerShell 5.1.
+
+**Classification:** Runner PowerShell automatic-variable / native-argv binding defect; no Guardian repository or Git defect demonstrated.
+
+**Mutation status:** No repository mutation occurred in the failed invocations. B04/B06 materialization did not begin; index, HEAD, and worktree remained preserved.
+
+**Safe handling:** Rename wrapper parameters to a non-automatic name such as `$GitArgs` or `$NativeArgs`, fail closed on zero arguments, and rerun read-only preflight from Phase 0.
+
+**Prohibited automatic recovery:** Do not reset, restore, clean, stage, retry a mutation, or reinterpret empty Git argv as repository failure.
+
+**Rule:** Governed PowerShell helpers SHALL NOT use automatic-variable names for explicit parameters. Native-command wrappers SHALL prove a non-empty argument vector before process launch.
+
+`POWERSHELL_AUTOMATIC_VARIABLE != GOVERNED_PARAMETER_NAME`
+
+`NATIVE_ARGV_COUNT_ZERO = RUNNER_DEFECT + CONTROLLED_STOP`
+
+---
+
+## E044 - Runner sidecar state write exceeded exact authorized mutation path
+
+**Trigger/context:** The same v0.16 release orchestrator's B04/B06 materialization phase was authorized to mutate only `docs/architecture/m16-r3d-persistent-anti-replay-rollback-anchor-and-recovery.md`, but its design also called `Save-State`, which would create or modify `.guardian-release/v0.16-orchestrator-state.json`.
+
+**Symptom:** Static adjudication of the runner showed a second repository write path outside the exact human-authorized mutation set. The earlier E043 failure prevented this sidecar write from occurring.
+
+**Root cause:** Orchestrator convenience state was modeled as an implicit repository mutation rather than as derived read-only state or an independently authorized artifact.
+
+**Classification:** Runner authorization-scope design defect; no unauthorized sidecar mutation actually occurred in the observed failed runs.
+
+**Mutation status:** No sidecar state file was written by the failed executions. Repository state must remain preserved.
+
+**Safe handling:** Remove implicit repository sidecar state writes. Derive phase state mechanically from Git/working-tree evidence on every invocation, or authorize any persistent state artifact as its own exact mutation boundary.
+
+**Prohibited automatic recovery:** Do not create the sidecar retrospectively, do not broaden B04/B06 authorization to include it, and do not use later approval as retroactive authorization.
+
+**Rule:** A single-file orchestrator does not create authority to persist hidden or convenience state inside the repository. Exact mutation path authorization remains controlling.
+
+`ORCHESTRATOR_STATE_CONVENIENCE != AUTHORIZED_REPOSITORY_MUTATION`
+
+`AUTHORIZED_PATH_SET_EXACT = NO_IMPLICIT_SIDECAR_WRITE`
+---
+
+## E045 - Cross-phase preimage lock was not advanced after an authorized prior-phase mutation
+
+**Trigger/context:** The v0.16 release orchestrator successfully materialized E043/E044 into the scripting guardrails, changing that file's SHA-256. The immediately following B04/B06 phase still called a preflight that required the older pre-E043/E044 guardrails SHA.
+
+**Symptom:** B04/B06 stopped before its authorized architecture write with `Guardrails preimage hash mismatch`, even though the observed guardrails SHA exactly matched the prior authorized E043/E044 postimage.
+
+**Root cause:** The orchestrator treated an earlier phase baseline as a timeless invariant instead of advancing the exact state lock across authorized phase transitions.
+
+**Classification:** Runner cross-phase state-handoff / stale-preimage-lock defect; no Guardian architecture, firmware, Git, or B04/B06 project defect demonstrated.
+
+**Mutation status:** The failed B04/B06 invocation performed no B04/B06 file write, staging, commit, push, network action, reset, restore, or cleanup. The earlier authorized E043/E044 ledger mutation remains preserved.
+
+**Safe handling:** Every phase SHALL lock against the exact postimage demonstrated by the immediately preceding authorized mutation. When a later phase depends on a mutable governance artifact, its expected SHA SHALL be supplied or otherwise mechanically derived from the prior phase result, never silently inherited from the original baseline.
+
+**Prohibited automatic recovery:** Do not restore the guardrails file to its older hash, do not remove E043/E044, do not bypass the hash lock, and do not retry B04/B06 until E045 is durable.
+
+**Rule:** Cross-phase orchestration SHALL distinguish immutable baseline identity from authorized evolving state and SHALL make the expected prior-phase postimage explicit at every mutation boundary.
+
+`AUTHORIZED_PRIOR_PHASE_POSTIMAGE != ORIGINAL_BASELINE_PREIMAGE`
+
+`NEXT_PHASE_EXPECTED_SHA = PRIOR_PHASE_DEMONSTRATED_POSTIMAGE`
+
+`STALE_PREIMAGE_LOCK = RUNNER_DEFECT + CONTROLLED_STOP`
+
+---
+
+## E046 - PowerShell interpolated variable followed by colon is parsed as a scoped variable reference
+
+**Trigger/context:** A governed PowerShell 5.1 runner contained an interpolated diagnostic string with a variable immediately followed by a colon, for example `"$i: actual=..."`.
+
+**Symptom:** Windows PowerShell stopped at parse time with `Variable reference is not valid.
+'':'
+ was not followed by a valid variable name character` and `FullyQualifiedErrorId : InvalidVariableReferenceWithDrive`.
+
+**Root cause:** In an expandable PowerShell string, a colon immediately following an unbraced variable token can be parsed as part of scoped/provider variable syntax rather than as literal punctuation.
+
+**Classification:** Runner parser-compatibility defect; no Guardian project defect demonstrated.
+
+**Mutation status:** The defective runner failed during parsing before its script body executed. No repository, key-file, index, network, commit, or push mutation occurred.
+
+**Safe handling:** Preserve repository state. Correct only the runner text, re-preflight the same governed boundary, and use explicit braced interpolation or string concatenation.
+
+**Prohibited automatic recovery:** Do not reset, restore, clean, unstage, delete candidates, or infer a project failure from a parser error.
+
+**Rule:** When literal punctuation immediately follows an interpolated PowerShell variable, delimit the variable explicitly or concatenate the punctuation.
+
+`$i: text` = PROHIBITED_IN_GOVERNED_EXPANDABLE_STRING
+
+`${i}: text` = SAFE_EXPLICIT_DELIMITATION
+
+`$Label +
+':'
+ + $Value` = SAFE_CONCATENATION
+
+---
+
+## E047 - ProcessStartInfo.ArgumentList is unavailable in Windows PowerShell 5.1 / .NET Framework
+
+**Trigger/context:** A read-only governed runner used `System.Diagnostics.ProcessStartInfo.ArgumentList` while executing under Windows PowerShell 5.1.
+
+**Symptom:** The runner controlled-stopped with `The property
+'ArgumentList'
+ cannot be found on this object` before repository mutation.
+
+**Root cause:** `ProcessStartInfo.ArgumentList` belongs to newer .NET implementations and is not available on the .NET Framework surface used by Windows PowerShell 5.1.
+
+**Classification:** Runner runtime/API compatibility defect; no Guardian source, provider, test, or repository failure demonstrated.
+
+**Mutation status:** Read-only boundary. No repository, index, key-file, network, commit, or push mutation occurred.
+
+**Safe handling:** Preserve state. Use `ProcessStartInfo.Arguments` with deterministic governed quoting, keep `UseShellExecute = $false`, redirect stdout/stderr separately, drain both asynchronously, and adjudicate the native process exit code plus resulting state.
+
+**Prohibited automatic recovery:** Do not mutate repository state, switch shells, or automatically retry a mutation merely to work around the unavailable property.
+
+**Rule:** Windows PowerShell 5.1 governed runners SHALL NOT use `ProcessStartInfo.ArgumentList`. Native argv must be rendered through an explicit PowerShell-5.1-compatible argument builder into `ProcessStartInfo.Arguments`.
+
+`WINDOWS_POWERSHELL_5_1 -> ProcessStartInfo.Arguments`
+
+`ProcessStartInfo.ArgumentList -> PROHIBITED_UNLESS_RUNTIME_CAPABILITY_IS_EXPLICITLY_PROVEN`
+
+`NATIVE_EXIT_STATUS != STDERR_TEXT`
+
+
+---
+
+## E048 - Safe native argv grammar and spaced search predicates
+
+  - Trigger/context: A read-only master passed the fixed search text RELEASE_READY_EQUALS to a native helper whose governed safe-token grammar intentionally rejects spaces.
+  - Observed symptom: The runner stopped before release convergence with a safe-token validation error; no repository mutation or network action occurred.
+  - Root cause: A PowerShell-side search/filter requirement was incorrectly transported as a spaced native argv token instead of using a safe native token and filtering exact text in PowerShell.
+  - Classification: Runner argv-contract defect; no Guardian project failure.
+  - Mutation status: Read-only execution only; no repository mutation occurred.
+  - Safe handling: Preserve repository state. Search natively with a safe token such as RELEASE_READY, then apply the spaced/exact predicate inside PowerShell.
+  - Prohibited automatic recovery: Do not relax the native safe-token grammar, add ad hoc quoting, retry mutations, or reinterpret the stop as a project defect.
+  - Corrected design rule: Native helpers constrained to safe-token argv SHALL NOT receive arguments outside that grammar. Requirements containing spaces or shell-sensitive content SHALL be resolved with safe candidate retrieval plus in-process filtering.
+  - Invariant: SAFE_NATIVE_ARGV + POWERSHELL_FILTERING, never SAFE_TOKEN_BYPASS_FOR_SPACED_PATTERN.
+
+---
+
+## E049 - Optional .NET property access under StrictMode
+
+Related incident: E047. This record preserves the previously misplaced observation without replacing the historical E038 identity.
+
+  - Trigger/context: A PowerShell 5.1 read-only adjudicator accessed ProcessStartInfo.ArgumentList while StrictMode was enabled.
+  - Observed symptom: The runner raised PropertyNotFoundException because the optional property is not present on the observed PowerShell 5.1/.NET object; no repository mutation or network action occurred.
+  - Root cause: The runner accessed an optional/version-dependent property directly instead of probing property existence first or using the PowerShell 5.1-compatible Arguments path.
+  - Classification: Runner runtime-compatibility/StrictMode defect; no Guardian project failure.
+  - Mutation status: Read-only execution only; no repository mutation occurred.
+  - Safe handling: Probe PSObject.Properties for ArgumentList before access. When absent, use the already-governed PowerShell 5.1-compatible argument transport without broadening the accepted argv grammar.
+  - Prohibited automatic recovery: Do not disable StrictMode, assume modern .NET members exist, relax argv controls, or mutate repository state to compensate for an environment/API-shape mismatch.
+  - Corrected design rule: Every optional or version-dependent property SHALL be existence-tested through PSObject.Properties before direct access under StrictMode.
+  - Invariant: PROPERTY_EXISTS_BEFORE_ACCESS; POWERSHELL_5_1_COMPATIBILITY_IS_A_PREFLIGHT_CONTRACT.
+
+---
+
+## E050 - Runner-local variable collided with automatic PowerShell Matches
+
+Trigger/context: 04Z signing preflight stored a Regex MatchCollection in `$matches` and subsequently evaluated a scalar `-cmatch` predicate.
+Observed symptom: `The property 'Groups' cannot be found on this object` at `$matches[0].Groups[1].Value`.
+Root cause: PowerShell variable names are case-insensitive. Successful scalar matching replaced the automatic `$Matches` value with a hashtable, overwriting the runner-local binding.
+Classification: runner runtime/parser-state defect; not a Guardian source or signing-key failure.
+Mutation status: the original 04Z output records STAGE_ATTEMPTED=False and COMMIT_ATTEMPTED=False. The external signing proof directory was created and preserved.
+Safe handling: preserve the signing proof, HEAD, index and worktree; correct the helper under a new runner identity. 04ZA used `$signatureMatches` and `[regex]::IsMatch`, passed four synthetic parser cases, and subsequently produced a verified signed commit.
+Prohibited automatic recovery: no repeat of 04Z, reset, restore, clean, amend, automatic restage or retry after partial mutation.
+Design rule: never assign to automatic/reserved variables, including `$Matches` and `$Args`. Keep extraction collections in uniquely named variables and use `[regex]::IsMatch` for boolean predicates when match state must be preserved.
+Validation limit: synthetic parser cases prove parser behavior only; cryptographic validity requires the independent GPG verification result.
+
+---
+
+## E051 - Staged whitespace defect in 04ZD ledger remediation
+
+Trigger/context: 04ZD relocated incident records and appended E050 without validating the complete candidate diff before writing and staging the ledger.
+Observed symptom: the staged whitespace check reported trailing spaces at lines 576, 596 and 606, and stopped with STAGED_WHITESPACE_CHECK_FAILED_PRESERVE_INDEX.
+Root cause: three trailing spaces already present in the reviewed ledger were carried into the candidate; the runner checked Git diff whitespace only after repository mutation.
+Classification: runner candidate-validation ordering defect; not a firmware or signing-key failure.
+Mutation status: LEDGER_WRITE_ATTEMPTED=True, STAGE_ATTEMPTED=True, COMMIT_ATTEMPTED=False. HEAD remained 760978bd28290d601c66c181cb64b62dcb3b2872; one ledger path remained staged and the architecture document remained unstaged.
+Safe handling: preserve the stopped state. A distinct continuation locks that exact staged blob and raw ledger hash, removes only the three recorded trailing spaces, appends this incident, stages only the ledger and attempts one signed commit.
+Design rule: validate the complete candidate bytes and diff before repository writes or index changes; preserve all unrelated work and verify signed commit scope, parent and signer.
+Prohibited automatic recovery: no repeat of 04ZD, reset, restore, clean, amend, blanket staging or automatic retry after a partial mutation.
+Validation limit: static checks of a generated continuation do not establish successful Windows execution or release readiness.
+
+---
+
+## E052 - HAL dependency added to production main was omitted from its host compile contract
+
+Trigger/context: the authorized HAL timebase correction added stm32f4xx_hal.h, HAL_Init and HAL_IncTick to main_guardian.c. Its host-only hardware-contract workflow still supplied only the CMSIS-shaped test header.
+Observed symptom: PR 76 target-contract job 111003443254, run 37056819361, failed compiling main_guardian.c with stm32f4xx_hal.h: No such file or directory. Eleven other check runs succeeded for PR head 954443891b8f1850c7e2fb34b8082d6eec5a6582. Actions checked out the synthetic PR merge 76ce11e5052daf18baf71f8ffaa4837dd0c4aa16.
+Root cause: the source-to-test dependency surface was not advanced when the production translation unit began consuming HAL declarations. The isolated Keil build used the actual vendor HAL and did not expose the missing host-test declaration file.
+Classification: CI integration/dependency-contract defect. This log does not demonstrate a production HAL execution failure or hardware qualification.
+Mutation status: the preceding source correction and commits were authorized and preserved. Diagnosis used read-only GitHub queries; no workflow rerun, merge, tag or release was performed during diagnosis.
+Safe handling: retain the production HAL calls. Add a declarations-only host header and opt into it explicitly in the main translation-unit compile command; keep the real HAL dependency and hardware qualification separate.
+Design rule: after a production dependency change, execute the exact affected CI compile command and reconcile all of its test include/declaration inputs. A test stub SHALL require explicit host opt-in, provide no runtime implementation, and SHALL NOT become hardware evidence.
+Validation: all seven revised workflow C compile commands passed in an isolated Linux fixture with strict warnings. Omitting the host opt-in flag was rejected, and the main object retained unresolved HAL_Init and HAL_IncTick symbols. These observations do not establish a successful subsequent GitHub run; the new PR head requires fresh CI adjudication.
+Prohibited automatic recovery: do not remove HAL calls to satisfy CI, suppress errors, skip the compile step, weaken warning policy, fabricate target evidence, or automatically retry a partial commit/push.
+---
+
+## E053 - Release checker coupled new-version publication to historical M15 closure
+
+Trigger/context: preparation of v0.16.0 after PR76 baseline CI succeeded.
+Observed defect: the existing checker required a published version DOI/date
+before candidate preparation and required the same new DOI inside the already
+published v0.15.0 M15 closure. A candidate cannot satisfy those predicates
+without a premature claim or a rewrite of historical publication identity.
+Root cause: candidate metadata, publication evidence and historical foundation
+closure were represented as one undifferentiated release state.
+Classification: release-governance validator lifecycle/design defect; not a
+firmware runtime failure or proof of physical qualification.
+Mutation status: diagnosis used read-only source review and isolated fixtures.
+The metadata boundary may update only its enumerated files under authorization.
+Safe handling: distinguish explicit candidate/publication states, validate the
+historical closure against its own archived version, reject unknown/duplicate
+states, and retain independent publication, CI and hardware gates.
+Design rule: candidate coherence is not publication readiness. Candidate
+metadata must omit a fabricated version DOI/date; --require-published must
+reject it. Published versions require actual DOI/date coherence and cannot
+reuse the v0.15.0 version DOI for a different version. Preserve the historical
+M15 closure and release record by exact Git blob identity.
+Prohibited automatic recovery: no rewriting historical closure, copying old
+DOIs into new releases, retargeting tags, bypassing failed CI or automatically
+retrying a partial commit/push. Preserve stopped state for adjudication.
+
+---
+
+## E054 - Python launcher presence substituted for a usable validation interpreter
+
+Trigger/context: 04ZI candidate metadata prevalidation on Windows PowerShell
+5.1 at unchanged HEAD c32832dca44f49c80786d3169444fb46c896aef6.
+Observed symptom: PYTHON_3_9_OR_NEWER_REQUIRED_NO_INSTALL before repository
+writes, staging, commit or push; all four mutation flags were False.
+Root cause established in the runner: it selected py.exe merely because the
+launcher command existed, tried only its -3 target and suppressed that probe's
+stdout/stderr before a generic assertion. It provided no usable-interpreter
+fallback. The underlying machine-specific probe failure is not established.
+Classification: runner interpreter-discovery and diagnostic-loss defect;
+not evidence that the installed Python version is old or firmware is broken.
+Mutation status: no repository mutation is evidenced in the failed run.
+Safe handling: preserve HEAD/index/worktree. Under a distinct corrected runner,
+observe existing project environments, registered Python installations and
+PATH commands. Print path, origin, prefix, exit code, stdout and stderr for
+each probe. Select only an actually successful Python >=3.9 invocation, then
+run the complete candidate tests before any repository mutation.
+Design rule: command presence is not execution capability. Optional interpreter
+probes may advance to another observed candidate; failed tests must not be
+ignored. Windows Store interpreter aliases must not be activated. Python-manager
+automatic installation is disabled in child processes, and launcher install
+opt-ins are removed from child environments only. No install,
+execution-policy change or PATH/config mutation is permitted by discovery.
+Validation limit: generated-source review and Linux metadata tests do not
+establish Windows interpreter discovery or PowerShell 5.1 runtime success.
+The local parser and observed corrected-run output remain required evidence.
+Prohibited automatic recovery: do not repeat 04ZI, infer an old Python from
+the generic stop, install dependencies automatically, bypass validation or
+retry a partial metadata commit/push. Preserve any later stopped state.

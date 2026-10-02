@@ -154,6 +154,7 @@ jobs:
           firmware/App/Src/guardian_firmware_app.c
           -o build/m13-target/guardian_firmware_app.o
 
+      # Compile HAL calls using declarations only; this does not link or run ST HAL.
       # Compile the exact Keil/CMSIS main-loop template.
       - name: Compile Keil bring-up main template
         run: >
@@ -164,6 +165,7 @@ jobs:
           -Wpedantic
           -Werror
           -DSTM32F401xE
+          -DGUARDIAN_HOST_HAL_COMPILE_CONTRACT
           -Ifirmware/Tests/CMSISStub
           -Ifirmware/Protocol/Inc
           -Ifirmware/App/Inc

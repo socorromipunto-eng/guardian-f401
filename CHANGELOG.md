@@ -2,6 +2,28 @@
 
 All notable changes to Guardian F401 are documented in this file.
 
+## [0.16.0] - Unreleased
+
+### Bounded software candidate
+
+- Configure the F401 startup stack to 4096 bytes and enable the measured Keil
+  optimization setting; runtime stack sufficiency remains unproven.
+- Initialize the ST HAL timebase and increment the HAL tick from SysTick.
+- Include NodeLink authentication and semantic sources in the Keil project;
+  retain the existing rollback-anchor source entry.
+- Add trusted-key-provider and signature-adapter host contracts and lifecycle
+  integration tests. Host test doubles do not qualify production cryptography.
+- Complete the declarations-only HAL host compile contract without replacing
+  the production vendor HAL implementation.
+- Record target geometry and persistent-storage binding limitations and repair
+  the governed scripting incident ledger.
+- Separate prepublication metadata coherence from published archive evidence,
+  preserving the historical v0.15.0 M15 closure and archive identities.
+
+No physical-board qualification, deployed backup chip, full security wiring,
+regulatory compliance, certification, or endorsement is claimed. Publication
+date and version DOI will be recorded only from observed publication evidence.
+
 ## [0.15.0] - 2026-09-01
 
 ### Added
