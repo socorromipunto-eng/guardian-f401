@@ -697,3 +697,62 @@ Safe handling: retain the production HAL calls. Add a declarations-only host hea
 Design rule: after a production dependency change, execute the exact affected CI compile command and reconcile all of its test include/declaration inputs. A test stub SHALL require explicit host opt-in, provide no runtime implementation, and SHALL NOT become hardware evidence.
 Validation: all seven revised workflow C compile commands passed in an isolated Linux fixture with strict warnings. Omitting the host opt-in flag was rejected, and the main object retained unresolved HAL_Init and HAL_IncTick symbols. These observations do not establish a successful subsequent GitHub run; the new PR head requires fresh CI adjudication.
 Prohibited automatic recovery: do not remove HAL calls to satisfy CI, suppress errors, skip the compile step, weaken warning policy, fabricate target evidence, or automatically retry a partial commit/push.
+---
+
+## E053 - Release checker coupled new-version publication to historical M15 closure
+
+Trigger/context: preparation of v0.16.0 after PR76 baseline CI succeeded.
+Observed defect: the existing checker required a published version DOI/date
+before candidate preparation and required the same new DOI inside the already
+published v0.15.0 M15 closure. A candidate cannot satisfy those predicates
+without a premature claim or a rewrite of historical publication identity.
+Root cause: candidate metadata, publication evidence and historical foundation
+closure were represented as one undifferentiated release state.
+Classification: release-governance validator lifecycle/design defect; not a
+firmware runtime failure or proof of physical qualification.
+Mutation status: diagnosis used read-only source review and isolated fixtures.
+The metadata boundary may update only its enumerated files under authorization.
+Safe handling: distinguish explicit candidate/publication states, validate the
+historical closure against its own archived version, reject unknown/duplicate
+states, and retain independent publication, CI and hardware gates.
+Design rule: candidate coherence is not publication readiness. Candidate
+metadata must omit a fabricated version DOI/date; --require-published must
+reject it. Published versions require actual DOI/date coherence and cannot
+reuse the v0.15.0 version DOI for a different version. Preserve the historical
+M15 closure and release record by exact Git blob identity.
+Prohibited automatic recovery: no rewriting historical closure, copying old
+DOIs into new releases, retargeting tags, bypassing failed CI or automatically
+retrying a partial commit/push. Preserve stopped state for adjudication.
+
+---
+
+## E054 - Python launcher presence substituted for a usable validation interpreter
+
+Trigger/context: 04ZI candidate metadata prevalidation on Windows PowerShell
+5.1 at unchanged HEAD c32832dca44f49c80786d3169444fb46c896aef6.
+Observed symptom: PYTHON_3_9_OR_NEWER_REQUIRED_NO_INSTALL before repository
+writes, staging, commit or push; all four mutation flags were False.
+Root cause established in the runner: it selected py.exe merely because the
+launcher command existed, tried only its -3 target and suppressed that probe's
+stdout/stderr before a generic assertion. It provided no usable-interpreter
+fallback. The underlying machine-specific probe failure is not established.
+Classification: runner interpreter-discovery and diagnostic-loss defect;
+not evidence that the installed Python version is old or firmware is broken.
+Mutation status: no repository mutation is evidenced in the failed run.
+Safe handling: preserve HEAD/index/worktree. Under a distinct corrected runner,
+observe existing project environments, registered Python installations and
+PATH commands. Print path, origin, prefix, exit code, stdout and stderr for
+each probe. Select only an actually successful Python >=3.9 invocation, then
+run the complete candidate tests before any repository mutation.
+Design rule: command presence is not execution capability. Optional interpreter
+probes may advance to another observed candidate; failed tests must not be
+ignored. Windows Store interpreter aliases must not be activated. Python-manager
+automatic installation is disabled in child processes, and launcher install
+opt-ins are removed from child environments only. No install,
+execution-policy change or PATH/config mutation is permitted by discovery.
+Validation limit: generated-source review and Linux metadata tests do not
+establish Windows interpreter discovery or PowerShell 5.1 runtime success.
+The local parser and observed corrected-run output remain required evidence.
+Prohibited automatic recovery: do not repeat 04ZI, infer an old Python from
+the generic stop, install dependencies automatically, bypass validation or
+retry a partial metadata commit/push. Preserve any later stopped state.
