@@ -1,0 +1,19 @@
+{
+  "zip_sha256": "1C915EDF7F8CC77EDEEB9CAA9078B08580EB4CD366B496C1BABA4AA1F0C1A504",
+  "entry_count": 35,
+  "source_paths": 575,
+  "commands": 11,
+  "positive_controls": 2,
+  "negative_controls": 4,
+  "signature_bytes": 4627,
+  "public_der_bytes": 2614,
+  "public_key_sha256": "77C74C7D8919A758076B54F639EB9BC6D3696CD6F2C1B99904578A873E2A2337",
+  "manifest_sha256": "4E5D16E48EB6F61654AE2ADFF3F11346F5F57ABE7B61D35061AB049761A88C42",
+  "signature_sha256": "185437AD47BB88CCE207065831BDAB0A9DF2552657EE21D07101331A7E9F7C0B",
+  "artifact_sha256": "3CDBFBE32D66F254C62D00354D57E91F7BDEBFA876BD6BA7585FCD6A4B73410B",
+  "review": "PASS_EVIDENCE_CONSISTENCY_HOST_SCOPE",
+  "cryptographic_reexecution_here": false,
+  "independent_implementation_validation": false,
+  "private_key_material_observed": false,
+  "private_acl_independently_observed": false
+}
