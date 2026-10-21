@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0.0",
+  "project": "Guardian F401",
+  "release": "v0.17.0",
+  "status": "HOLD",
+  "source_freshness": "2026-10-04",
+  "baseline": {
+    "branch": "feature/m17-heterogeneous-multinode-assurance",
+    "head": "717e53c717af1dc31af540bbcadd9b426f9c9535",
+    "tree": "d16f9ffed29c4f3c1b7dd445902aeafe42a489c0",
+    "incident_range": "SG-001..SG-045"
+  },
+  "domains": [
+    {
+      "id": "AUTHORITY",
+      "status": "DEMONSTRATED",
+      "scope": "host/system semantics",
+      "next_gate": 13,
+      "note": "STM32F401 reference/control authority preserved; distributed closure still required."
+    },
+    {
+      "id": "ACTUATION",
+      "status": "DEMONSTRATED_WITH_REMAINING_DISTRIBUTED_GAPS",
+      "next_gate": 13,
+      "note": "No automatic peer/AI actuation authority; partition/failover closure remains."
+    },
+    {
+      "id": "IDENTITY",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 13,
+      "note": "Distributed duplicate/stale identity hostile closure required."
+    },
+    {
+      "id": "KEYS",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 2,
+      "note": "Ceremony plan exists; no production-approved key yet."
+    },
+    {
+      "id": "SIGNING",
+      "status": "HOST_DEMONSTRATED",
+      "next_gate": 9,
+      "note": "Ed25519 provider and adapter path demonstrated; real production key end-to-end pending."
+    },
+    {
+      "id": "FRESHNESS",
+      "status": "DEMONSTRATED_HOST_CONTRACT",
+      "next_gate": 10,
+      "note": "Initial provisioning and physical anchor closure pending."
+    },
+    {
+      "id": "ANTI_REPLAY",
+      "status": "DEMONSTRATED_HOST_CONTRACT",
+      "next_gate": 10,
+      "note": "Initial provisioning NOT_DEMONSTRATED."
+    },
+    {
+      "id": "FIRMWARE_UPDATE",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 15,
+      "note": "Cross-integration with boot/recovery pending."
+    },
+    {
+      "id": "BOOT",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 15,
+      "note": "Cross-integration and physical evidence pending."
+    },
+    {
+      "id": "RECOVERY",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 15,
+      "note": "Recovery cross-integration and physical fault evidence pending."
+    },
+    {
+      "id": "SEMANTICS",
+      "status": "DEMONSTRATED",
+      "next_gate": 19,
+      "note": "Final claim/adversarial review still required."
+    },
+    {
+      "id": "QUORUM",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 13
+    },
+    {
+      "id": "PARTITION",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 13
+    },
+    {
+      "id": "SPLIT_BRAIN",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 13
+    },
+    {
+      "id": "FAILOVER",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 14
+    },
+    {
+      "id": "PHYSICAL_HARDWARE",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 18
+    },
+    {
+      "id": "SUPPLY_CHAIN",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 17
+    },
+    {
+      "id": "RELEASE_INTEGRITY",
+      "status": "REVIEW_REQUIRED",
+      "next_gate": 17
+    },
+    {
+      "id": "CI",
+      "status": "NOT_DEMONSTRATED",
+      "next_gate": 16
+    },
+    {
+      "id": "RELEASE_CLOSURE",
+      "status": "BLOCKED_BY_PRIOR_GAPS",
+      "next_gate": 20
+    }
+  ],
+  "claim_firewall": [
+    "REFERENCE != CONFORMANCE",
+    "CONFORMANCE != CERTIFICATION",
+    "CERTIFICATION != DEPLOYMENT AUTHORIZATION",
+    "HOST_EVIDENCE != PHYSICAL_HARDWARE_EVIDENCE",
+    "VALID_SIGNATURE != TRUSTED",
+    "TRUSTED != AUTHORIZED",
+    "AUTHORIZED != ACCEPTED",
+    "ACCEPTED != ACTUATION_AUTHORIZED"
+  ]
+}

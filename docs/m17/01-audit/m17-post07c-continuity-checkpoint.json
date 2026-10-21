@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "project": "Guardian F401",
+  "checkpoint_id": "M17-POST07C-CI-UTF8-CONTINUITY",
+  "record_role": "REVIEWED_CHECKPOINT_AND_07D_PROPOSED_CHANGE_NOT_EXECUTION_EVIDENCE",
+  "source_of_truth_order": [
+    "Project Context",
+    "controlled repository documents and ADR",
+    "exact evidence bytes",
+    "memory as navigation only"
+  ],
+  "observed_baseline": {
+    "head": "289eb429ef998af63e82946e300aab425bc7d485",
+    "branch": "feature/m17-authenticated-ingress-integration",
+    "paths": 583,
+    "zip": "Guardian-M17-07C-Four-Gates-Host-PQC-Validation-1830de023f0e46d4b6b4996b78601810.zip",
+    "zip_sha256": "7ED157B4173224117DBADAB6F64AB5C81E764ACA08758AF436F993F120D336FC"
+  },
+  "reviewed_results": {
+    "host_recipes": 12,
+    "optimization_cases": 24,
+    "host_commands": 129,
+    "coff_objects": 80,
+    "pe_images": 24,
+    "registered_json_documents": 38,
+    "registered_records": 200,
+    "reference_bindings": 11,
+    "pqc": "Two positive and four negative public-only same-provider ML-DSA-87 verifications over historical 06M artifact; no current firmware target signing or conformance",
+    "all_583_identities_preserved": true
+  },
+  "incident_id": "G-M17-E07C-001",
+  "permanent_prevention": [
+    "Explicit encoding=utf-8 on every Python generated-text write",
+    "Strict UTF-8 validation before packaging generated reports",
+    "Raw native logs retain original bytes and separate encoding classification",
+    "File preservation compares ordinal path identities, never enumeration order",
+    "State-changing Git boundaries remain separate; no automatic recovery",
+    "Unknown remains UNKNOWN; host success never establishes physical/regulatory qualification"
+  ],
+  "07d_scope": {
+    "existing_replacements": [
+      "tools/m17-host-test-recipes.json",
+      "tools/run_m17_host_tests.py",
+      ".github/workflows/m17-portable-host-tests.yml"
+    ],
+    "new_document_count": 2,
+    "expected_path_count_if_successful": 585,
+    "execution_not_claimed_by_this_document": true,
+    "index_commit_push_or_gate_closure": false
+  },
+  "gates": {
+    "01": "HOLD",
+    "13": "HOLD",
+    "14": "HOLD",
+    "16": "HOLD_PENDING_ADMISSION_AND_EXACT_COMMIT_REMOTE_CI"
+  },
+  "remaining_dependencies": [
+    "Signature and sender/key identity on canonical v2 transcript",
+    "Semantic contract and durable freshness",
+    "One-use ACK and transactional corroboration publication",
+    "F401 build/resource/boot/watchdog/fault evidence",
+    "MCXN947 actual firmware and physical link",
+    "Additional chips selected by role and evidence",
+    "Production key custody and PQC target/update/boot integration",
+    "EU applicability, NASA/CISA mapping and exact aerospace standard selection",
+    "Unidentified EDI ACT reference remains UNKNOWN"
+  ],
+  "authority_invariants": [
+    "F401 deterministic/reference actuation authority",
+    "Peer silence never transfers actuation authority",
+    "NXP supervision is not actuation authorization",
+    "AI remains advisory"
+  ],
+  "next_boundary_after_07d": "Exact five-path worktree admission adjudication, then separately scoped validation/staging or ingress implementation; no automatic commit/push"
+}

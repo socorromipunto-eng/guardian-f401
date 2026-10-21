@@ -7,26 +7,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#define TEST_STORAGE_CAPACITY ((size_t)1024U)
+#define TEST_STORAGE_CAPACITY ((size_t)1024u)
 
-typedef struct
-{
+typedef struct {
     uint8_t storage[TEST_STORAGE_CAPACITY];
     uint32_t image_size;
 } integration_storage_t;
 
-static unsigned int g_backend_call_count = 0U;
-static int g_backend_result = 1;
-static uint8_t g_last_public_key[GUARDIAN_FIRMWARE_TRUSTED_KEY_PUBLIC_KEY_BYTES];
-static uint8_t g_last_signature[GUARDIAN_FIRMWARE_ED25519_SIGNATURE_BYTES];
-static size_t g_last_message_length = 0U;
-
-static const uint8_t g_expected_key2_public_key[GUARDIAN_FIRMWARE_TRUSTED_KEY_PUBLIC_KEY_BYTES] = {
-    0x33u, 0x0Eu, 0x6Du, 0xB6u, 0xBBu, 0x72u, 0x3Fu, 0xFEu,
-    0x2Bu, 0x98u, 0x7Au, 0xD6u, 0x0Eu, 0x07u, 0x73u, 0x97u,
-    0xCCu, 0x33u, 0x3Fu, 0x04u, 0x7Bu, 0x4Bu, 0x77u, 0x06u,
-    0x68u, 0x9Fu, 0xA2u, 0x49u, 0x69u, 0x26u, 0xCBu, 0xC4u
-};
+static unsigned int g_backend_call_count = 0u;
 
 int guardian_firmware_ed25519_backend_verify(
     const uint8_t signature[GUARDIAN_FIRMWARE_ED25519_SIGNATURE_BYTES],
@@ -34,28 +22,17 @@ int guardian_firmware_ed25519_backend_verify(
     const uint8_t *message,
     size_t message_length)
 {
-    if ((signature == NULL) ||
-        (public_key == NULL) ||
-        (message == NULL) ||
-        (message_length == 0U))
-    {
+    ++g_backend_call_count;
+    if ((signature == NULL) || (public_key == NULL) ||
+        (message == NULL) || (message_length == 0u)) {
         return 0;
     }
-
-    ++g_backend_call_count;
-    (void)memcpy(g_last_public_key, public_key, sizeof(g_last_public_key));
-    (void)memcpy(g_last_signature, signature, sizeof(g_last_signature));
-    g_last_message_length = message_length;
-    return g_backend_result;
+    return 1;
 }
 
-static void reset_backend(int result)
+static void reset_backend(void)
 {
-    g_backend_call_count = 0U;
-    g_backend_result = result;
-    (void)memset(g_last_public_key, 0, sizeof(g_last_public_key));
-    (void)memset(g_last_signature, 0, sizeof(g_last_signature));
-    g_last_message_length = 0U;
+    g_backend_call_count = 0u;
 }
 
 static int integration_erase(void *context, uint32_t image_size)
@@ -77,9 +54,8 @@ static int integration_write(
 {
     integration_storage_t *storage = (integration_storage_t *)context;
     if ((storage == NULL) ||
-        ((data == NULL) && (length != 0U)) ||
-        ((uint64_t)offset + (uint64_t)length > (uint64_t)storage->image_size))
-    {
+        ((data == NULL) && (length != 0u)) ||
+        ((uint64_t)offset + (uint64_t)length > (uint64_t)storage->image_size)) {
         return 0;
     }
     (void)memcpy(&storage->storage[offset], data, length);
@@ -92,10 +68,8 @@ static int integration_hash(
     uint8_t digest[GUARDIAN_FIRMWARE_DIGEST_SIZE])
 {
     integration_storage_t *storage = (integration_storage_t *)context;
-    if ((storage == NULL) ||
-        (digest == NULL) ||
-        (image_size != storage->image_size))
-    {
+    if ((storage == NULL) || (digest == NULL) ||
+        (image_size != storage->image_size)) {
         return 0;
     }
     guardian_sha256(storage->storage, image_size, digest);
@@ -137,8 +111,7 @@ static int integration_complete_pending(
 
 static void configure_lifecycle(
     guardian_firmware_lifecycle_t *lifecycle,
-    integration_storage_t *storage,
-    uint8_t required_algorithm)
+    integration_storage_t *storage)
 {
     guardian_firmware_config_t config = {0};
 
@@ -148,15 +121,16 @@ static void configure_lifecycle(
     config.write = integration_write;
     config.hash = integration_hash;
     config.verify_signature = guardian_firmware_trusted_signature_verify;
-    config.required_signature_algorithm = required_algorithm;
+    config.required_signature_algorithm = GUARDIAN_FIRMWARE_SIGNATURE_ED25519;
     config.mark_pending = integration_mark_pending;
     config.persist_floor = integration_persist_floor;
     config.complete_pending = integration_complete_pending;
     config.max_image_size = (uint32_t)TEST_STORAGE_CAPACITY;
-    config.active_version_counter = 10U;
-    config.rollback_floor = 10U;
+    config.active_version_counter = 10u;
+    config.rollback_floor = 10u;
 
-    assert(guardian_firmware_lifecycle_configure(lifecycle, &config) == GUARDIAN_FIRMWARE_OK);
+    assert(guardian_firmware_lifecycle_configure(lifecycle, &config) ==
+           GUARDIAN_FIRMWARE_OK);
 }
 
 static guardian_firmware_manifest_t build_manifest(
@@ -170,18 +144,16 @@ static guardian_firmware_manifest_t build_manifest(
 
     manifest.signature_algorithm = algorithm;
     manifest.key_id = key_id;
-    manifest.version_counter = 11U;
-    manifest.firmware_major = 0U;
-    manifest.firmware_minor = 16U;
-    manifest.firmware_patch = 0U;
+    manifest.version_counter = 11u;
+    manifest.firmware_major = 0u;
+    manifest.firmware_minor = 17u;
+    manifest.firmware_patch = 0u;
     manifest.image_size = image_size;
     guardian_sha256(image, image_size, manifest.image_sha256);
     manifest.signature_length = (uint8_t)GUARDIAN_FIRMWARE_ED25519_SIGNATURE_BYTES;
-
-    for (i = 0U; i < sizeof(manifest.signature); ++i) {
-        manifest.signature[i] = (uint8_t)(0xA0U ^ (uint8_t)i);
+    for (i = 0u; i < sizeof(manifest.signature); ++i) {
+        manifest.signature[i] = (uint8_t)(0xA0u ^ (uint8_t)i);
     }
-
     return manifest;
 }
 
@@ -191,8 +163,9 @@ static void stage_image(
     uint32_t image_size)
 {
     guardian_firmware_chunk_t chunk = {0};
+
     assert(image_size <= GUARDIAN_FIRMWARE_CHUNK_MAX_DATA);
-    chunk.offset = 0U;
+    chunk.offset = 0u;
     chunk.length = (uint16_t)image_size;
     (void)memcpy(chunk.data, image, image_size);
     assert(guardian_firmware_write_chunk(lifecycle, &chunk) == GUARDIAN_FIRMWARE_OK);
@@ -204,153 +177,95 @@ static guardian_firmware_result_t begin_stage_finalize(
     const uint8_t *image,
     uint32_t image_size)
 {
-    guardian_firmware_result_t begin_result = guardian_firmware_begin(lifecycle, manifest);
-    if (begin_result != GUARDIAN_FIRMWARE_OK) {
-        return begin_result;
+    guardian_firmware_result_t result;
+
+    result = guardian_firmware_begin(lifecycle, manifest);
+    if (result != GUARDIAN_FIRMWARE_OK) {
+        return result;
     }
     stage_image(lifecycle, image, image_size);
     return guardian_firmware_finalize(lifecycle);
 }
 
-/* IT01 */
-static void test_it01_lifecycle_binds_adapter(void)
+static void assert_signature_rejected_without_backend(uint32_t key_id)
 {
     guardian_firmware_lifecycle_t lifecycle = {0};
     integration_storage_t storage = {0};
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    assert(lifecycle.config.verify_signature == guardian_firmware_trusted_signature_verify);
-}
-
-/* IT02 */
-static void test_it02_valid_key2_reaches_provider_and_backend(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E valid key2";
+    static const uint8_t image[] = "Guardian M17 provenance enforcement";
     guardian_firmware_manifest_t manifest;
 
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 2U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(1);
+    configure_lifecycle(&lifecycle, &storage);
+    manifest = build_manifest(image,
+                              (uint32_t)sizeof(image),
+                              key_id,
+                              GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
+    reset_backend();
 
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_OK);
-    assert(lifecycle.state == GUARDIAN_FIRMWARE_STATE_VERIFIED);
-    assert(g_backend_call_count == 1U);
-    assert(g_last_message_length == GUARDIAN_FIRMWARE_SIGNED_MANIFEST_SIZE);
-    assert(memcmp(g_last_public_key, g_expected_key2_public_key, sizeof(g_last_public_key)) == 0);
-    assert(memcmp(g_last_signature, manifest.signature, sizeof(g_last_signature)) == 0);
-}
-
-/* IT03 */
-static void test_it03_unknown_key_fails_closed(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E unknown key";
-    guardian_firmware_manifest_t manifest;
-
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 999U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(1);
-
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID);
-    assert(g_backend_call_count == 0U);
-}
-
-/* IT04 */
-static void test_it04_key1_fails_closed_no_production_reuse(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E key1 rejected";
-    guardian_firmware_manifest_t manifest;
-
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 1U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(1);
-
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID);
-    assert(g_backend_call_count == 0U);
-}
-
-/* IT05 */
-static void test_it05_algorithm_mismatch_fails_closed(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E algorithm mismatch";
-    guardian_firmware_manifest_t manifest;
-
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 2U, GUARDIAN_FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256);
-    reset_backend(1);
-
-    assert(guardian_firmware_begin(&lifecycle, &manifest) == GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
-    assert(g_backend_call_count == 0U);
-}
-
-/* IT06 */
-static void test_it06_backend_failure_propagates(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E backend failure";
-    guardian_firmware_manifest_t manifest;
-
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 2U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(0);
-
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID);
-    assert(g_backend_call_count == 1U);
+    assert(begin_stage_finalize(&lifecycle,
+                                &manifest,
+                                image,
+                                (uint32_t)sizeof(image)) ==
+           GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID);
     assert(lifecycle.failure == GUARDIAN_FIRMWARE_FAILURE_SIGNATURE_INVALID);
+    assert(g_backend_call_count == 0u);
 }
 
-/* IT07 */
-static void test_it07_no_fallback_key_path(void)
+static void test_lifecycle_binds_adapter(void)
 {
     guardian_firmware_lifecycle_t lifecycle = {0};
     integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E no fallback";
-    guardian_firmware_manifest_t manifest;
 
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 0U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(1);
-
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_ERROR_SIGNATURE_INVALID);
-    assert(g_backend_call_count == 0U);
-}
-
-/* IT08 */
-static void test_it08_lifecycle_does_not_bypass_adapter_or_provider(void)
-{
-    guardian_firmware_lifecycle_t lifecycle = {0};
-    integration_storage_t storage = {0};
-    static const uint8_t image[] = "Guardian B03 E2E no bypass";
-    guardian_firmware_manifest_t manifest;
-
-    configure_lifecycle(&lifecycle, &storage, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    manifest = build_manifest(image, (uint32_t)sizeof(image), 2U, GUARDIAN_FIRMWARE_SIGNATURE_ED25519);
-    reset_backend(1);
-
+    configure_lifecycle(&lifecycle, &storage);
     assert(lifecycle.config.verify_signature == guardian_firmware_trusted_signature_verify);
-    assert(begin_stage_finalize(&lifecycle, &manifest, image, (uint32_t)sizeof(image)) == GUARDIAN_FIRMWARE_OK);
-    assert(g_backend_call_count == 1U);
-    assert(memcmp(g_last_public_key, g_expected_key2_public_key, sizeof(g_last_public_key)) == 0);
+}
+
+static void test_key2_legacy_unverified_rejected(void)
+{
+    assert_signature_rejected_without_backend(2u);
+    (void)printf("LIFECYCLE_KEY2_LEGACY_UNVERIFIED=REJECTED_BEFORE_BACKEND\n");
+}
+
+static void test_unknown_key_rejected(void)
+{
+    assert_signature_rejected_without_backend(999u);
+    (void)printf("LIFECYCLE_UNKNOWN_KEY=REJECTED\n");
+}
+
+static void test_no_fallback_key_rejected(void)
+{
+    assert_signature_rejected_without_backend(0u);
+    assert_signature_rejected_without_backend(1u);
+    (void)printf("LIFECYCLE_NO_FALLBACK=PASS\n");
+}
+
+static void test_algorithm_confusion_rejected_before_transfer(void)
+{
+    guardian_firmware_lifecycle_t lifecycle = {0};
+    integration_storage_t storage = {0};
+    static const uint8_t image[] = "Guardian M17 algorithm confusion";
+    guardian_firmware_manifest_t manifest;
+
+    configure_lifecycle(&lifecycle, &storage);
+    manifest = build_manifest(image,
+                              (uint32_t)sizeof(image),
+                              2u,
+                              GUARDIAN_FIRMWARE_SIGNATURE_DEMO_HMAC_SHA256);
+    reset_backend();
+
+    assert(guardian_firmware_begin(&lifecycle, &manifest) ==
+           GUARDIAN_FIRMWARE_ERROR_INVALID_PAYLOAD);
+    assert(g_backend_call_count == 0u);
+    (void)printf("LIFECYCLE_ALGORITHM_CONFUSION=REJECTED\n");
 }
 
 int main(void)
 {
-    test_it01_lifecycle_binds_adapter();
-    test_it02_valid_key2_reaches_provider_and_backend();
-    test_it03_unknown_key_fails_closed();
-    test_it04_key1_fails_closed_no_production_reuse();
-    test_it05_algorithm_mismatch_fails_closed();
-    test_it06_backend_failure_propagates();
-    test_it07_no_fallback_key_path();
-    test_it08_lifecycle_does_not_bypass_adapter_or_provider();
+    test_lifecycle_binds_adapter();
+    test_key2_legacy_unverified_rejected();
+    test_unknown_key_rejected();
+    test_no_fallback_key_rejected();
+    test_algorithm_confusion_rejected_before_transfer();
 
-    (void)printf("Guardian B03 lifecycle end-to-end integration host tests: PASS\n");
+    (void)printf("Guardian M17 lifecycle provenance enforcement host tests: PASS\n");
     return 0;
 }

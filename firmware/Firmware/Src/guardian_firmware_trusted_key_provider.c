@@ -12,6 +12,13 @@ static const guardian_firmware_trusted_key_record_t g_guardian_firmware_trusted_
             0x2Bu, 0x98u, 0x7Au, 0xD6u, 0x0Eu, 0x07u, 0x73u, 0x97u,
             0xCCu, 0x33u, 0x3Fu, 0x04u, 0x7Bu, 0x4Bu, 0x77u, 0x06u,
             0x68u, 0x9Fu, 0xA2u, 0x49u, 0x69u, 0x26u, 0xCBu, 0xC4u
+        },
+        GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_LEGACY_UNVERIFIED,
+        {
+            0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+            0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+            0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
+            0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u
         }
     }
 };
@@ -19,6 +26,19 @@ static const guardian_firmware_trusted_key_record_t g_guardian_firmware_trusted_
 static const size_t g_guardian_firmware_trusted_key_count =
     sizeof(g_guardian_firmware_trusted_keys) /
     sizeof(g_guardian_firmware_trusted_keys[0]);
+
+static int guardian_firmware_trusted_key_digest_is_zero(
+    const uint8_t digest[GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES])
+{
+    size_t i;
+    uint8_t combined = 0u;
+
+    for (i = 0u; i < GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES; ++i) {
+        combined = (uint8_t)(combined | digest[i]);
+    }
+
+    return combined == 0u ? 1 : 0;
+}
 
 guardian_firmware_trusted_key_resolution_t
  guardian_firmware_trusted_key_provider_resolve(
@@ -60,5 +80,39 @@ guardian_firmware_trusted_key_resolution_t
     }
 
     *out_record = match;
+    return GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_OK;
+}
+
+guardian_firmware_trusted_key_resolution_t
+ guardian_firmware_trusted_key_provider_resolve_production(
+    uint32_t key_id,
+    guardian_firmware_trusted_key_algorithm_t required_algorithm,
+    const guardian_firmware_trusted_key_record_t **out_record)
+{
+    const guardian_firmware_trusted_key_record_t *record = NULL;
+    guardian_firmware_trusted_key_resolution_t resolution;
+
+    if (out_record == NULL) {
+        return GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_INVALID_ARGUMENT;
+    }
+
+    *out_record = NULL;
+    resolution = guardian_firmware_trusted_key_provider_resolve(
+        key_id,
+        required_algorithm,
+        &record);
+
+    if (resolution != GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_OK) {
+        return resolution;
+    }
+
+    if ((record == NULL) ||
+        (record->provenance_state !=
+         GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_PRODUCTION_APPROVED) ||
+        (guardian_firmware_trusted_key_digest_is_zero(record->provenance_digest) != 0)) {
+        return GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_UNVERIFIED_PROVENANCE;
+    }
+
+    *out_record = record;
     return GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_OK;
 }

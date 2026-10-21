@@ -1,0 +1,52 @@
+name: Guardian M17 Portable Host Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  m17-portable-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        optimization: [O0, O2]
+        recipe:
+          - 01-multinode
+          - 02-nxp-supervisor
+          - 03-st-measurement
+          - 04-witness
+          - 05-high-compute
+          - 06-signed-evidence
+          - 10-monocypher
+          - 11-anti-replay
+          - 12-corroboration
+          - 13-corroboration-wire
+          - 14-ack
+          - 15-signed-envelope
+
+    steps:
+      - name: Check out revision under test
+        uses: actions/checkout@v7
+      - name: Compile and execute portable M17 test
+        run: >-
+          python3 tools/run_m17_host_tests.py
+          --recipe "${{ matrix.recipe }}"
+          --optimization "${{ matrix.optimization }}"
+          --output "${{ runner.temp }}/guardian-m17-${{ matrix.recipe }}-${{ matrix.optimization }}"
+      - name: Preserve diagnostics in job log
+        if: always()
+        shell: bash
+        run: |
+          evidence="${{ runner.temp }}/guardian-m17-${{ matrix.recipe }}-${{ matrix.optimization }}"
+          if [ -d "$evidence" ]; then
+            while IFS= read -r -d '' record; do
+              printf '\nEvidence file: %s\n' "$record"
+              cat "$record"
+            done < <(find "$evidence" -type f \( -name '*.txt' -o -name 'result.json' \) -print0 | sort -z)
+          fi

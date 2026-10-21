@@ -1,0 +1,57 @@
+{
+    "schema":  "guardian-f401-m17-provider-provenance-1",
+    "provider":  "Monocypher",
+    "version":  "4.0.3",
+    "release_date":  "2026-06-15",
+    "upstream_repository":  "https://github.com/LoupVaillant/Monocypher",
+    "upstream_release":  "https://github.com/LoupVaillant/Monocypher/releases/tag/4.0.3",
+    "upstream_manual":  "https://monocypher.org/manual/ed25519",
+    "commit":  "ab2b16dd619ad5f6979a4fbe69cfa324a6fcc35f",
+    "source_freshness_verified_date":  "2026-10-04",
+    "license_spdx":  "BSD-2-Clause OR CC0-1.0",
+    "local_patches":  false,
+    "purpose":  "Ed25519 signature verification backend only",
+    "rfc":  "RFC 8032",
+    "fips_186_5_algorithm_baseline":  true,
+    "fips_cmvp_provider_validation_claim":  false,
+    "private_signing_key_on_target":  false,
+    "guardian_backend_calls_signing_api":  false,
+    "upstream_security_note":  "4.0.3 fixes a timing leak in EdDSA/Ed25519 signatures; pre-4.0.3 provider versions are not eligible for this boundary.",
+    "files":  [
+                  {
+                      "upstream_path":  "src/monocypher.c",
+                      "local_path":  "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.c",
+                      "git_blob_sha1":  "c7c5450e84e4dffda44514d9f918162f1830de56",
+                      "sha256":  "F1F838CDD483BDEBE0DF0FF5C5ED60535E496F769C6A2F933AC4C0B114207123",
+                      "size_bytes":  102582
+                  },
+                  {
+                      "upstream_path":  "src/monocypher.h",
+                      "local_path":  "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.h",
+                      "git_blob_sha1":  "cf635e88e4f5851e1f58a9e2b3e85b8029a73861",
+                      "sha256":  "FCAF6ED771358BB4F40FBA016F6518AE86EC02B1B877D2CC35AD92D3A26FD7B3",
+                      "size_bytes":  12177
+                  },
+                  {
+                      "upstream_path":  "src/optional/monocypher-ed25519.c",
+                      "local_path":  "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.c",
+                      "git_blob_sha1":  "4fdd07641e1c4d54a348e95d0ab05c28f84654a6",
+                      "sha256":  "CE0D2F8E32CA8F66398BA5B3456CC74327C3EFF14E7B950CE7D57BE9025CC453",
+                      "size_bytes":  16526
+                  },
+                  {
+                      "upstream_path":  "src/optional/monocypher-ed25519.h",
+                      "local_path":  "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.h",
+                      "git_blob_sha1":  "d7aa004123e1d38b891fdabd4171fbf9957242ae",
+                      "sha256":  "3A3035181F991A158D0E1C7567258F0BAE8BA0F1F23C5512B4A1DB1B3C9730CE",
+                      "size_bytes":  5451
+                  },
+                  {
+                      "upstream_path":  "LICENCE.md",
+                      "local_path":  "firmware/ThirdParty/monocypher-4.0.3/LICENCE.md",
+                      "git_blob_sha1":  "9d69ad72ec113a743264d34dd86a5c04d0c42d35",
+                      "sha256":  "A5781770269D2516E52BA4863F790C10A16DA4089A1E81823AEE19FF1E9026B0",
+                      "size_bytes":  9256
+                  }
+              ]
+}

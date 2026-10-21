@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "guardian-f401-m17-production-key-ceremony-evidence-v1",
+  "title": "Guardian F401 M17 Production Key Ceremony Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ceremony_id",
+    "plan_sha256",
+    "environment_record_sha256",
+    "algorithm",
+    "key_id",
+    "public_key_hex",
+    "public_key_sha256",
+    "generator_identity",
+    "module_identity",
+    "entropy_evidence_sha256",
+    "custody_evidence_sha256",
+    "proof_of_possession",
+    "backup_policy_evidence_sha256",
+    "participants",
+    "approvals",
+    "transcript_sha256",
+    "provenance_digest_sha256"
+  ],
+  "properties": {
+    "ceremony_id": {
+      "type": "string",
+      "pattern": "^M17-KC-[A-Z0-9_-]{8,64}$"
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "environment_record_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "algorithm": {
+      "const": "ED25519"
+    },
+    "key_id": {
+      "type": "integer",
+      "minimum": 3
+    },
+    "public_key_hex": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "public_key_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "generator_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "module_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entropy_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "custody_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "proof_of_possession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "challenge_domain",
+        "challenge_sha256",
+        "signature_hex",
+        "verification_result",
+        "verification_provider"
+      ],
+      "properties": {
+        "challenge_domain": {
+          "const": "GUARDIAN-F401:M17:PRODUCTION-KEY-CEREMONY:V1"
+        },
+        "challenge_sha256": {
+          "type": "string",
+          "pattern": "^[A-F0-9]{64}$"
+        },
+        "signature_hex": {
+          "type": "string",
+          "pattern": "^[A-F0-9]{128}$"
+        },
+        "verification_result": {
+          "const": "PASS"
+        },
+        "verification_provider": {
+          "const": "GUARDIAN_REAL_MONOCYPHER_PROVIDER"
+        }
+      }
+    },
+    "backup_policy_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "participants": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject_id",
+          "role"
+        ],
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "enum": [
+              "CEREMONY_AUTHORITY",
+              "KEY_CUSTODIAN",
+              "EVIDENCE_RECORDER",
+              "INDEPENDENT_OBSERVER"
+            ]
+          }
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject_id",
+          "decision",
+          "evidence_sha256"
+        ],
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decision": {
+            "const": "APPROVE"
+          },
+          "evidence_sha256": {
+            "type": "string",
+            "pattern": "^[A-F0-9]{64}$"
+          }
+        }
+      }
+    },
+    "transcript_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    },
+    "provenance_digest_sha256": {
+      "type": "string",
+      "pattern": "^[A-F0-9]{64}$"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "private_key_hex"
+        ]
+      },
+      {
+        "required": [
+          "private_key_seed"
+        ]
+      },
+      {
+        "required": [
+          "private_key_bytes"
+        ]
+      },
+      {
+        "required": [
+          "plaintext_private_key_backup"
+        ]
+      },
+      {
+        "required": [
+          "pin"
+        ]
+      },
+      {
+        "required": [
+          "password"
+        ]
+      }
+    ]
+  }
+}

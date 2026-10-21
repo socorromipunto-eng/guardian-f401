@@ -300,6 +300,226 @@
         "R-12",
         "R-19"
       ]
+    },
+    {
+      "id": "SG-028",
+      "date": "2026-10-04",
+      "class": "SEMANTIC_SHORT_TOKEN_SUBSTRING_FALSE_POSITIVE",
+      "root_cause": "A read-only semantic surface probe searched for the short token AI using case-insensitive raw substring matching. The token was therefore reported present when the letters appeared inside an unrelated word such as claims, producing a lexical false positive rather than evidence of an AI semantic concept.",
+      "prevention": "Short semantic tokens and acronyms shall use boundary-aware token matching or structural parsing. Raw substring presence is insufficient for semantic-presence claims; the checker must distinguish a standalone token from the same character sequence embedded inside another word.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-029",
+      "date": "2026-10-04",
+      "class": "HOST_TOOLCHAIN_PATH_ONLY_DISCOVERY_FALSE_NEGATIVE",
+      "root_cause": "A host-validation runner treated Get-Command clang.exe or gcc.exe failure as proof that no supported host C compiler existed. Clang was installed at a standard absolute location but was not exported through PATH, so the runner stopped before build even though a valid compiler was available.",
+      "prevention": "Compiler discovery shall distinguish PATH visibility from tool installation. When a required compiler is not found in PATH, read-only discovery must inspect previously demonstrated or standard installation locations and supported development-tool discovery mechanisms before classifying the tool as unavailable. Once discovered, later governed builds shall lock the exact absolute compiler path and version.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-030",
+      "date": "2026-10-04",
+      "class": "UNSIGNED_RUNNER_EXECUTION_POLICY_PREFLIGHT_FAILURE",
+      "root_cause": "A governed PowerShell runner was parser-valid but was invoked directly under a local execution policy that required a trusted signature. Windows rejected the unsigned script before the runner body started. The launch workflow had not classified execution-policy enforcement separately from parser validity or project state.",
+      "prevention": "Before executing a downloaded or locally materialized governed runner, distinguish parser validity, file identity and execution-policy authorization. Hash-lock the exact runner, parser-gate it, and when policy permits use a process-scoped launch mechanism that does not modify MachinePolicy, UserPolicy, LocalMachine or CurrentUser policy. An execution-policy block before runner entry is an environment/launch failure, not a firmware or repository failure; no recovery mutation is authorized.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-031",
+      "date": "2026-10-04",
+      "class": "CMD_TO_POWERSHELL_ESCAPE_LEAK",
+      "root_cause": "A Windows cmd launcher embedded PowerShell source containing a pipeline and escaped the pipe as caret-pipe for cmd parsing. The caret was delivered into the PowerShell source as a literal character, so the child PowerShell parser rejected the launcher payload before the governed validation runner started.",
+      "prevention": "Do not assume cmd escaping preserves embedded PowerShell source semantics. Prefer a simple launcher that hash-locks the target runner and invokes powershell.exe -File, or use a separately parser-validated PowerShell launcher. If inline PowerShell is unavoidable, avoid shell metacharacters or mechanically verify the exact child-process source after cmd parsing. Launcher parser failure before runner entry must preserve repository state and must not trigger retry, cleanup, reset, restore, staging, commit or push.",
+      "rules": [
+        "R-19",
+        "R-35"
+      ]
+    },
+    {
+      "id": "SG-032",
+      "date": "2026-10-04",
+      "class": "POWERSHELL_ARRAY_TRAILING_COMMA_PARSER_FAILURE",
+      "root_cause": "A generated Windows PowerShell 5.1 runner ended an array literal with a trailing comma immediately before the closing parenthesis. Windows PowerShell parsed the comma as requiring another expression and stopped with Missing expression after comma before any governed test or repository action executed.",
+      "prevention": "Generated Windows PowerShell 5.1 runners shall not emit trailing commas in array literals. Every downloadable runner shall pass a Windows PowerShell parser gate before execution, and orchestrators shall parser-check the complete executable artifact before creating build state or invoking child work.",
+      "rules": [
+        "R-19",
+        "R-29"
+      ]
+    },
+    {
+      "id": "SG-033",
+      "date": "2026-10-04",
+      "class": "SIGNED_EVIDENCE_MULTINODE_ROLE_TYPE_CONTRACT_DRIFT",
+      "root_cause": "The generated Signed Evidence integration declared producer-role fields with guardian_node_role_t even though the exact public MultiNode contract defines guardian_multinode_role_t. An earlier isolated prevalidation used an incomplete dependency model and therefore failed to expose the public-type mismatch. The real repository Clang build correctly failed before runtime.",
+      "prevention": "Integration authoring shall resolve public type names from the exact included dependency surface before generation. Host prevalidation shall compile against the exact governed dependency contract or an exact mechanically derived interface, never a permissive local alias that can mask contract drift. Cross-module public symbols must be locked before mutation and rechecked in the real repository build.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-034",
+      "date": "2026-10-04",
+      "class": "HOST_HAL_STUB_BOUNDARY_PARITY_OMISSION",
+      "root_cause": "The governed continuation runner compiled the STM32F401 persistence HAL adapter host contract without reproducing the host-only include-stub boundary used by the repository CI workflow. The production adapter includes stm32f4xx_hal.h, stm32f4xx_hal_flash.h, and stm32f4xx_hal_flash_ex.h; the host test supplies controlled HAL symbols but the preprocessor still requires those include names to resolve. The runner therefore stopped at compile time even though the governed CI contract explicitly creates empty host-only headers before this test.",
+      "prevention": "Local governed reproduction of a repository CI host contract shall materialize the exact non-repository test-environment dependencies required by that contract before compilation. For the STM32F401 persistence adapter host test, create the three empty HAL include stubs in a temporary build directory, add that directory to the compiler include path, lock the test and production adapter blobs, and continue to label the result as a host contract test only. Host stubs never constitute physical flash, linker-reservation, endurance, or power-loss validation.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-035",
+      "date": "2026-10-04",
+      "class": "RUNNER_POSTIMAGE_HASH_CONSTANT_DRIFT",
+      "root_cause": "The V5 governed ten-step runner embedded and wrote three authorized persistent anti-replay source files, but its hard-coded expected SHA-256 constants were stale and did not correspond to the exact embedded payload bytes. The runner therefore stopped after mutation even though all three files had already been written. This is a runner evidence-lock defect, not a firmware defect.",
+      "prevention": "Before delivery, every governed authoring runner shall derive or independently recompute the expected SHA-256 of the exact embedded payload bytes using the same newline normalization and encoding that the runner will write. Postimage constants shall be self-checked before any repository mutation. If a postimage check fails after mutation, preserve all exact files, forbid delete/rewrite/retry, adjudicate all target hashes against the archived runner payload, record the defect durably, and continue only from the mechanically demonstrated state.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-036",
+      "date": "2026-10-04",
+      "class": "RUNNER_FINAL_STATE_POSTMUTATION_HASH_STALE_LOCK",
+      "root_cause": "The V6 assurance runner correctly recorded SG-035 and carried the validated post-mutation register SHA-256 in its CurrentRegisterSha variable. All ten functional steps then passed. The final footer invoked a repository-state validator that still enforced the immutable pre-mutation ExpectedRegisterSha, causing a controlled stop after successful evidence generation. This was a runner final-state checker defect, not a project, firmware, test, or assurance failure.",
+      "prevention": "Any repository-state validator executed after an authorized mutation shall receive the exact validated postimage hash for every object that was allowed to mutate. Pre-mutation hashes are valid only for preflight. Final-state verification shall compare against the observed and independently validated postimage state, and generic validators shall not silently capture stale global preimage locks.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-037",
+      "date": "2026-10-04",
+      "class": "POWERSHELL_SCALAR_COLLECTION_COUNT_ASSUMPTION",
+      "root_cause": "The V7 all-SG runner executed under Windows PowerShell 5.1 with Set-StrictMode 2.0 and dereferenced .Count on values originating from function or pipeline output without first normalizing cardinality. PowerShell can unwrap zero- or one-element output to null or a scalar, so the step-1 repository-state lock stopped before any repository mutation with a Count property error. This was a runner collection-shape defect, not a project, firmware, evidence, or repository-state failure.",
+      "prevention": "Every governed PowerShell 5.1 runner shall normalize any function, pipeline, JSON property, native-output split, or other variable-cardinality value with @(...), or an equivalent explicit array conversion, before cardinality checks or indexed iteration. Direct .Count access on unnormalized variable-cardinality output is prohibited under StrictMode. Runner preflight shall exercise zero, one, and multiple element collection shapes before delivery.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-038",
+      "date": "2026-10-04",
+      "class": "RUNNER_LAUNCHER_SIDECAR_BASENAME_CONTRACT_MISMATCH",
+      "root_cause": "The V8 master completed all ten governed steps and wrote its evidence and result artifacts successfully, but the master used unversioned Downloads sidecar basenames while its paired launcher searched for V8-versioned result, failure, and archive-path basenames. The launcher therefore reported ARCHIVE_STATUS=NOT_AVAILABLE and LAUNCHER_EXIT_CODE=1 after a valid master PASS. This was an orchestration/archival contract defect, not a repository, firmware, assurance, or test failure.",
+      "prevention": "Each governed runner package shall define one canonical artifact basename and use that identical basename for runner, result, failure, archive-path, launcher expectations, and archive-copy logic. Basename/version strings shall be derived once or cross-checked before delivery. A successful child execution is not archival success until the exact result and archive-path sidecars expected by the launcher are proven present. Sidecar contract drift shall fail package preflight before repository work begins.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-039",
+      "date": "2026-10-04",
+      "class": "POWERSHELL_CMDLET_ARGUMENT_TOKEN_BOUNDARY_OMISSION",
+      "root_cause": "The V10 PowerShell 5.1 parser gate passed, but a generated Write-Host command omitted the required command/argument token boundary before the Step 1 PASS string. PowerShell therefore interpreted the concatenated token as a different command name and stopped during Step 1 output. All exact state locks had already passed and no repository mutation had occurred. This was a generated-runner defect, not a Guardian firmware, assurance, repository-state, or architecture failure.",
+      "prevention": "Generated PowerShell runners shall enforce explicit whitespace or parenthesized argument boundaries after command names. Package preflight shall perform both parser validation and a lexical command-boundary lint before repository work begins. Parser PASS alone is not proof that command/argument token boundaries are operationally valid.",
+      "rules": [
+        "R-19",
+        "R-29"
+      ]
+    },
+    {
+      "id": "SG-040",
+      "date": "2026-10-04",
+      "class": "CROSS_ARTIFACT_SEMANTIC_REVIEW_EXACT_LITERAL_LOCATION_ASSUMPTION",
+      "root_cause": "V11 Step 18 required the exact literal VALID_SIGNATURE != TRUSTED inside the architecture document even though the architecture already expressed the same security separation in prose and pipeline form, and the authorized requirements document contained the exact invariant. The reviewer therefore rejected a semantically present control because it assumed an undeclared literal location. This was a generated review-gate defect, not a firmware or architecture defect.",
+      "prevention": "Review gates shall declare artifact ownership for every exact-token requirement before authoring. When a control is intentionally distributed across an authorized artifact set, the reviewer shall validate controlled semantic anchors across that set rather than require an undeclared literal in one file. Exact literal checks remain mandatory only when the governing artifact contract explicitly requires that literal in that specific artifact. Semantic review shall remain fail-closed and shall not use loose substring matching.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-041",
+      "date": "2026-10-04",
+      "class": "CROSS_ARTIFACT_DEVILS_ADVOCATE_SINGLE_ARTIFACT_SCOPE_ASSUMPTION",
+      "root_cause": "V12 corrected the prior cross-artifact semantic review but its Devils Advocate gate still searched every hostile-review token only inside the architecture document. The authorized requirements document explicitly governed production provider substitution and Devils Advocate review, while the architecture expressed provider replacement and the associated security-boundary revalidation. The gate therefore rejected a governed threat because review ownership was incorrectly collapsed to one artifact. This was a generated review-scope defect, not a firmware, architecture, or requirements defect.",
+      "prevention": "Every multi-artifact review gate shall define an explicit token-to-artifact ownership map before evaluation. Architecture claims shall be checked in architecture, normative claims in the normative baseline, requirements and adversarial obligations in the requirements artifact, and package-wide claims only across an explicitly assembled governed package. A reviewer shall not silently require every threat literal to appear in one artifact. Exact-token checks remain fail-closed within their declared owner artifact.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-042",
+      "date": "2026-10-04",
+      "class": "CMD_FOR_F_QUOTED_EXECUTABLE_SUBCOMMAND_PARSE_FAILURE",
+      "root_cause": "The V14 Windows CMD launcher attempted to obtain the runner SHA-256 by invoking a quoted powershell.exe path inside a FOR /F command-substitution block. cmd.exe reconstructed the nested quoting incorrectly and treated the executable plus arguments as one malformed command, so the launcher failed before the master runner executed. No repository or firmware mutation occurred.",
+      "prevention": "Governed CMD launchers shall not execute quoted native or PowerShell command lines inside FOR /F command substitution when command identity, quoting, or output is security relevant. Invoke the process directly, write its machine-readable result to an explicit temporary sidecar, check its exit code, then read the sidecar with SET /P. Launcher preflight must fail closed before runner execution and must not infer a missing hash as a repository failure.",
+      "rules": [
+        "R-19",
+        "R-35"
+      ]
+    },
+    {
+      "id": "SG-043",
+      "date": "2026-10-04",
+      "class": "EXISTING_SG031_CMD_ESCAPE_ANTI_REGRESSION_NOT_ENFORCED",
+      "root_cause": "The V15 launcher correctly removed PowerShell execution from FOR /F but still embedded PowerShell programs inside CMD -Command strings using CMD caret escapes. A caret intended for cmd.exe was delivered literally to PowerShell, causing a parser error before the master runner executed. This recurred despite SG-031 already defining CMD_TO_POWERSHELL_ESCAPE_LEAK, proving that the existing anti-regression rule was not enforced at the launcher boundary. No repository or firmware mutation occurred.",
+      "prevention": "Governed Windows CMD launchers shall contain no inline PowerShell programs. They may invoke powershell.exe only with -File and explicit arguments. All hashing, parser gates, structure lints, JSON handling, and result adjudication shall live in a versioned PowerShell file. The master shall self-hash against an expected SHA supplied by the launcher before any repository mutation. Launcher QA shall mechanically reject -Command, caret-to-PowerShell escapes, and FOR /F command substitution for security-relevant outputs.",
+      "rules": [
+        "R-19",
+        "R-35"
+      ]
+    },
+    {
+      "id": "SG-044",
+      "date": "2026-10-04",
+      "class": "HOST_BUILD_INCLUDE_DEPENDENCY_GRAPH_OMISSION",
+      "root_cause": "The V16 Ed25519 implementation authoring boundary completed exactly eight authorized files, but the Step 12 host compiler included Firmware/Inc and provider headers without including the Security/Inc and Protocol/Inc roots transitively required by guardian_firmware_lifecycle.h through guardian_firmware_trusted_signature_adapter.h. clang therefore stopped on guardian_crypto.h before testing the authored Ed25519 implementation. This is a governed runner build-boundary defect, not evidence of a firmware or cryptographic implementation failure.",
+      "prevention": "Before host validation, derive and lock the complete project include dependency graph for every compiled Guardian translation unit. A runner compiling through guardian_firmware_lifecycle.h shall include Firmware/Inc, Security/Inc, and Protocol/Inc unless a narrower mechanically proven header contract exists. Missing build-environment dependencies shall be classified separately from source defects. After authorized authoring plus build-boundary failure, preserve and hash the authored postimages; continuation runners shall validate those postimages and shall not rewrite or reauthorize them merely to repair compiler include paths.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-045",
+      "date": "2026-10-04",
+      "class": "STRICT_C11_SOURCE_FINAL_NEWLINE_OMISSION",
+      "root_cause": "The V16 authoring helper materialized the Guardian Ed25519 backend and host test from PowerShell here-strings without a final LF byte. Static continuation QA demonstrated that clang with the governed -Werror -pedantic boundary rejects both files with -Wnewline-eof once the include graph is corrected. The cryptographic logic and RFC 8032 vectors are not implicated; the defect is source-materialization hygiene in the authoring runner.",
+      "prevention": "Governed C source authoring shall mechanically require exactly one final LF byte before hashing and repository materialization. Strict compiler warnings shall not be suppressed to hide missing source terminators. If an authorized postimage lacks the final LF, preserve the postimage, record the defect, obtain a separate exact repair authorization, append only one LF byte, verify the expected repaired SHA-256, and then resume validation without rewriting unrelated bytes.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-046",
+      "date": "2026-10-04",
+      "class": "POWERSHELL_HERE_STRING_FINAL_NEWLINE_POSTIMAGE_HASH_ASSUMPTION",
+      "root_cause": "The V21 cross-language generator calculated SHA-256 over payload text normalized with a final LF, then embedded that text in a PowerShell single-quoted here-string. PowerShell excludes the newline immediately preceding the closing here-string delimiter from the string value. WriteAllText therefore materialized the authorized Gate01 files without that final LF. Step 14 compared the actual pending gate-register bytes against the generator-side hash that included LF and stopped after the nine authorized files had already been created. This is a runner postimage-model defect, not a project, firmware, standards, or closure-document semantic defect.",
+      "prevention": "Governed generators shall hash the exact bytes the target runtime will write, not a source-language approximation. Cross-language payloads shall use exact byte payloads such as Base64 or shall mechanically model here-string boundary semantics before issuance. Preflight QA shall prove both with-final-LF and without-final-LF variants cannot be confused. After partial authorized materialization, continuation runners shall lock actual postimages and shall not recreate unchanged files merely to satisfy stale expected hashes.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
+    },
+    {
+      "id": "SG-047",
+      "date": "2026-10-04",
+      "class": "EXISTING_SG040_CROSS_ARTIFACT_SEMANTIC_LOCATION_GUARD_NOT_ENFORCED",
+      "root_cause": "The V22 Gate01 continuation validator required the exact literal HOST EVIDENCE != PHYSICAL HARDWARE EVIDENCE inside the closure charter even though the charter already stated the equivalent semantic rule A successful host test is not hardware evidence and the canonical exact literal was owned by the assurance standards matrix. This repeated the SG-040 exact-literal-location failure family because the validator ignored cross-artifact semantic ownership. The stop occurred before Gate01 promotion and after SG-046 had been durably recorded. This is a runner assurance-validator defect, not a firmware, project, standards, or closure-document semantic defect.",
+      "prevention": "Semantic validators shall use an explicit ownership map. Natural-language policy meaning may be proven in the charter, canonical claim-firewall literals in the standards matrix, requirement identifiers in requirements, and implementation mappings in architecture. An exact literal may be required in a specific artifact only when that artifact contract explicitly owns the literal. Closure-runner QA shall mechanically reject validators that reintroduce an SG-040 single-file exact-literal assumption.",
+      "rules": [
+        "R-12",
+        "R-19"
+      ]
     }
   ]
 }

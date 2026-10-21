@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0.0",
+  "project": "Guardian F401",
+  "program": "M17 / v0.17.0 Closure Program",
+  "release": "v0.17.0",
+  "program_status": "ACTIVE_HOLD",
+  "current_gate": 1,
+  "gates": [
+    {
+      "gate": 1,
+      "id": "BASELINE_AND_EVIDENCE_FREEZE",
+      "status": "MATERIALIZED_PENDING_VALIDATION",
+      "purpose": "Gate01 baseline, standards, requirements, architecture, evidence reuse and gaps"
+    },
+    {
+      "gate": 2,
+      "id": "PRODUCTION_KEY_CEREMONY_ENVIRONMENT_SELECTION",
+      "status": "NOT_STARTED",
+      "purpose": "Select ceremony environment; no key generation"
+    },
+    {
+      "gate": 3,
+      "id": "CEREMONY_ENVIRONMENT_QUALIFICATION",
+      "status": "NOT_STARTED",
+      "purpose": "Qualify selected environment and tool/module identity"
+    },
+    {
+      "gate": 4,
+      "id": "CEREMONY_READINESS_DUAL_CONTROL",
+      "status": "NOT_STARTED",
+      "purpose": "Roles, approvals, abort/recovery controls"
+    },
+    {
+      "gate": 5,
+      "id": "PRODUCTION_KEY_GENERATION_CEREMONY",
+      "status": "NOT_STARTED",
+      "purpose": "Generate new production key under approved ceremony"
+    },
+    {
+      "gate": 6,
+      "id": "PUBLIC_KEY_CAPTURE_PROOF_OF_POSSESSION",
+      "status": "NOT_STARTED",
+      "purpose": "Capture public artifact and verify domain-separated possession"
+    },
+    {
+      "gate": 7,
+      "id": "PROVENANCE_EVIDENCE_FINALIZATION",
+      "status": "NOT_STARTED",
+      "purpose": "Complete ceremony/provenance evidence"
+    },
+    {
+      "gate": 8,
+      "id": "PRODUCTION_TRUST_ANCHOR_ADMISSION",
+      "status": "NOT_STARTED",
+      "purpose": "Admit proven key to production resolution"
+    },
+    {
+      "gate": 9,
+      "id": "PRODUCTION_CRYPTO_END_TO_END",
+      "status": "NOT_STARTED",
+      "purpose": "Lifecycle to real provider with approved key"
+    },
+    {
+      "gate": 10,
+      "id": "PERSISTENT_ANTI_REPLAY_INITIAL_PROVISIONING",
+      "status": "NOT_STARTED",
+      "purpose": "Close initial provisioning semantics"
+    },
+    {
+      "gate": 11,
+      "id": "PHYSICAL_ROLLBACK_ANCHOR_BACKEND",
+      "status": "NOT_STARTED",
+      "purpose": "Demonstrate target-backed rollback anchor"
+    },
+    {
+      "gate": 12,
+      "id": "HARDWARE_POWER_LOSS_FAULT_VALIDATION",
+      "status": "NOT_STARTED",
+      "purpose": "Physical persistence/fault interruption validation"
+    },
+    {
+      "gate": 13,
+      "id": "QUORUM_PARTITION_SPLIT_BRAIN",
+      "status": "NOT_STARTED",
+      "purpose": "Distributed safety closure"
+    },
+    {
+      "gate": 14,
+      "id": "BOUNDED_FAILOVER",
+      "status": "NOT_STARTED",
+      "purpose": "Failover without authority escalation"
+    },
+    {
+      "gate": 15,
+      "id": "FIRMWARE_UPDATE_BOOT_RECOVERY_CROSS_INTEGRATION",
+      "status": "NOT_STARTED",
+      "purpose": "Cross-integrate lifecycle/boot/recovery"
+    },
+    {
+      "gate": 16,
+      "id": "M17_CI_INTEGRATION",
+      "status": "NOT_STARTED",
+      "purpose": "CI closure for release-critical tests"
+    },
+    {
+      "gate": 17,
+      "id": "SUPPLY_CHAIN_RELEASE_INTEGRITY",
+      "status": "NOT_STARTED",
+      "purpose": "Source/tool/SBOM/release integrity closure"
+    },
+    {
+      "gate": 18,
+      "id": "PHYSICAL_HARDWARE_QUALIFICATION",
+      "status": "NOT_STARTED",
+      "purpose": "Physical target evidence"
+    },
+    {
+      "gate": 19,
+      "id": "FULL_ASSURANCE_ADVERSARIAL_RELEASE_REVIEW",
+      "status": "NOT_STARTED",
+      "purpose": "Claims/evidence/devils advocate review"
+    },
+    {
+      "gate": 20,
+      "id": "V017_RELEASE_CLOSURE",
+      "status": "NOT_STARTED",
+      "purpose": "Final technical release adjudication"
+    }
+  ],
+  "next_human_boundary": "HUMAN_M17_V017_CLOSURE_PROGRAM_BASELINE_FREEZE_AUTHORIZATION",
+  "rules": {
+    "runner_steps": 20,
+    "one_human_authorization_per_mutation_boundary": true,
+    "evidence_reuse_requires_same_dependency_hashes": true,
+    "automatic_recovery_prohibited": true,
+    "stage_commit_push_pr_merge_release_separate": true
+  }
+}

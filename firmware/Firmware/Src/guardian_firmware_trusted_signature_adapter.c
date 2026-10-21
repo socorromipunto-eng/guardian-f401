@@ -1,5 +1,23 @@
 #include "guardian_firmware_trusted_signature_adapter.h"
+
 #include <stddef.h>
+
+static int guardian_firmware_provenance_digest_is_zero(
+    const uint8_t digest[GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES])
+{
+    size_t i;
+    uint8_t combined = 0u;
+
+    if (digest == NULL) {
+        return 1;
+    }
+
+    for (i = 0u; i < GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES; ++i) {
+        combined = (uint8_t)(combined | digest[i]);
+    }
+
+    return combined == 0u ? 1 : 0;
+}
 
 int guardian_firmware_trusted_signature_verify(
     void *context,
@@ -29,7 +47,7 @@ int guardian_firmware_trusted_signature_verify(
         return 0;
     }
 
-    resolution = guardian_firmware_trusted_key_provider_resolve(
+    resolution = guardian_firmware_trusted_key_provider_resolve_production(
         key_id,
         GUARDIAN_FIRMWARE_TRUSTED_KEY_ALGORITHM_ED25519,
         &record);
@@ -41,7 +59,10 @@ int guardian_firmware_trusted_signature_verify(
 
     if ((record->key_id != key_id) ||
         (record->state != GUARDIAN_FIRMWARE_TRUSTED_KEY_STATE_ACTIVE) ||
-        (record->algorithm != GUARDIAN_FIRMWARE_TRUSTED_KEY_ALGORITHM_ED25519)) {
+        (record->algorithm != GUARDIAN_FIRMWARE_TRUSTED_KEY_ALGORITHM_ED25519) ||
+        (record->provenance_state !=
+         GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_PRODUCTION_APPROVED) ||
+        (guardian_firmware_provenance_digest_is_zero(record->provenance_digest) != 0)) {
         return 0;
     }
 
