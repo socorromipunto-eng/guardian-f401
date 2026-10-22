@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #define GUARDIAN_FIRMWARE_TRUSTED_KEY_PUBLIC_KEY_BYTES 32u
+#define GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES 32u
 
 typedef enum {
     GUARDIAN_FIRMWARE_TRUSTED_KEY_ALGORITHM_UNKNOWN = 0,
@@ -21,11 +22,20 @@ typedef enum {
     GUARDIAN_FIRMWARE_TRUSTED_KEY_STATE_REVOKED = 3
 } guardian_firmware_trusted_key_state_t;
 
+typedef enum {
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_UNKNOWN = 0,
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_LEGACY_UNVERIFIED = 1,
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_PRODUCTION_APPROVED = 2,
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_REVOKED = 3
+} guardian_firmware_trusted_key_provenance_state_t;
+
 typedef struct {
     uint32_t key_id;
     guardian_firmware_trusted_key_algorithm_t algorithm;
     guardian_firmware_trusted_key_state_t state;
     uint8_t public_key[GUARDIAN_FIRMWARE_TRUSTED_KEY_PUBLIC_KEY_BYTES];
+    guardian_firmware_trusted_key_provenance_state_t provenance_state;
+    uint8_t provenance_digest[GUARDIAN_FIRMWARE_TRUSTED_KEY_PROVENANCE_DIGEST_BYTES];
 } guardian_firmware_trusted_key_record_t;
 
 typedef enum {
@@ -34,11 +44,18 @@ typedef enum {
     GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_AMBIGUOUS_KEY = 2,
     GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_NON_ACTIVE_KEY = 3,
     GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_ALGORITHM_MISMATCH = 4,
-    GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_INVALID_ARGUMENT = 5
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_INVALID_ARGUMENT = 5,
+    GUARDIAN_FIRMWARE_TRUSTED_KEY_RESOLUTION_UNVERIFIED_PROVENANCE = 6
 } guardian_firmware_trusted_key_resolution_t;
 
 guardian_firmware_trusted_key_resolution_t
  guardian_firmware_trusted_key_provider_resolve(
+    uint32_t key_id,
+    guardian_firmware_trusted_key_algorithm_t required_algorithm,
+    const guardian_firmware_trusted_key_record_t **out_record);
+
+guardian_firmware_trusted_key_resolution_t
+ guardian_firmware_trusted_key_provider_resolve_production(
     uint32_t key_id,
     guardian_firmware_trusted_key_algorithm_t required_algorithm,
     const guardian_firmware_trusted_key_record_t **out_record);

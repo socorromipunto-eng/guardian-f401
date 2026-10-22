@@ -1,0 +1,106 @@
+{
+  "schema_version": "candidate-1",
+  "status": "CANDIDATE_NOT_APPROVED",
+  "origin": "ARCHITECTURE_DERIVED",
+  "gate13_closed": false,
+  "gate14_closed": false,
+  "legal_conformance": "NOT_DEMONSTRATED",
+  "requirements": [
+    {
+      "id": "M17-PART-001",
+      "requirement": "Membership and identity must be explicit, unique and bounded.",
+      "parent": "V017-CR-043",
+      "validation_plan": "Duplicate/unknown identity, invalid threshold and role mask rejection.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-002",
+      "requirement": "Count only distinct accepted identities in one round/profile/policy/generation.",
+      "parent": "V017-CR-040",
+      "validation_plan": "Duplicate, reordered, mismatched-context records cannot add votes.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-003",
+      "requirement": "Required role coverage is mandatory independently of count threshold.",
+      "parent": "V017-CR-040",
+      "validation_plan": "Majority lacking required witness/control evidence denied.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-004",
+      "requirement": "Authentication, freshness and semantic acceptance remain separate upstream prerequisites.",
+      "parent": "V017-CR-043",
+      "validation_plan": "Invalid flags/credentials/profile cannot produce eligibility.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-005",
+      "requirement": "Clock validity and bounded age must be checked at each assessment.",
+      "parent": "V017-CR-041",
+      "validation_plan": "Timeout, rollback and overflow invalidate cached eligibility.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-006",
+      "requirement": "Accepted conflicting commitments or equivocation latch denial.",
+      "parent": "V017-CR-041",
+      "validation_plan": "Witness conflict and majority agreement cannot clear latch.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-007",
+      "requirement": "Lost/asymmetric communication cannot establish complete evidence coverage.",
+      "parent": "V017-CR-041",
+      "validation_plan": "Minority, majority and one-way partitions remain denied when predicates fail.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-008",
+      "requirement": "Reset, membership change and rejoin invalidate old-round evidence.",
+      "parent": "V017-CR-041",
+      "validation_plan": "Stale restart and rejoin cannot reuse previous eligibility.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-009",
+      "requirement": "Reconciliation requires a separately verified scoped authority decision.",
+      "parent": "V017-CR-042",
+      "validation_plan": "Unauthenticated clear, arbitrary boolean and automatic timeout cannot clear conflict.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-010",
+      "requirement": "Assessment, quorum and silence never grant actuation or failover.",
+      "parent": "V017-CR-040",
+      "validation_plan": "Every state yields zero new actuator capability.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-011",
+      "requirement": "Malformed/replayed input preserves accepted evidence and freshness cursors.",
+      "parent": "V017-CR-041",
+      "validation_plan": "Byte snapshots and follow-up valid record prove no consumption.",
+      "status": "OPEN",
+      "evidence": []
+    },
+    {
+      "id": "M17-PART-012",
+      "requirement": "Evidence records retain context, identities, findings and recovery provenance.",
+      "parent": "V017-CR-043",
+      "validation_plan": "Missing context and erased conflict history rejected; persistent integration pending.",
+      "status": "OPEN",
+      "evidence": []
+    }
+  ]
+}

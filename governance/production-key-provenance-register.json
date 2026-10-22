@@ -1,0 +1,37 @@
+{
+  "schema": "guardian-f401-m17-production-key-provenance-register-v1",
+  "status": "CONTROLLED_DRAFT",
+  "policy": {
+    "production_requires_active_key": true,
+    "production_requires_algorithm_match": true,
+    "production_requires_provenance_state": "PRODUCTION_APPROVED",
+    "production_requires_nonzero_provenance_digest": true,
+    "private_signing_key_on_target": false,
+    "valid_signature_implies_trusted": false,
+    "trusted_implies_authorized": false,
+    "authorized_implies_accepted": false
+  },
+  "keys": [
+    {
+      "key_id": 2,
+      "algorithm": "ED25519",
+      "public_key_hex": "330E6DB6BB723FFE2B987AD60E077397CC333F047B4B7706689FA2496926CBC4",
+      "public_key_sha256": "AA68F1A9198772CDF61E47DD34DA7D2EB44E77F027B375E1A89FC53132AF4582",
+      "lifecycle_state": "ACTIVE",
+      "provenance_state": "LEGACY_UNVERIFIED",
+      "provenance_digest_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "production_eligible": false,
+      "origin": "NOT_DEMONSTRATED",
+      "generation_mechanism": "NOT_DEMONSTRATED",
+      "private_key_custody": "NOT_DEMONSTRATED",
+      "approval_evidence": []
+    }
+  ],
+  "enforcement": {
+    "trusted_signature_adapter": "HOST_DEMONSTRATED",
+    "lifecycle_legacy_unverified_key2": "REJECTED_BEFORE_BACKEND",
+    "positive_production_approved_path": "TEST_DOUBLE_ONLY",
+    "production_approved_key_present": false,
+    "production_key_ceremony": "PLAN_MATERIALIZED_NOT_EXECUTED"
+  }
+}

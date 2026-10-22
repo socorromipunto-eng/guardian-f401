@@ -1,0 +1,30 @@
+{
+  "id": "G-M17-E07C-001",
+  "classification": "RUNNER_REPORT_ENCODING_DEFECT_NOT_FIRMWARE_TEST_FAILURE",
+  "trigger": "Python Path.write_text without explicit encoding in Windows Python 3.12 helper",
+  "symptom": "Strict UTF-8 decode fails at byte 6075 (0x96) in four-gates-debt-review.json",
+  "root_cause": "Default Windows code page used for JSON written with ensure_ascii=False; en dash is encoded as Windows-1252 byte 0x96",
+  "repository_mutation": false,
+  "safe_handling": "Preserve original evidence bytes. Convert only separate external copy; prove parsed JSON identity against original and existing UTF-8 Markdown representation. No tests rerun.",
+  "original_sha256": "1502429548B50BA9EFA08FF8308274623C989AEA791D4D9B9E6E4959252DD157",
+  "utf8_copy_sha256": "CCD31448311341755661BD90A9BD99EDB07E34A0FDB63734249B38D41DA79A58",
+  "semantic_identity": true,
+  "utf8_markdown_corroboration": true,
+  "corrected_rule": "All Python text writes must explicitly specify encoding=utf-8. Strictly decode newly generated text artifacts before packaging. Preserve raw native logs under their declared encoding separately.",
+  "prohibited_actions": [
+    "Repeat 07C",
+    "Overwrite historical evidence",
+    "Reset/restore/unstage/clean or automatic repository mutation"
+  ],
+  "repository_incident_register_admission": "PENDING_SEPARATE_CONTROLLED_CHANGE",
+  "correction_candidate": {
+    "historical_helper_sha256": "509D78BCF896A4747D7060FB786C8F2782EE869B154D4F3179456852DC8F87B7",
+    "corrected_helper_sha256": "FEF088C08E844D451AC58FA608802EA0A35418D021BA3533C4D14865E8203135",
+    "text_writes_made_explicit": 5,
+    "ast_equivalence_except_encoding_arguments": true,
+    "historical_runner_or_evidence_overwritten": false,
+    "tests_need_repeat_for_encoding_only_correction": false,
+    "corrected_helper_location": "07D external evidence folder: 07C-corrected-utf8-helper.py",
+    "central_incident_register_unchanged": true
+  }
+}
