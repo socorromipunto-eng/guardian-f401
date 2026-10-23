@@ -29,6 +29,8 @@ jobs:
           - 13-corroboration-wire
           - 14-ack
           - 15-signed-envelope
+          - 16-v2-peer-verifier
+          - 17-ingress-transaction
 
     steps:
       - name: Check out revision under test

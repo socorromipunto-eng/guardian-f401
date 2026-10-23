@@ -1,0 +1,92 @@
+[
+  {
+    "authority": "NASA engineering",
+    "url": "https://nodis3.gsfc.nasa.gov/displayDir.cfm?Internal_ID=N_PR_7150_002D_",
+    "document": "NPR7150.2D",
+    "role": "Traceability and lifecycle reference; NASA/contract applicability not established.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "NASA assurance",
+    "url": "https://standards.nasa.gov/sites/default/files/standards/NASA/B/0/NASA-STD-87398RevB.pdf",
+    "document": "NASA-STD-8739.8B",
+    "role": "Assurance review reference; independent IV&V not claimed.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "CISA",
+    "url": "https://www.cisa.gov/sites/default/files/2023-10/Shifting-the-Balance-of-Cybersecurity-Risk-Principles-and-Approaches-for-Secure-by-Design-Software.pdf",
+    "document": "Secure by Design",
+    "role": "Proposed fail-closed defaults, scoped trust and explicit residual risk.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "NIST firmware",
+    "url": "https://www.nist.gov/publications/platform-firmware-resiliency-guidelines",
+    "document": "SP800-193",
+    "role": "Protection/detection/recovery reference; device resiliency qualification remains open.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "NIST development",
+    "url": "https://csrc.nist.gov/pubs/sp/800/218/final",
+    "document": "SP800-218 SSDF1.1",
+    "role": "Development/verification/provenance reference, not assessed conformance.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "Aviation",
+    "url": "https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_20-115D.pdf",
+    "document": "FAA AC20-115D referencing ED-12C/DO-178C",
+    "role": "Reference only. Full DO-178C text/objectives and certification basis not assessed.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "EU Machinery",
+    "url": "https://eur-lex.europa.eu/eli/reg/2023/1230/oj/eng",
+    "document": "EU2023/1230",
+    "role": "Official act identity retrieved; full amendment chain and product applicability not adjudicated by this runner.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "EU AI",
+    "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng",
+    "document": "EU2024/1689",
+    "role": "Official act identity retrieved; no new AI component, product classification or conformity conclusion.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "PQC",
+    "url": "https://csrc.nist.gov/pubs/fips/204/final",
+    "document": "FIPS204",
+    "role": "ML-DSA artifact research reference. Current publication page notes errata; this runner makes no algorithm validation claim.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  },
+  {
+    "authority": "NSA profile distinction",
+    "url": "https://media.defense.gov/2025/May/30/2003728741/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS.PDF",
+    "document": "CNSA2.0 advisory",
+    "role": "Software/firmware update signing profile distinction: do not equate ML-DSA research with LMS/XMSS profile satisfaction.",
+    "verification": "Official primary-source identity/title retrieved during preparation; not a complete source-content or legal applicability audit",
+    "applicability": "NOT_ADJUDICATED",
+    "conformance": false
+  }
+]

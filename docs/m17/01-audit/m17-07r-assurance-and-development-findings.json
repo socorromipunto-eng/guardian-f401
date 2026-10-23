@@ -1,0 +1,40 @@
+{
+  "human_readability": {
+    "review": "AUTHOR_SELF_REVIEW_NOT_INDEPENDENT",
+    "decision": "Bounded fixed profile, trust ownership, step sequence, binary offsets, tests and exclusions documented; C test assertions report source line failures."
+  },
+  "devils_advocate": {
+    "review": "AUTHOR_SELF_REVIEW_NOT_INDEPENDENT",
+    "findings": [
+      "Trusted anchor cannot be replaced by ordinary flash without antirollback qualification.",
+      "A correctly signed measurement is not physical truth.",
+      "Trusted local caller can forge public C structs; owner boundary must be enforced by integration.",
+      "One-peer eligibility is not heterogeneous quorum or actuator authority.",
+      "Clock rollback across reboot only checked against persisted time; platform time source must be trusted.",
+      "Profile transition, key rotation, audit failure and production update remain open."
+    ]
+  },
+  "technical_destruction": {
+    "method": "Real signed fixtures, all-wire bit alterations, complete persisted-byte corruption, provider fault cuts, assertion-killed guard mutants; exact results in local-validation.json and later windows-result.json",
+    "independent_review": false
+  },
+  "corrected_during_development": [
+    {
+      "id": "G-M17-07R-D01",
+      "symptom": "A time below the recovery observation but above genesis persisted time was accepted by first draft.",
+      "root_cause": "Only persisted commit time was checked.",
+      "correction": "Establish RAM clock floor during recovery and recheck in prepare/commit/snapshot.",
+      "repository_mutation": false,
+      "regression": "Clock rollback after recovery is rejected."
+    },
+    {
+      "id": "G-M17-07R-D02",
+      "symptom": "First draft expired only strictly after deadline.",
+      "root_cause": "Comparison did not match ISM-R15 deadline-equality contract.",
+      "correction": "Use >= deadline as expired; canonical eligible state requires last_time < deadline.",
+      "repository_mutation": false,
+      "regression": "Signed ACK exactly at deadline is rejected."
+    }
+  ],
+  "mutant_rule": "Compilation failure or process crash is NOT a killed security mutant; require compilation/link success then exit1 from host assertion."
+}
