@@ -18,8 +18,8 @@ def validate_manifest(root, manifest):
     if manifest.get("schema_version") != 1 or manifest.get("scope") != "portable_host_only":
         raise ValueError("MANIFEST_SCOPE_INVALID")
     recipes = manifest["recipes"]
-    expected = {'01-multinode', '02-nxp-supervisor', '03-st-measurement', '04-witness', '05-high-compute', '06-signed-evidence', '10-monocypher', '11-anti-replay', '12-corroboration', '13-corroboration-wire', '14-ack', '15-signed-envelope'}
-    if len(recipes) != 12 or {r["id"] for r in recipes} != expected:
+    expected = {'01-multinode', '02-nxp-supervisor', '03-st-measurement', '04-witness', '05-high-compute', '06-signed-evidence', '10-monocypher', '11-anti-replay', '12-corroboration', '13-corroboration-wire', '14-ack', '15-signed-envelope', '16-v2-peer-verifier', '17-ingress-transaction'}
+    if len(recipes) != 14 or {r["id"] for r in recipes} != expected:
         raise ValueError("RECIPE_SET_INVALID")
     used = {p for r in recipes for p in r["sources"]}
     if used != set(manifest["source_sha256"]):
@@ -48,10 +48,12 @@ def main():
     parser.add_argument("--recipe", required=True)
     parser.add_argument("--optimization", choices=("O0", "O2"), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compiler", default=None)
+    parser.add_argument("--target", choices=("x86_64-pc-windows-msvc",), default=None)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     manifest_path = root / "tools/m17-host-test-recipes.json"
-    compiler_name = shutil.which("gcc")
+    compiler_name = args.compiler or shutil.which("gcc")
     if not compiler_name:
         raise SystemExit("GCC_NOT_FOUND_NO_INSTALL")
     compiler = Path(compiler_name).resolve()
@@ -93,6 +95,8 @@ def main():
         report["compiler_version"] = run("compiler-version", [compiler, "--version"])
         flags = ["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wsign-conversion",
                  "-Wshadow", "-Wcast-qual", "-Wvla", "-Werror", "-UNDEBUG", "-" + args.optimization]
+        if args.target:
+            flags.insert(0, "--target=" + args.target)
         report["flags"] = flags
         includes = ["-I" + str(checked_path(root, p)) for p in recipe["includes"]]
         objects = []
@@ -101,8 +105,8 @@ def main():
             run("compile-" + str(index), [compiler, *flags, *includes, "-c", checked_path(root, rel), "-o", obj])
             objects.append(obj)
             report["objects"].append({"source": rel, "artifact": obj.name, "sha256": digest(obj)})
-        image = out / "host-test"
-        run("link", [compiler, *objects, "-o", image])
+        image = out / ("host-test.exe" if os.name == "nt" else "host-test")
+        run("link", [compiler, *(["--target=" + args.target] if args.target else []), *objects, "-o", image])
         image_hash = digest(image)
         stdout = run("execute", [image])
         if stdout.splitlines().count(recipe["success_line"]) != 1:

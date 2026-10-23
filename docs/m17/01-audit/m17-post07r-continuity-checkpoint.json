@@ -1,0 +1,48 @@
+{
+  "role": "POST07R_CANDIDATE_ADMISSION_PLAN_NOT_RELEASE_CLOSURE",
+  "baseline_head": "0f2d55c722fc74dabba90a53c83a24ec7d62dbb2",
+  "branch": "feature/m17-authenticated-ingress-state-machine",
+  "reviewed_evidence": "3B35FD213CA7961E9A1753A0D85668D3BCE2C154959A5607F157CDD95127A3E1",
+  "parent_requirement_count": 32,
+  "historical_pending_windows_labels": "Original 07R disposition bytes retained. Windows evidence is separately adjudicated by m17-07r-windows-evidence-checks.json; no production requirement is closed.",
+  "candidate_profile": "one peer fixed round; persistence fault simulation only",
+  "build_nxp": "User reports prior NXP compilation. Exact artifact binding and physical two-end evidence remain to be adjudicated.",
+  "open_debts": [
+    "single peer immutable round profile only",
+    "real device persistent provider and rollback anchor",
+    "trusted timebase and target resource budgets",
+    "audit event and audit failure policy",
+    "multi-peer gc_report/quorum and profile migration",
+    "complete legacy CI regression integration",
+    "F401/NXP exact target artifacts and two-end physical evidence",
+    "production update/key provenance and PQC scope separation"
+  ],
+  "gates": {
+    "01": "OPEN",
+    "13": "OPEN",
+    "14": "OPEN",
+    "16": "OPEN"
+  },
+  "next": "validate exact admitted CI14 recipes O0/O2; separate staging and signed commit; no push or release in these runners",
+  "runner_incident": {
+    "id": "G-M17-E07S-001",
+    "classification": "RUNNER_CROSS_PLATFORM_ZIP_NAME_COMPARISON_DEFECT",
+    "trigger": "07S initial reviewed archive verification on Windows",
+    "symptom": "ARCHIVE_EXTRA before admission write loop",
+    "root_cause": "Expected entry paths captured with Windows backslashes on Linux were compared with zipfile Windows-normalized forward-slash names. Valid archive names were incorrectly classified as extra.",
+    "mutation_status": "Console and code ordering indicate stop before writes; corrected runner MUST verify exact failed-attempt evidence and observed before/after state before retry.",
+    "corrected_rule": "Canonicalize both expected and observed entry names with strict root/path validation; reject canonical aliases and duplicates; read each ZipInfo object directly; preserve exact ZIP and entry byte hashes.",
+    "prohibited_recovery": [
+      "Do not repeat old chain",
+      "No reset restore clean unstage or automatic rollback"
+    ],
+    "regressions": [
+      "Windows-normalized names accepted for same exact reviewed archive",
+      "Mixed separator aliases rejected",
+      "Absolute traversal NUL empty-segment and wrong-root names rejected",
+      "Extra/missing entries size and byte mismatches rejected"
+    ],
+    "failed_evidence_zip": "Guardian-M17-07Chain-Admission-2d70ed8d20854998abfcead48664084b.zip",
+    "failed_evidence_sha256": "0C8247D71185FD6904A674F8308BC587D9AD28AA22E956E6F6A5BAE8A0FC0C5D"
+  }
+}

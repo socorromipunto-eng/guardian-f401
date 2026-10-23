@@ -228,6 +228,58 @@
         "SIGNED_ENVELOPE_CHECKS=31337"
       ],
       "evidence_scope": "Canonical envelope and signing transcript only; does not verify a signature"
+    },
+    {
+      "id": "16-v2-peer-verifier",
+      "test": "firmware/Tests/m17_signed_envelope_auth_host_test.c",
+      "sources": [
+        "firmware/NodeLink/Src/guardian_signed_envelope.c",
+        "firmware/NodeLink/Src/guardian_signed_envelope_auth.c",
+        "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.c",
+        "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.c",
+        "firmware/Tests/m17_signed_envelope_auth_host_test.c"
+      ],
+      "includes": [
+        "firmware/NodeLink/Inc",
+        "firmware/ThirdParty/monocypher-4.0.3/src",
+        "firmware/ThirdParty/monocypher-4.0.3/src/optional",
+        "firmware/Tests"
+      ],
+      "success_line": "V2_AUTH_CHECKS=8394",
+      "required_lines": [
+        "BIT_MUTATION_REJECTIONS=2432",
+        "LENGTH_REJECTIONS=322",
+        "V2_SIGNATURE_AND_LOCAL_IDENTITY=PASS_HOST_ONLY",
+        "SEMANTICS_FRESHNESS_ACK_DURABILITY_AUTHORITY=NOT_ESTABLISHED"
+      ],
+      "evidence_scope": "07R single-peer immutable-round reference host only; no target, quorum or release qualification"
+    },
+    {
+      "id": "17-ingress-transaction",
+      "test": "firmware/Tests/m17_ingress_transaction_host_test.c",
+      "sources": [
+        "firmware/NodeLink/Src/guardian_signed_envelope.c",
+        "firmware/NodeLink/Src/guardian_signed_envelope_auth.c",
+        "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.c",
+        "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.c",
+        "firmware/NodeLink/Src/guardian_ingress_transaction.c",
+        "firmware/Tests/m17_ingress_transaction_host_test.c"
+      ],
+      "includes": [
+        "firmware/NodeLink/Inc",
+        "firmware/ThirdParty/monocypher-4.0.3/src",
+        "firmware/ThirdParty/monocypher-4.0.3/src/optional",
+        "firmware/Tests"
+      ],
+      "success_line": "INGRESS_CHECKS=12331",
+      "required_lines": [
+        "INGRESS_SCENARIO_GROUPS=51",
+        "INGRESS_SEVEN_STAGES=PASS_REFERENCE_HOST_ONLY",
+        "BIT_MUTATION_REJECTIONS=2432",
+        "PERSISTENCE_FAULT_CUTS=24",
+        "PHYSICAL_DURABILITY_TARGET_PQC_CONFORMANCE=NOT_ESTABLISHED"
+      ],
+      "evidence_scope": "07R single-peer immutable-round reference host only; no target, quorum or release qualification"
     }
   ],
   "source_sha256": {
@@ -242,21 +294,25 @@
     "firmware/MultiNode/Src/guardian_security_witness.c": "05BC8ADD17C358F027B840A5E9BD080B1FD7774B7FE5BD1243B76AB3F5FAB219",
     "firmware/MultiNode/Src/guardian_signed_evidence.c": "4F4F8E799788AAC308C62C0C6380AEC2E4266D5F419E9FF3F97C124C3C9D8944",
     "firmware/MultiNode/Src/guardian_st_measurement_node.c": "C3E5D7CB90F33A6F38B20026BEB580C96095B7AB422C7B89929CCF6084A7A366",
+    "firmware/NodeLink/Src/guardian_ingress_transaction.c": "79D1F073191E693EB24D631E65B1140ACD95050761F1E8C3647DB49BF4A65462",
     "firmware/NodeLink/Src/guardian_node_link_freshness.c": "6EF6329775C17F8D04071CDFAC6F9F1DDBE0EC5866A334B83C9DC668F251BE3F",
     "firmware/NodeLink/Src/guardian_node_link_freshness_persistence.c": "A9BF4289EF349470A781F2920E89E14112D007C3239691760605FB74AFF810CF",
     "firmware/NodeLink/Src/guardian_node_link_freshness_persistence_codec.c": "28612052F295F2F0B01E9ED12CCA53E5CC213ED76F352EF9761109412BE1D971",
     "firmware/NodeLink/Src/guardian_node_link_persistent_anti_replay.c": "63D68404E02519EE3AF64F9476BC5C11C6CF898593009B8E105D8AF7091AD2ED",
     "firmware/NodeLink/Src/guardian_node_link_rollback_anchor.c": "77A7FF2A1EC22DDDE58EF2813484458FFEC2FBB48A37DC703E493CC3F5C78846",
     "firmware/NodeLink/Src/guardian_signed_envelope.c": "9BBA3E3BBE04D225E5CE7863F191D41BC47C8241F9E1EE25F8A5DED9CB99E46F",
+    "firmware/NodeLink/Src/guardian_signed_envelope_auth.c": "35C70A8208E287A12779777B878471FFF145BFBC57871E6B9935BC7D2EA92F14",
     "firmware/Security/Src/guardian_crypto.c": "89871511E27C04ED5F96A13C3C3510386EA2C634E9FFA0BE32DBC8153EE121B1",
     "firmware/Tests/firmware_ed25519_monocypher_provider_host_test.c": "FA8144E4A82E3912005A4C6D5AE67EBCFB143574D4A0F692CAEEDBA0076C08AD",
     "firmware/Tests/m17_corroboration_ack_host_test.c": "54B78E8D9E3F82C9912B1484B8CE0FC0EC64D6E17518CF7EAB56240D4348BC0C",
     "firmware/Tests/m17_corroboration_host_test.c": "CD70FDF0A2E1635945BBD3842824833B22878C196712D3F1BB7D7AA6E3D401FF",
     "firmware/Tests/m17_corroboration_wire_host_test.c": "F867EA8E8DA4ECC9816E7F4507E2490FCFC1DA74221720B33F7285F677B3F1AA",
     "firmware/Tests/m17_high_compute_node_host_test.c": "6C0B252FFB395B16D456649DF10063D93EE73EE67DA93FD90D3CA00E5338B5D5",
+    "firmware/Tests/m17_ingress_transaction_host_test.c": "5F9F1A0B06F0A71E27022A63E1CE51A1651EA3FCFC7AF3C6CAC9E295F45C4BAF",
     "firmware/Tests/m17_mcxn947_supervisor_host_test.c": "75B33B57D351ED8CF1933FB5049DB4CC8004184167EDD31A1E5A12177A271BE9",
     "firmware/Tests/m17_multinode_core_host_test.c": "C641B1F6C0DD10DE82509A07FD1657397A5014695FF2949B9BF3670BA60B9DC1",
     "firmware/Tests/m17_security_witness_host_test.c": "99830E8DAC518D35557CC81CAC987242BC3F0005E306204C890CEBFC64ED1984",
+    "firmware/Tests/m17_signed_envelope_auth_host_test.c": "D19B38773F7E172B35EB9AB63A35E9931E7C0514EA690D4644E5619B3B030B49",
     "firmware/Tests/m17_signed_envelope_host_test.c": "9653957A563D733C0355ED4B1CA313897856ACA626993B6BB524E9ABDCE7C83C",
     "firmware/Tests/m17_signed_evidence_integration_host_test.c": "701AC70484ED3C993AA369C922CC7D664D834DB0DA85262C13479E91B9BC3C36",
     "firmware/Tests/m17_st_measurement_node_host_test.c": "629633AEF984C9C599A31A811CA769E123C1C971B492D04A5759074F7617CE97",
@@ -265,6 +321,9 @@
     "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.c": "CE0D2F8E32CA8F66398BA5B3456CC74327C3EFF14E7B950CE7D57BE9025CC453"
   },
   "header_sha256": {
+    "firmware/Firmware/Inc/guardian_firmware_lifecycle.h": "86DEFB6FC395BE95370AFB2279AFD86061F9B097DC758418E0C02108DEDBAA8F",
+    "firmware/Firmware/Inc/guardian_firmware_trusted_key_provider.h": "DF82DA033A3DD18279CEADA8EDE9EA7F76901E2D25D5E6125C52139716877D54",
+    "firmware/Firmware/Inc/guardian_firmware_trusted_signature_adapter.h": "B856738973992A6DA3DB1CBF10EB6C608B47CF1B50A4990C2E4E3108C67F61B6",
     "firmware/MultiNode/Inc/guardian_corroboration_ack.h": "BC13E26CA944791F390884E929ADC0218AD19850E20195783D07257BAE887125",
     "firmware/MultiNode/Inc/guardian_corroboration_wire.h": "1F25E41E23697D43F518DC70532782CC32556D7754DAED98535FA915CD079533",
     "firmware/MultiNode/Inc/guardian_high_compute_node.h": "FEC423ED85DA131CBFAAE34EFAB1336E38EB3BB4E7F0EAA3B151D557A7736984",
@@ -274,13 +333,7 @@
     "firmware/MultiNode/Inc/guardian_security_witness.h": "77A5E05B317C42E75ABE20A4AD8CB01CEC15AD8FB9E0BC4BFA51FEA47E717FEC",
     "firmware/MultiNode/Inc/guardian_signed_evidence.h": "8E90DAD8AA49DDCD3A05232512340B9E0AFECC28249E41C843ABA3DD3F9CC145",
     "firmware/MultiNode/Inc/guardian_st_measurement_node.h": "94C418B783DBA46245477717ACF36095CA4CDC180BF8F50CB62F33163583BC48",
-    "firmware/NodeLink/Inc/guardian_node_link_persistent_anti_replay.h": "6E08D9BE647F1CEBE0B3D8F1F6D261CD93158B290759AA47B877795445DF84AF",
-    "firmware/NodeLink/Inc/guardian_signed_envelope.h": "20D670DF2959B777E953866449B1EC2DCD87A28AE61B3A9823479E7E5052DC42",
-    "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.h": "FCAF6ED771358BB4F40FBA016F6518AE86EC02B1B877D2CC35AD92D3A26FD7B3",
-    "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.h": "3A3035181F991A158D0E1C7567258F0BAE8BA0F1F23C5512B4A1DB1B3C9730CE",
-    "firmware/Firmware/Inc/guardian_firmware_lifecycle.h": "86DEFB6FC395BE95370AFB2279AFD86061F9B097DC758418E0C02108DEDBAA8F",
-    "firmware/Firmware/Inc/guardian_firmware_trusted_key_provider.h": "DF82DA033A3DD18279CEADA8EDE9EA7F76901E2D25D5E6125C52139716877D54",
-    "firmware/Firmware/Inc/guardian_firmware_trusted_signature_adapter.h": "B856738973992A6DA3DB1CBF10EB6C608B47CF1B50A4990C2E4E3108C67F61B6",
+    "firmware/NodeLink/Inc/guardian_ingress_transaction.h": "275E8FB9491E5C638A9B57C5C09D565F400D4DC956C48713DC8F79C8E6486FD8",
     "firmware/NodeLink/Inc/guardian_node_link.h": "17D1926B99260C792AE7DBEB899095A132B34D1B0941BCBDB60C7EB68C7E2481",
     "firmware/NodeLink/Inc/guardian_node_link_auth.h": "80F51E61E5B2826C2E57D451788E10EA2273E854554EF91BB9E685CBC35BFF51",
     "firmware/NodeLink/Inc/guardian_node_link_freshness.h": "2489CD06C9B784E9C7AF4D4A91C9DF364BCB8F33B7C33A26791A35C375E9A70E",
@@ -288,11 +341,18 @@
     "firmware/NodeLink/Inc/guardian_node_link_freshness_persistence_backend.h": "6D0D2AC58CB069F8263D53820DDB7BAC829805EC518FB5A6778CD060B1739F19",
     "firmware/NodeLink/Inc/guardian_node_link_freshness_persistence_codec.h": "3C8AE21377C421F78001A1A24A273A37C165D13BFF34EE7CF6C77CD34072825E",
     "firmware/NodeLink/Inc/guardian_node_link_freshness_persistence_stm32f401.h": "8DBF3CD0CC548716CE622045DDFB38AFF1ACB9D80050308078085E527C066372",
+    "firmware/NodeLink/Inc/guardian_node_link_persistent_anti_replay.h": "6E08D9BE647F1CEBE0B3D8F1F6D261CD93158B290759AA47B877795445DF84AF",
     "firmware/NodeLink/Inc/guardian_node_link_rollback_anchor.h": "CAEA89BD34C31DA874D7E7EFAA6E7575428134A9A64023CA31335ED7BFB67528",
     "firmware/NodeLink/Inc/guardian_node_link_semantic.h": "803136CE9FDE8E9D0633F12346EFEBC0D6EA6EE3E1AC01C7016676025A354CAC",
+    "firmware/NodeLink/Inc/guardian_signed_envelope.h": "20D670DF2959B777E953866449B1EC2DCD87A28AE61B3A9823479E7E5052DC42",
+    "firmware/NodeLink/Inc/guardian_signed_envelope_auth.h": "9D013D07A8246F03E52BDF62DAABE87DB9E9523A31F6615A9CB19FB4203305F8",
     "firmware/Protocol/Inc/guardian_parser.h": "4F39E35A4E85CFF2A448F2C6E607082562278F484A34C6FC5920EA40C38B81BF",
     "firmware/Protocol/Inc/guardian_protocol.h": "FE4E8142FA705F198DD947FC93433D5DA712CEA97808E6066F13151C8878D8E2",
     "firmware/Security/Inc/guardian_crypto.h": "48CD82445EDF640866E91D24644A4A0F3E7BFB3616A24529844EA12165445D0E",
-    "firmware/Security/Inc/guardian_security.h": "86B832348D50BF3DA988DC7F0926928A45B698E5D07882676ACE44A04D4F121F"
+    "firmware/Security/Inc/guardian_security.h": "86B832348D50BF3DA988DC7F0926928A45B698E5D07882676ACE44A04D4F121F",
+    "firmware/Tests/m17_ingress_transaction_vectors.h": "A70CED9E47BD22D8840F4B215BF8B43D9D1CC974559CF5428B82ED1EE63A66CE",
+    "firmware/Tests/m17_signed_envelope_auth_vectors.h": "36420DBEDBBC82426258B88F7D23CBE11AD924769224CBAE3482D363E27544BE",
+    "firmware/ThirdParty/monocypher-4.0.3/src/monocypher.h": "FCAF6ED771358BB4F40FBA016F6518AE86EC02B1B877D2CC35AD92D3A26FD7B3",
+    "firmware/ThirdParty/monocypher-4.0.3/src/optional/monocypher-ed25519.h": "3A3035181F991A158D0E1C7567258F0BAE8BA0F1F23C5512B4A1DB1B3C9730CE"
   }
 }
