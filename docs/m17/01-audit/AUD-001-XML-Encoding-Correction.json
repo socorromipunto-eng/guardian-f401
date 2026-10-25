@@ -1,0 +1,55 @@
+{
+  "finding": "AUD-001",
+  "status": "FIX_VERIFIED_XML_BYTES_KEIL_QUALIFICATION_PENDING",
+  "project": "Guardian F401",
+  "baseline_commit": "b7e3c95425603f8d5e4599fd745c6d3acd672c2d",
+  "branch": "fix/m17-keil-xml-encoding",
+  "target": "firmware/MDK-ARM/Guardian-F401.uvprojx",
+  "before_sha256": "3590482DA2959CF2D633F34D523A4CB1426F9F7B67344E6B8073302339ADB0BE",
+  "after_sha256": "BD18F9B5B12F7CF5B3D3A47BE4B79E5F3224A1E9BE4BCC97F98B2CAC2AB57247",
+  "only_byte_change": "XML first declaration encoding utf-16 to utf-8; length minus one; 628 CRLF preserved",
+  "semantic_tree_preserved": true,
+  "target_file_entries": 35,
+  "execution_archive": "Guardian-M17-08-XML-Correct-32b888016d2b466db16ddff9296b5c46.zip",
+  "execution_archive_sha256": "63F64B3052449EC9B92B2320B87399A733595DBA2446A9CF0B8B59DE071359A7",
+  "reviewed_command_count": 47,
+  "reviewed_archive_entries": 203,
+  "review_one": {
+    "result": "PASS_EXACT_BYTES_AND_XML_CONFIGURATION",
+    "before_sha256": "3590482DA2959CF2D633F34D523A4CB1426F9F7B67344E6B8073302339ADB0BE",
+    "after_sha256": "BD18F9B5B12F7CF5B3D3A47BE4B79E5F3224A1E9BE4BCC97F98B2CAC2AB57247",
+    "length_delta": -1,
+    "crlf_lines": 628,
+    "target_entries": 35,
+    "review_independence": "SAME_DEVELOPMENT_WORKSTREAM_NOT_INDEPENDENT_IVV",
+    "Keil_execution": "NOT_PERFORMED"
+  },
+  "review_two": {
+    "result": "PASS_SECOND_BYTE_CONTRACT_AND_EIGHT_NEGATIVES",
+    "negative_cases_rejected": [
+      "unchanged_invalid_declaration",
+      "wrong_utf16_encoding",
+      "target_renamed",
+      "line_endings_normalized",
+      "unrelated_comment_inserted",
+      "truncated_file",
+      "utf8_bom_added",
+      "encoding_spelling_drift"
+    ],
+    "unrelated_xml_bytes_preserved": true,
+    "review_independence": "TWO_METHODS_SAME_WORKSTREAM_NOT_INDEPENDENT_REVIEWERS",
+    "firmware_functional_or_physical_qualification": false
+  },
+  "independent_reviewers": "NOT_DEMONSTRATED",
+  "Keil_build_execution": false,
+  "production_gates_closed": false,
+  "other_19_audit_findings": "OPEN",
+  "stage_commit_push": "NOT_PERFORMED",
+  "next_steps": [
+    "review exact 08C evidence",
+    "admit these two exact audit documents under a separate worktree boundary",
+    "stage exact XML plus admitted audit documents",
+    "create signed commit using pinned existing OpenPGP identity",
+    "push and PR/CI review under their separate boundaries"
+  ]
+}
