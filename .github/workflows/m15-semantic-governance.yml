@@ -28,8 +28,7 @@ jobs:
 
       - name: Install governance dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r governance/requirements-governance.in
+          python tools/install_governance_dependencies.py
 
       - name: Validate repository text encoding
         run: |
