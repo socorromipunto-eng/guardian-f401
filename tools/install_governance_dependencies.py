@@ -68,12 +68,23 @@ ARTIFACTS = [{'name': 'jsonschema',
   'sha256': '6D67A2B4E7F14D8B31B8B52648866FA717F45A1EB70E83002F4331D07E953717',
   'metadata_url': 'https://pypi.org/pypi/pip/25.2/json',
   'scope': 'pip_tool'}]
-LOCK_SHA256 = "3B6059C6EE7AF006C2F7FFB4B47BD754530BF28A74EF4B89DC65962AAC35931E"
+LOCK_SHA256 = "67FE8ED47D02BD26C81319A22A28917704B0FFE755EF8A60FB4109B47348CAAF"
 
 
 def require(condition, reason):
     if not condition:
         raise RuntimeError(reason)
+
+
+def verify_lock(raw):
+    """Accept the reviewed LF blob or its uniform CRLF checkout only."""
+    canonical = raw.replace(b"\r\n", b"\n")
+    require(b"\r" not in canonical, "LOCK_INVALID_LINE_ENDINGS")
+    require(raw == canonical or raw == canonical.replace(b"\n", b"\r\n"),
+            "LOCK_MIXED_LINE_ENDINGS")
+    require(hashlib.sha256(canonical).hexdigest().upper() == LOCK_SHA256,
+            "CANDIDATE_LOCK_CHANGED")
+    return canonical
 
 
 def check_url(url):
@@ -102,13 +113,15 @@ def main():
             "CPYTHON312_X64_REQUIRED")
     root = Path(__file__).resolve().parents[1]
     lock = root / "governance/requirements.lock"
-    require(hashlib.sha256(lock.read_bytes()).hexdigest().upper() == LOCK_SHA256,
-            "CANDIDATE_LOCK_CHANGED")
+    canonical_lock = verify_lock(lock.read_bytes())
     temporary_root = Path(os.environ["RUNNER_TEMP"]).resolve()
     require(temporary_root.is_dir(), "RUNNER_TEMP_ABSENT")
     opener = urllib.request.build_opener(ReviewedRedirect())
     with tempfile.TemporaryDirectory(prefix="guardian-aud002-", dir=temporary_root) as folder:
         house = Path(folder)
+        verified_lock = house / "requirements.lock"
+        with verified_lock.open("xb") as output:
+            output.write(canonical_lock)
         for artifact in ARTIFACTS:
             check_url(artifact["url"])
             with opener.open(artifact["url"], timeout=30) as response:
@@ -126,7 +139,7 @@ def main():
         command = [sys.executable, "-I", "-B", "-c", entry, str(pip_wheel),
                    "--isolated", "--disable-pip-version-check", "--no-cache-dir", "--no-input",
                    "install", "--no-index", "--find-links", str(house), "--only-binary=:all:",
-                   "--require-hashes", "--ignore-installed", "--no-compile", "-r", str(lock)]
+                   "--require-hashes", "--ignore-installed", "--no-compile", "-r", str(verified_lock)]
         subprocess.run(command, cwd=root, env=environment, check=True, timeout=180)
     print("AUD002_HASH_LOCKED_DEPENDENCY_INSTALL=PASS")
 
