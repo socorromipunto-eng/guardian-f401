@@ -30,12 +30,12 @@ jobs:
       # Download the repository source into the runner workspace.
       - name: Check out repository
         # Use the maintained checkout action.
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       # Install the selected CPython runtime.
       - name: Set up Python
         # Use the maintained Python setup action.
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         # Configure the runtime version deterministically.
         with:
           # Use a stable Python version without external package dependencies.
@@ -56,7 +56,7 @@ jobs:
       # Download the repository source into the runner workspace.
       - name: Check out repository
         # Use the maintained checkout action.
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       # Create a dedicated directory for generated host test binaries.
       - name: Prepare build directory
