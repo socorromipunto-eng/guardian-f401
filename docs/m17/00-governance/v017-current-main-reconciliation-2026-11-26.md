@@ -38,3 +38,22 @@ The closure-gate register remains ACTIVE_HOLD at Gate 1 MATERIALIZED_PENDING_VAL
 6. Begin physical, distributed, and production gates only when required equipment and controlled evidence are available.
 
 This documentation change does not alter firmware, requirement statements, claim/evidence registers, gate statuses, or GitHub rulesets.
+
+## Current-main observation after PR #84 â€” 2026-11-26
+
+This is a post-merge observation; it does not rewrite the frozen assessment baseline or close AUD-002.
+
+- Current main: `04e5b0e7b7a32b54257fbb3c2975a293f87fc686`; tree `505cd2b43215b52b3a19ec3b37b24fd7dd2831a6` (PR #84 merge).
+- The GitHub check-runs query returned 40 records for this commit; all 40 completed successfully. M17 Portable Host contributed 28/28 successful matrix jobs in Actions run 45869662430. The other 12 checks succeeded across runs 45869662304, 45869662364, 45869662372, 45869662385, 45869662417, 45869662455, 45869662461, 45869662503, 45869662750, and 45869662783.
+- The existing M17 workflow had no stable aggregate check. This change adds `m17-portable-host-required`; it fails unless the complete matrix succeeds and must itself pass in PR CI before the ruleset requires it.
+- Live repository ruleset `Protect main` (ID 21526024) was observed active, with 0 required approvals and 11 required status contexts; M17 was absent. This runner will update it only after the PR's new check succeeds, then read the policy back.
+- The matrix inventories 16 registered M16 requirements and 46 V017-CR items from a document marked CONTROLLED CANDIDATE. Those 46 rows remain HOLD and are not represented as approved requirements or complete design-to-test traceability. Missing allocations/evidence are explicit.
+- Windows focused-test evidence remains owner-reported and unadmitted. No independent reviewer, physical-board execution, distributed-safety qualification, or production qualification is established.
+
+## Required closure actions
+
+1. Obtain a successful PR run of the 40 existing checks and `m17-portable-host-required`.
+2. Confirm ruleset 21526024 requires at least one approval and `m17-portable-host-required`; preserve the existing required contexts.
+3. Admit Windows evidence with exact baseline, commands, tool identity, raw results, and hashes; record an independent reviewer's identity, independence basis, and disposition.
+4. Approve or disposition the V017-CR candidate set, then complete architecture/interface/hazard allocation, verification method, direct evidence, and review for every approved applicable requirement.
+5. Keep Gate 01, AUD-002, physical, distributed, and production states open until their own acceptance evidence is reviewed.

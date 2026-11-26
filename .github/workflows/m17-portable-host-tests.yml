@@ -52,3 +52,18 @@ jobs:
               cat "$record"
             done < <(find "$evidence" -type f \( -name '*.txt' -o -name 'result.json' \) -print0 | sort -z)
           fi
+  m17-portable-host-required:
+    name: m17-portable-host-required
+    if: ${{ always() }}
+    needs: m17-portable-host
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the complete M17 matrix to succeed
+        env:
+          MATRIX_RESULT: ${{ needs.m17-portable-host.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != "success" ]; then
+            echo "M17 matrix result was: $MATRIX_RESULT"
+            exit 1
+          fi
