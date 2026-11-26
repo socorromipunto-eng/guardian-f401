@@ -3,12 +3,12 @@
   "project": "Guardian F401",
   "release": "v0.17.0",
   "status": "HOLD",
-  "source_freshness": "2026-10-04",
+  "source_freshness": "2026-11-26",
   "baseline": {
-    "branch": "feature/m17-heterogeneous-multinode-assurance",
-    "head": "717e53c717af1dc31af540bbcadd9b426f9c9535",
-    "tree": "d16f9ffed29c4f3c1b7dd445902aeafe42a489c0",
-    "incident_range": "SG-001..SG-045"
+    "branch": "main",
+    "head": "2e8f4ea8e60a95a8c8491749c5f9acf1ecf0cce3",
+    "tree": "d9e9b3d45be19d0fb9e553204f71a7c11bccf720",
+    "incident_range": "SG-001..SG-048"
   },
   "domains": [
     {
